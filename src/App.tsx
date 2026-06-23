@@ -1,30 +1,52 @@
-import { isConfigured } from "./lib/supabase";
+import type { ReactNode } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider, useAuth } from "./lib/auth";
+import StudentHome from "./pages/student/StudentHome";
+import ExamPage from "./pages/student/ExamPage";
+import ResultPage from "./pages/student/ResultPage";
+import LoginPage from "./pages/admin/LoginPage";
+import AdminLayout from "./pages/admin/AdminLayout";
+import TopicsPage from "./pages/admin/TopicsPage";
+import TestEditorPage from "./pages/admin/TestEditorPage";
+import SubmissionsPage from "./pages/admin/SubmissionsPage";
 
-// Phase 0: màn hình nền móng — xác nhận app chạy + trạng thái kết nối Supabase.
-// Các Phase sau sẽ thay bằng router (đăng nhập GV / trang admin / app thi).
+// Chặn vào trang quản trị khi chưa đăng nhập.
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { session, loading } = useAuth();
+  if (loading) return <div className="center muted">Đang kiểm tra đăng nhập…</div>;
+  if (!session) return <Navigate to="/admin/login" replace />;
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
-    <div className="card">
-      <span className="badge">Phase 0 · Nền móng</span>
-      <h1>English Test Platform</h1>
-      <p className="sub">
-        Nền tảng thi tiếng Anh có database — IELTS Ms. Trà My. Bản v2 đang dựng theo lộ trình trong{" "}
-        <code>docs/PLAN.md</code>.
-      </p>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Học sinh */}
+          <Route path="/" element={<StudentHome />} />
+          <Route path="/exam/:testId" element={<ExamPage />} />
+          <Route path="/result" element={<ResultPage />} />
 
-      <div className="status">
-        <span className={`dot ${isConfigured ? "ok" : "off"}`} />
-        {isConfigured
-          ? "Đã cấu hình Supabase (.env) — sẵn sàng cho Phase 1."
-          : "Chưa cấu hình Supabase — điền .env theo docs/SETUP.md."}
-      </div>
+          {/* Giáo viên */}
+          <Route path="/admin/login" element={<LoginPage />} />
+          <Route
+            path="/admin"
+            element={
+              <RequireAuth>
+                <AdminLayout />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<Navigate to="topics" replace />} />
+            <Route path="topics" element={<TopicsPage />} />
+            <Route path="tests/:testId" element={<TestEditorPage />} />
+            <Route path="submissions" element={<SubmissionsPage />} />
+          </Route>
 
-      <ul className="steps">
-        <li>Tạo dự án Supabase + chạy <code>supabase/schema.sql</code></li>
-        <li>Tạo bucket R2 cho audio/ảnh</li>
-        <li>Điền <code>VITE_SUPABASE_URL</code> + <code>VITE_SUPABASE_ANON_KEY</code> vào <code>.env</code></li>
-        <li>Tiếp theo (Phase 1): đăng nhập giáo viên + quản trị đề Viết</li>
-      </ul>
-    </div>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

@@ -56,8 +56,13 @@ create table if not exists questions (
   sort_order  int not null default 0,
   qtype       text not null check (qtype in ('single','multi','tfng','fill')),
   prompt      text not null,
-  options     jsonb default '[]'::jsonb,   -- ["A...","B...",...] cho single/multi
-  correct     jsonb not null,              -- vd "B" | ["A","C"] | "true" | ["library","the library"]
+  options     jsonb default '[]'::jsonb,   -- ["Paris","London",...] cho single/multi
+  -- QUY ƯỚC ĐÁP ÁN (để an toàn khi XÁO TRỘN đáp án): correct lưu theo GIÁ TRỊ, KHÔNG theo chữ cái/chỉ số.
+  --   single : "Paris"                       (đúng = đúng 1 lựa chọn)
+  --   multi  : ["Paris","Hà Nội"]            (đúng = đúng đủ tập lựa chọn, không thừa thiếu)
+  --   tfng   : "true" | "false" | "notgiven" (chuẩn hóa true/yes, false/no, notgiven/ng)
+  --   fill   : ["library","the library"]     (đúng = khớp 1 trong các đáp án; chuẩn hóa hoa-thường, khoảng trắng)
+  correct     jsonb not null,
   points      numeric not null default 1
 );
 
@@ -125,50 +130,164 @@ create policy teacher_all_questions on questions    for all to authenticated usi
 create policy teacher_all_sessions on exam_sessions for all to authenticated using (true) with check (true);
 create policy teacher_all_assign   on assignments   for all to authenticated using (true) with check (true);
 create policy teacher_read_subs    on submissions   for select to authenticated using (true);
+-- GV chấm tay bài Viết / gán band / sửa & xóa bài nộp:
+create policy teacher_update_subs  on submissions   for update to authenticated using (true) with check (true);
+create policy teacher_delete_subs  on submissions   for delete to authenticated using (true);
 create policy own_profile          on profiles      for select to authenticated using (id = auth.uid());
 
 -- HS (anon): KHÔNG có policy đọc questions/correct -> chặn đọc trực tiếp.
 -- Mọi thao tác của HS đi qua RPC bên dưới (SECURITY DEFINER).
 
 -- =====================================================================
+-- HÀM TIỆN ÍCH (chuẩn hóa + quy đổi band)
+-- =====================================================================
+
+-- Chuẩn hóa chuỗi để so khớp đáp án: bỏ khoảng trắng thừa + về chữ thường.
+create or replace function etp_norm(p text)
+returns text language sql immutable as $$
+  select lower(btrim(regexp_replace(coalesce(p,''), '\s+', ' ', 'g')));
+$$;
+
+-- Quy đổi % đúng -> band IELTS (xấp xỉ, theo bảng Academic Reading/Listening phổ bi).
+-- Chỉ áp dụng cho reading/listening; writing chấm tay nên trả NULL.
+create or replace function etp_band(p_skill text, p_percent numeric)
+returns numeric language sql immutable as $$
+  select case
+    when p_skill = 'writing' then null
+    when p_percent is null then null
+    when p_percent >= 97 then 9.0
+    when p_percent >= 93 then 8.5
+    when p_percent >= 88 then 8.0
+    when p_percent >= 83 then 7.5
+    when p_percent >= 75 then 7.0
+    when p_percent >= 65 then 6.5
+    when p_percent >= 58 then 6.0
+    when p_percent >= 50 then 5.5
+    when p_percent >= 40 then 5.0
+    when p_percent >= 33 then 4.5
+    when p_percent >= 25 then 4.0
+    else 3.5
+  end;
+$$;
+
+-- =====================================================================
 -- RPC cho học sinh (chạy quyền server, giấu đáp án)
 -- =====================================================================
 
--- Lấy đề (đã loại cột correct). Phase 2 sẽ bổ sung xáo trộn + phân phiên bản xoay vòng.
+-- Liệt kê đề đang mở cho học sinh (anon KHÔNG đọc trực tiếp được topics/tests vì RLS).
+-- Chỉ trả thông tin an toàn (tên chủ đề, kỹ năng, tiêu đề đề, thời gian) — KHÔNG có câu hỏi/đáp án.
+create or replace function rpc_list_exams()
+returns jsonb
+language sql security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'topic_id', tp.id,
+           'topic_name', tp.name,
+           'skill', tp.skill,
+           'tests', (select coalesce(jsonb_agg(jsonb_build_object(
+                        'id', t.id, 'version_label', t.version_label, 'title', t.title,
+                        'time_limit_min', t.time_limit_min, 'min_words', t.min_words
+                     ) order by t.version_label), '[]')
+                     from tests t where t.topic_id = tp.id and t.active)
+         ) order by tp.sort_order, tp.name), '[]')
+  from topics tp
+  where tp.active
+    and exists (select 1 from tests t where t.topic_id = tp.id and t.active);
+$$;
+
+-- Lấy đề để làm bài: loại cột correct (đáp án), kèm thông tin chủ đề (skill),
+-- và XÁO TRỘN thứ tự câu hỏi + thứ tự đáp án (chống nhìn bài). Đáp án so theo GIÁ TRỊ nên xáo vẫn chấm đúng.
 create or replace function rpc_get_test(p_test_id uuid)
 returns jsonb
 language sql security definer set search_path = public as $$
   select jsonb_build_object(
-    'test', (select to_jsonb(t) from tests t where t.id = p_test_id),
+    'test', (select to_jsonb(t) from tests t where t.id = p_test_id and t.active),
+    'topic', (select jsonb_build_object('name', tp.name, 'skill', tp.skill)
+              from tests t join topics tp on tp.id = t.topic_id where t.id = p_test_id),
     'passages', (select coalesce(jsonb_agg(to_jsonb(p) order by p.sort_order),'[]')
                  from passages p where p.test_id = p_test_id),
     'questions', (select coalesce(jsonb_agg(
-                    jsonb_build_object('id',q.id,'passage_id',q.passage_id,'sort_order',q.sort_order,
-                                       'qtype',q.qtype,'prompt',q.prompt,'options',q.options) -- KHÔNG có correct
-                    order by q.sort_order),'[]')
+                    jsonb_build_object(
+                      'id', q.id, 'passage_id', q.passage_id, 'qtype', q.qtype,
+                      'prompt', q.prompt, 'points', q.points,
+                      -- xáo trộn đáp án (chỉ với single/multi có options)
+                      'options', (select coalesce(jsonb_agg(o order by random()), '[]'::jsonb)
+                                  from jsonb_array_elements(q.options) o)
+                    ) order by random()), '[]')   -- KHÔNG có correct; câu hỏi xáo ngẫu nhiên
                   from questions q where q.test_id = p_test_id)
   );
 $$;
 
--- Chấm điểm ở server + lưu submission. Logic so khớp chi tiết hoàn thiện ở Phase 2.
+-- Chấm điểm Ở SERVER + lưu bài nộp. So khớp theo qtype, đáp án chuẩn hóa (etp_norm).
+--   single/tfng: khớp đúng 1 giá trị · multi: trùng tập hợp · fill: khớp 1 trong nhiều đáp án.
+-- Bài Viết (skill=writing): không có câu trắc nghiệm -> score/max=0, lưu essay để GV chấm tay.
 create or replace function rpc_submit(
   p_test_id uuid, p_name text, p_email text, p_answers jsonb,
-  p_violations int, p_log text, p_started_at timestamptz
+  p_violations int, p_log text, p_started_at timestamptz, p_essay text default null
 ) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
   v_score numeric := 0; v_max numeric := 0; v_id uuid;
-  -- TODO Phase 2: lặp qua questions, so p_answers với correct theo qtype
-  --   (single/tfng: bằng nhau; multi: tập hợp; fill: chuẩn hóa hoa-thường + nhiều đáp án).
+  v_skill text; v_topic_name text; v_band numeric; v_percent numeric;
+  q record; v_ans jsonb; v_ok boolean;
+  v_correct_set text[]; v_ans_set text[];
 begin
-  insert into submissions(test_id, student_name, student_email, answers, score, max_score,
-                          violations, violation_log, started_at)
-  values (p_test_id, p_name, p_email, p_answers, v_score, v_max, p_violations, p_log, p_started_at)
+  select tp.skill, tp.name into v_skill, v_topic_name
+  from tests t join topics tp on tp.id = t.topic_id where t.id = p_test_id;
+
+  -- Duyệt từng câu hỏi (đọc trực tiếp questions.correct — an toàn vì chạy quyền definer).
+  for q in select id, qtype, correct, points from questions where test_id = p_test_id loop
+    v_max := v_max + coalesce(q.points, 0);
+    v_ans := p_answers -> (q.id::text);   -- đáp án HS theo question id
+    v_ok := false;
+
+    if v_ans is not null then
+      if q.qtype in ('single','tfng') then
+        -- so 1 giá trị (đáp án có thể lưu dạng "X" hoặc ["X"]).
+        v_ok := etp_norm(
+                  case when jsonb_typeof(v_ans) = 'array' then v_ans->>0 else v_ans #>> '{}' end
+                ) = etp_norm(
+                  case when jsonb_typeof(q.correct) = 'array' then q.correct->>0 else q.correct #>> '{}' end
+                );
+      elsif q.qtype = 'fill' then
+        -- khớp 1 trong các đáp án chấp nhận (correct là mảng, hoặc 1 chuỗi).
+        if jsonb_typeof(q.correct) = 'array' then
+          select exists(
+            select 1 from jsonb_array_elements_text(q.correct) c
+            where etp_norm(c) = etp_norm(case when jsonb_typeof(v_ans)='array' then v_ans->>0 else v_ans #>> '{}' end)
+          ) into v_ok;
+        else
+          v_ok := etp_norm(q.correct #>> '{}') = etp_norm(case when jsonb_typeof(v_ans)='array' then v_ans->>0 else v_ans #>> '{}' end);
+        end if;
+      elsif q.qtype = 'multi' then
+        -- trùng tập hợp (không thừa, không thiếu), chuẩn hóa + sắp xếp.
+        if jsonb_typeof(q.correct) = 'array' and jsonb_typeof(v_ans) = 'array' then
+          select array_agg(distinct etp_norm(c) order by etp_norm(c))
+            into v_correct_set from jsonb_array_elements_text(q.correct) c;
+          select array_agg(distinct etp_norm(a) order by etp_norm(a))
+            into v_ans_set from jsonb_array_elements_text(v_ans) a;
+          v_ok := v_correct_set = v_ans_set;
+        end if;
+      end if;
+    end if;
+
+    if v_ok then v_score := v_score + coalesce(q.points, 0); end if;
+  end loop;
+
+  v_percent := case when v_max > 0 then round(v_score * 100.0 / v_max, 1) else null end;
+  v_band := etp_band(v_skill, v_percent);
+
+  insert into submissions(test_id, topic_name, student_name, student_email, answers, essay,
+                          score, max_score, band, violations, violation_log, started_at)
+  values (p_test_id, v_topic_name, p_name, p_email, p_answers, p_essay,
+          v_score, v_max, v_band, coalesce(p_violations,0), p_log, p_started_at)
   returning id into v_id;
-  return jsonb_build_object('submission_id', v_id, 'score', v_score, 'max_score', v_max);
+
+  return jsonb_build_object('submission_id', v_id, 'score', v_score,
+                            'max_score', v_max, 'percent', v_percent, 'band', v_band);
 end;
 $$;
 
--- Cho phép anon gọi 2 RPC trên
+-- Cho phép anon gọi các RPC học sinh (KHÔNG cấp quyền đọc bảng questions cho anon).
+grant execute on function rpc_list_exams() to anon, authenticated;
 grant execute on function rpc_get_test(uuid) to anon, authenticated;
-grant execute on function rpc_submit(uuid, text, text, jsonb, int, text, timestamptz) to anon, authenticated;
+grant execute on function rpc_submit(uuid, text, text, jsonb, int, text, timestamptz, text) to anon, authenticated;
