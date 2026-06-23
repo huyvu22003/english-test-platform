@@ -13,6 +13,7 @@ Nền tảng thi tiếng Anh có **database đầy đủ** cho trung tâm **IELT
 | File | Nội dung |
 |---|---|
 | [`docs/ONBOARDING.md`](docs/ONBOARDING.md) | **Bắt đầu từ đâu** — dành cho dev mới tiếp nhận (đọc đầu tiên) |
+| [`docs/VISION.md`](docs/VISION.md) | **Định hướng** — hệ đánh giá năng lực & tiến bộ (CEFR, Writing-first) |
 | [`docs/PLAN.md`](docs/PLAN.md) | Kiến trúc, mô hình dữ liệu, tính năng, lộ trình |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | **Vì sao** — nhật ký quyết định kiến trúc (ADR) |
 | [`docs/PROGRESS.md`](docs/PROGRESS.md) | **Đang ở đâu** — tiến độ, việc tiếp theo, nợ kỹ thuật |

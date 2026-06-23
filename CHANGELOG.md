@@ -7,6 +7,15 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Thêm — Phase A+B: Hệ đánh giá năng lực + Writing chấm tay
+- **Định hướng mới** (`docs/VISION.md`, ADR-009..014): hệ đánh giá năng lực & theo dõi tiến bộ; thang **CEFR** (map IELTS); roster học viên.
+- **Schema:** bảng `levels` (CEFR↔IELTS↔lớp), `students`/`classes`; `tests.prompt`+`tests.purpose`; cột chấm tay 4 tiêu chí IELTS + `overall_band`/`cefr`/`status`/`feedback` trong `submissions`; `etp_band_to_cefr`. RPC: `rpc_list_writing_topics`, `rpc_pick_prompt`, `rpc_submit_writing`, `rpc_get_progress`. VÌ SAO: xem ADR-010..014.
+- **`supabase/seed.sql`:** 11 chủ đề Writing (13 đề) trích từ app v1 `app_testwriting.xlsx`.
+- **Học sinh:** chọn chủ đề → bốc đề ngẫu nhiên → viết (đếm từ) + khóa fullscreen/log → nộp (chờ GV chấm); trang `/progress` xem đường band theo email.
+- **Giáo viên:** hàng đợi chấm + chấm **4 tiêu chí IELTS** (tự tính overall + CEFR) + nhận xét; lọc theo trạng thái; nhập đề bài (prompt) cho topic Writing.
+
+
+
 ### Tài liệu — Quy trình ghi/đọc log cho bàn giao
 - Thêm `docs/ONBOARDING.md` (bắt đầu từ đâu), `docs/DECISIONS.md` (ADR — vì sao), `docs/PROGRESS.md` (đang ở đâu), `docs/DEVLOG.md` (diễn biến theo thời gian). VÌ SAO: để bất kỳ dev tiếp nhận nào cũng nắm rõ quy trình, ý tưởng, tiến độ từ đầu.
 - Bổ sung `CONTRIBUTING.md`: vòng đời ghi log bắt buộc (Code→Build→CHANGELOG→DEVLOG→PROGRESS→DECISIONS→PR) + bảng "thay đổi nào ghi vào đâu" + cách đọc log + template.

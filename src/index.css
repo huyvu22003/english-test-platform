@@ -163,6 +163,16 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .essay-box p { white-space: pre-wrap; }
 .viol-box pre { white-space: pre-wrap; font-size: 12px; color: var(--muted); }
 
+/* Phase A+B — chọn chủ đề / chấm 4 tiêu chí / biểu đồ tiến bộ */
+.topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.topic-pick { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; text-align: left; cursor: pointer; border: 1px solid var(--line); }
+.topic-pick:hover { border-color: var(--brand); box-shadow: 0 4px 14px rgba(122,43,143,.12); }
+.grade-grid { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin: 10px 0; }
+.grade-grid .field.inline { width: 130px; }
+.overall-box { padding: 8px 12px; background: #faf7fc; border: 1px solid var(--line); border-radius: 8px; font-size: 15px; }
+.viol-box summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.chart { display: block; margin-top: 8px; }
+
 @media (max-width: 760px) {
   .admin { grid-template-columns: 1fr; }
   .sidebar { flex-direction: row; align-items: center; gap: 10px; }
