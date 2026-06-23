@@ -3,7 +3,9 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
 import StudentHome from "./pages/student/StudentHome";
 import ExamPage from "./pages/student/ExamPage";
+import WritingExamPage from "./pages/student/WritingExamPage";
 import ResultPage from "./pages/student/ResultPage";
+import ProgressPage from "./pages/student/ProgressPage";
 import LoginPage from "./pages/admin/LoginPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import TopicsPage from "./pages/admin/TopicsPage";
@@ -25,8 +27,10 @@ export default function App() {
         <Routes>
           {/* Học sinh */}
           <Route path="/" element={<StudentHome />} />
+          <Route path="/writing/:topicId" element={<WritingExamPage />} />
           <Route path="/exam/:testId" element={<ExamPage />} />
           <Route path="/result" element={<ResultPage />} />
+          <Route path="/progress" element={<ProgressPage />} />
 
           {/* Giáo viên */}
           <Route path="/admin/login" element={<LoginPage />} />

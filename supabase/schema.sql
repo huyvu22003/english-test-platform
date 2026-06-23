@@ -291,3 +291,158 @@ $$;
 grant execute on function rpc_list_exams() to anon, authenticated;
 grant execute on function rpc_get_test(uuid) to anon, authenticated;
 grant execute on function rpc_submit(uuid, text, text, jsonb, int, text, timestamptz, text) to anon, authenticated;
+
+
+-- =====================================================================
+-- PHASE A+B — Hệ đánh giá năng lực (CEFR) + Roster + Writing chấm tay
+--   Mở rộng thêm, KHÔNG phá phần trên. Xem docs/VISION.md.
+-- =====================================================================
+
+-- ---------- Bảng quy đổi trình độ: CEFR <-> IELTS band <-> tên lớp nội bộ ----------
+create table if not exists levels (
+  cefr          text primary key check (cefr in ('A1','A2','B1','B2','C1','C2')),
+  ielts_band    numeric,        -- band IELTS tham chiếu
+  internal_name text,           -- tên lớp/cấp nội bộ của trung tâm
+  sort_order    int not null default 0
+);
+insert into levels(cefr, ielts_band, internal_name, sort_order) values
+  ('A1', 3.0, 'Beginner', 1),
+  ('A2', 4.0, 'Elementary', 2),
+  ('B1', 5.0, 'Pre-Intermediate', 3),
+  ('B2', 6.0, 'Intermediate', 4),
+  ('C1', 7.0, 'Upper-Intermediate', 5),
+  ('C2', 8.0, 'Advanced', 6)
+on conflict (cefr) do nothing;
+
+-- ---------- Lớp/khóa + Roster học viên (để theo dõi tiến bộ theo thời gian) ----------
+create table if not exists classes (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null,
+  created_at timestamptz not null default now()
+);
+create table if not exists students (
+  id         uuid primary key default gen_random_uuid(),
+  code       text unique,        -- mã học viên (tùy chọn)
+  full_name  text not null,
+  email      text,
+  class_id   uuid references classes(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_students_email on students(email);
+
+-- ---------- tests: thêm đề bài (prompt) + mục đích bài ----------
+alter table tests add column if not exists prompt  text;   -- đề bài Task 2 (writing)
+alter table tests add column if not exists purpose text not null default 'progress'
+  check (purpose in ('placement','progress','exit'));
+
+-- ---------- submissions: liên kết học viên + chấm tay 4 tiêu chí IELTS + trạng thái ----------
+alter table submissions add column if not exists student_id   uuid references students(id) on delete set null;
+alter table submissions add column if not exists status       text not null default 'submitted'
+  check (status in ('submitted','graded'));
+alter table submissions add column if not exists score_tr     numeric;  -- Task Response
+alter table submissions add column if not exists score_cc     numeric;  -- Coherence & Cohesion
+alter table submissions add column if not exists score_lr     numeric;  -- Lexical Resource
+alter table submissions add column if not exists score_gra    numeric;  -- Grammatical Range & Accuracy
+alter table submissions add column if not exists overall_band numeric;  -- band tổng (trung bình 4 tiêu chí)
+alter table submissions add column if not exists cefr         text;     -- quy đổi từ band
+alter table submissions add column if not exists feedback     text;     -- nhận xét của GV
+alter table submissions add column if not exists graded_by    uuid references profiles(id);
+alter table submissions add column if not exists graded_at    timestamptz;
+
+-- Quy đổi band -> CEFR (dùng cho cả writing chấm tay lẫn báo cáo tiến bộ).
+create or replace function etp_band_to_cefr(p_band numeric)
+returns text language sql immutable as $$
+  select case
+    when p_band is null then null
+    when p_band >= 8.0 then 'C2'
+    when p_band >= 7.0 then 'C1'
+    when p_band >= 6.0 then 'B2'
+    when p_band >= 5.0 then 'B1'
+    when p_band >= 4.0 then 'A2'
+    else 'A1'
+  end;
+$$;
+
+-- RLS cho bảng mới
+alter table levels   enable row level security;
+alter table classes  enable row level security;
+alter table students enable row level security;
+-- levels là dữ liệu tham chiếu công khai (không nhạy cảm)
+create policy read_levels        on levels   for select to anon, authenticated using (true);
+-- lớp + roster: chỉ giáo viên (authenticated). Học sinh được tạo qua RPC definer bên dưới.
+create policy teacher_all_classes  on classes  for all to authenticated using (true) with check (true);
+create policy teacher_all_students on students for all to authenticated using (true) with check (true);
+
+-- =====================================================================
+-- RPC Writing cho học sinh (anon) — chấm TAY nên không có đáp án để giấu,
+-- nhưng vẫn qua RPC để: liệt kê chủ đề mở, bốc đề ngẫu nhiên, gắn hồ sơ học viên.
+-- =====================================================================
+
+-- Danh sách chủ đề Writing đang mở (có ít nhất 1 đề active).
+create or replace function rpc_list_writing_topics()
+returns jsonb language sql security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'topic_id', tp.id, 'topic_name', tp.name,
+           'num_prompts', (select count(*) from tests t where t.topic_id = tp.id and t.active)
+         ) order by tp.sort_order, tp.name), '[]')
+  from topics tp
+  where tp.active and tp.skill = 'writing'
+    and exists (select 1 from tests t where t.topic_id = tp.id and t.active);
+$$;
+
+-- Bốc NGẪU NHIÊN 1 đề (prompt) trong 1 chủ đề.
+create or replace function rpc_pick_prompt(p_topic_id uuid)
+returns jsonb language sql security definer set search_path = public as $$
+  select to_jsonb(x) from (
+    select t.id as test_id, t.prompt, t.title, t.time_limit_min, t.min_words,
+           tp.name as topic_name
+    from tests t join topics tp on tp.id = t.topic_id
+    where t.topic_id = p_topic_id and t.active
+    order by random() limit 1
+  ) x;
+$$;
+
+-- Nộp bài Viết: upsert hồ sơ học viên theo email, lưu bài (status='submitted', chờ GV chấm).
+create or replace function rpc_submit_writing(
+  p_test_id uuid, p_name text, p_email text, p_essay text,
+  p_violations int, p_log text, p_started_at timestamptz
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_id uuid; v_student uuid; v_topic text;
+begin
+  -- nối hồ sơ học viên (tạo nếu chưa có) để theo dõi tiến bộ
+  if p_email is not null and length(btrim(p_email)) > 0 then
+    select id into v_student from students where lower(email) = lower(btrim(p_email)) limit 1;
+    if v_student is null then
+      insert into students(full_name, email) values (p_name, btrim(p_email)) returning id into v_student;
+    end if;
+  end if;
+
+  select tp.name into v_topic from tests t join topics tp on tp.id = t.topic_id where t.id = p_test_id;
+
+  insert into submissions(test_id, topic_name, student_id, student_name, student_email, essay,
+                          violations, violation_log, started_at, status)
+  values (p_test_id, v_topic, v_student, p_name, p_email, p_essay,
+          coalesce(p_violations,0), p_log, p_started_at, 'submitted')
+  returning id into v_id;
+
+  return jsonb_build_object('submission_id', v_id);
+end;
+$$;
+
+-- Tiến bộ của 1 học viên (theo email): các bài ĐÃ CHẤM theo thời gian.
+create or replace function rpc_get_progress(p_email text)
+returns jsonb language sql security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'submitted_at', s.submitted_at, 'topic_name', s.topic_name,
+           'overall_band', s.overall_band, 'cefr', s.cefr, 'status', s.status
+         ) order by s.submitted_at), '[]')
+  from submissions s
+  where lower(s.student_email) = lower(btrim(p_email));
+$$;
+
+grant execute on function rpc_list_writing_topics() to anon, authenticated;
+grant execute on function rpc_pick_prompt(uuid) to anon, authenticated;
+grant execute on function rpc_submit_writing(uuid, text, text, text, int, text, timestamptz) to anon, authenticated;
+grant execute on function rpc_get_progress(text) to anon, authenticated;

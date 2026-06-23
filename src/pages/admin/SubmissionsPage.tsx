@@ -1,15 +1,18 @@
-// Dashboard điểm: danh sách bài nộp, lọc, xem bài Viết, chấm tay (điểm/band),
-// xuất CSV (mở được bằng Excel), xóa bài.
+// Hàng đợi chấm: danh sách bài nộp, lọc (tên/chủ đề/trạng thái), xem bài viết +
+// nhật ký vi phạm, CHẤM TAY 4 tiêu chí IELTS (tự tính overall + CEFR), xuất CSV, xóa.
 import { useMemo, useState } from "react";
-import { deleteSubmission, listSubmissions, updateSubmission } from "../../lib/api";
+import { deleteSubmission, gradeWriting, listSubmissions, bandToCefr } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { ErrorBox, Spinner } from "../../components/common";
-import type { Submission } from "../../lib/types";
+import type { Submission, WritingScores } from "../../lib/types";
+
+type StatusFilter = "all" | "submitted" | "graded";
 
 export default function SubmissionsPage() {
   const subs = useAsync<Submission[]>(listSubmissions, []);
   const [q, setQ] = useState("");
   const [topic, setTopic] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("all");
 
   const topics = useMemo(() => {
     const s = new Set<string>();
@@ -20,24 +23,24 @@ export default function SubmissionsPage() {
   const rows = useMemo(() => {
     return (subs.data ?? []).filter((s) => {
       if (topic && s.topic_name !== topic) return false;
+      if (status !== "all" && s.status !== status) return false;
       if (q) {
         const hay = `${s.student_name ?? ""} ${s.student_email ?? ""}`.toLowerCase();
         if (!hay.includes(q.toLowerCase())) return false;
       }
       return true;
     });
-  }, [subs.data, q, topic]);
+  }, [subs.data, q, topic, status]);
+
+  const pending = (subs.data ?? []).filter((s) => s.status === "submitted").length;
 
   function exportCsv() {
-    const header = [
-      "Thời gian nộp", "Họ tên", "Email", "Chủ đề", "Điểm", "Tổng", "%", "Band", "Vi phạm",
-    ];
+    const header = ["Thời gian nộp", "Họ tên", "Email", "Chủ đề", "Số từ", "Overall band", "CEFR", "Trạng thái", "Vi phạm"];
     const lines = rows.map((s) => [
       new Date(s.submitted_at).toLocaleString("vi-VN"),
       s.student_name ?? "", s.student_email ?? "", s.topic_name ?? "",
-      num(s.score), num(s.max_score),
-      s.score != null && s.max_score ? Math.round((s.score / s.max_score) * 1000) / 10 : "",
-      num(s.band), num(s.violations),
+      wc(s.essay), num(s.overall_band), s.cefr ?? "",
+      s.status === "graded" ? "Đã chấm" : "Chờ chấm", num(s.violations),
     ]);
     downloadCsv([header, ...lines], `bai-nop-${new Date().toISOString().slice(0, 10)}.csv`);
   }
@@ -45,7 +48,7 @@ export default function SubmissionsPage() {
   return (
     <div>
       <div className="title-row">
-        <h1>Bài nộp &amp; Điểm</h1>
+        <h1>Hàng đợi chấm &amp; Điểm {pending > 0 && <span className="pill off">{pending} chờ chấm</span>}</h1>
         <button className="btn" onClick={exportCsv} disabled={rows.length === 0}>⬇ Xuất CSV</button>
       </div>
 
@@ -54,6 +57,11 @@ export default function SubmissionsPage() {
         <select value={topic} onChange={(e) => setTopic(e.target.value)}>
           <option value="">Tất cả chủ đề</option>
           {topics.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}>
+          <option value="all">Mọi trạng thái</option>
+          <option value="submitted">Chờ chấm</option>
+          <option value="graded">Đã chấm</option>
         </select>
         <span className="muted small">{rows.length} bài</span>
       </div>
@@ -64,16 +72,12 @@ export default function SubmissionsPage() {
       <div className="card table-wrap">
         <table className="table">
           <thead>
-            <tr>
-              <th>Nộp lúc</th><th>Học sinh</th><th>Chủ đề</th><th>Điểm</th><th>Band</th><th>Vi phạm</th><th></th>
-            </tr>
+            <tr><th>Nộp lúc</th><th>Học sinh</th><th>Chủ đề</th><th>Band</th><th>CEFR</th><th>Trạng thái</th><th>Vi phạm</th><th></th></tr>
           </thead>
           <tbody>
-            {rows.map((s) => (
-              <Row key={s.id} s={s} onChanged={subs.reload} />
-            ))}
+            {rows.map((s) => <Row key={s.id} s={s} onChanged={subs.reload} />)}
             {rows.length === 0 && !subs.loading && (
-              <tr><td colSpan={7} className="muted">Chưa có bài nộp.</td></tr>
+              <tr><td colSpan={8} className="muted">Không có bài nào.</td></tr>
             )}
           </tbody>
         </table>
@@ -82,14 +86,34 @@ export default function SubmissionsPage() {
   );
 }
 
+const CRITERIA: { key: keyof WritingScores; label: string }[] = [
+  { key: "tr", label: "Task Response" },
+  { key: "cc", label: "Coherence & Cohesion" },
+  { key: "lr", label: "Lexical Resource" },
+  { key: "gra", label: "Grammar" },
+];
+
 function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
   const [open, setOpen] = useState(false);
-  const [score, setScore] = useState(s.score ?? 0);
-  const [band, setBand] = useState(s.band ?? 0);
+  const [sc, setSc] = useState<WritingScores>({
+    tr: s.score_tr ?? 6, cc: s.score_cc ?? 6, lr: s.score_lr ?? 6, gra: s.score_gra ?? 6,
+  });
+  const [feedback, setFeedback] = useState(s.feedback ?? "");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  async function saveGrade() {
-    await updateSubmission(s.id, { score: Number(score), band: Number(band) });
-    onChanged();
+  const overall = Math.round(((sc.tr + sc.cc + sc.lr + sc.gra) / 4) * 2) / 2;
+
+  async function save() {
+    setBusy(true); setErr(null);
+    try {
+      await gradeWriting(s.id, sc, feedback.trim());
+      onChanged();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
   }
   async function remove() {
     if (!confirm("Xóa bài nộp này?")) return;
@@ -103,34 +127,48 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
         <td className="small">{new Date(s.submitted_at).toLocaleString("vi-VN")}</td>
         <td>{s.student_name}<div className="muted small">{s.student_email}</div></td>
         <td>{s.topic_name}</td>
-        <td>{s.score != null ? `${s.score}/${s.max_score}` : "—"}</td>
-        <td>{s.band ?? "—"}</td>
+        <td>{s.overall_band ?? "—"}</td>
+        <td>{s.cefr ?? "—"}</td>
+        <td>{s.status === "graded" ? <span className="ok-text">Đã chấm</span> : <span className="pill off small">Chờ chấm</span>}</td>
         <td>{s.violations ? <span className="viol">{s.violations}</span> : "0"}</td>
-        <td><button className="btn ghost small" onClick={() => setOpen((o) => !o)}>{open ? "Đóng" : "Chi tiết"}</button></td>
+        <td><button className="btn ghost small" onClick={() => setOpen((o) => !o)}>{open ? "Đóng" : "Chấm"}</button></td>
       </tr>
       {open && (
         <tr className="detail-row">
-          <td colSpan={7}>
+          <td colSpan={8}>
             {s.essay && (
               <div className="essay-box">
-                <strong>Bài viết:</strong>
+                <strong>Bài viết ({wc(s.essay)} từ):</strong>
                 <p>{s.essay}</p>
               </div>
             )}
             {s.violation_log && (
-              <div className="viol-box">
-                <strong>Nhật ký vi phạm:</strong>
+              <details className="viol-box">
+                <summary>Nhật ký vi phạm ({s.violations})</summary>
                 <pre>{s.violation_log}</pre>
-              </div>
+              </details>
             )}
-            <div className="row-form">
-              <label className="field inline"><span>Điểm</span>
-                <input type="number" step="0.5" value={score} onChange={(e) => setScore(Number(e.target.value))} />
-              </label>
-              <label className="field inline"><span>Band</span>
-                <input type="number" step="0.5" value={band} onChange={(e) => setBand(Number(e.target.value))} />
-              </label>
-              <button className="btn small primary" onClick={saveGrade}>Lưu điểm</button>
+
+            <div className="grade-grid">
+              {CRITERIA.map((c) => (
+                <label className="field inline" key={c.key}><span>{c.label}</span>
+                  <input type="number" min={0} max={9} step="0.5" value={sc[c.key]}
+                    onChange={(e) => setSc((p) => ({ ...p, [c.key]: Number(e.target.value) }))} />
+                </label>
+              ))}
+              <div className="overall-box">
+                Overall: <strong>{overall}</strong> <span className="pill">{bandToCefr(overall)}</span>
+              </div>
+            </div>
+            <label className="field"><span>Nhận xét cho học sinh</span>
+              <textarea rows={3} value={feedback} onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Điểm mạnh, điểm cần cải thiện theo từng tiêu chí…" />
+            </label>
+            {err && <ErrorBox msg={err} />}
+            <div className="actions">
+              <button className="btn small primary" disabled={busy} onClick={save}>
+                {busy ? "Đang lưu…" : s.status === "graded" ? "Cập nhật điểm" : "Lưu điểm & chấm xong"}
+              </button>
               <button className="btn ghost small danger" onClick={remove}>Xóa bài</button>
             </div>
           </td>
@@ -142,6 +180,9 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
 
 function num(v: number | null | undefined): string {
   return v == null ? "" : String(v);
+}
+function wc(essay: string | null): number {
+  return essay ? essay.trim().split(/\s+/).filter(Boolean).length : 0;
 }
 
 // Xuất CSV có BOM để Excel đọc đúng tiếng Việt.

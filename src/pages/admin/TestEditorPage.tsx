@@ -69,6 +69,7 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
 // ---------- Thông tin đề ----------
 function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => void; isWriting: boolean }) {
   const [title, setTitle] = useState(test.title ?? "");
+  const [prompt, setPrompt] = useState(test.prompt ?? "");
   const [version, setVersion] = useState(test.version_label);
   const [time, setTime] = useState(test.time_limit_min);
   const [minWords, setMinWords] = useState(test.min_words);
@@ -81,7 +82,8 @@ function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => voi
     try {
       await saveTest({
         id: test.id, topic_id: test.topic_id,
-        title: title.trim() || null, version_label: version.trim() || "A",
+        title: title.trim() || null, prompt: prompt.trim() || null,
+        version_label: version.trim() || "A",
         time_limit_min: Number(time) || 0, min_words: Number(minWords) || 0, active,
       });
       setMsg("Đã lưu.");
@@ -93,6 +95,12 @@ function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => voi
 
   return (
     <div className="card">
+      {isWriting && (
+        <label className="field"><span>Đề bài (prompt) — học sinh sẽ thấy</span>
+          <textarea rows={4} value={prompt} onChange={(e) => setPrompt(e.target.value)}
+            placeholder="vd: Some people think that… Discuss both views and give your opinion." />
+        </label>
+      )}
       <div className="grid2">
         <label className="field"><span>Tiêu đề đề</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="vd: The History of Tea" />

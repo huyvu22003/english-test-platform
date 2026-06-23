@@ -18,6 +18,8 @@ export interface Test {
   topic_id: string;
   version_label: string;
   title: string | null;
+  prompt: string | null;          // đề bài Task 2 (writing)
+  purpose: "placement" | "progress" | "exit";
   time_limit_min: number;
   min_words: number;
   active: boolean;
@@ -99,7 +101,57 @@ export interface Submission {
   essay: string | null;
   started_at: string | null;
   submitted_at: string;
+  // Phase A+B — chấm tay Writing
+  status: "submitted" | "graded";
+  student_id: string | null;
+  score_tr: number | null;
+  score_cc: number | null;
+  score_lr: number | null;
+  score_gra: number | null;
+  overall_band: number | null;
+  cefr: string | null;
+  feedback: string | null;
+  graded_at: string | null;
 }
 
 // Đáp án học sinh: { [question_id]: chuỗi | mảng chuỗi }
 export type AnswerMap = Record<string, string | string[]>;
+
+// ---------- Phase A+B — đánh giá năng lực / Writing ----------
+export interface WritingTopic {
+  topic_id: string;
+  topic_name: string;
+  num_prompts: number;
+}
+
+export interface PickedPrompt {
+  test_id: string;
+  prompt: string | null;
+  title: string | null;
+  time_limit_min: number;
+  min_words: number;
+  topic_name: string;
+}
+
+export interface ProgressItem {
+  submitted_at: string;
+  topic_name: string | null;
+  overall_band: number | null;
+  cefr: string | null;
+  status: "submitted" | "graded";
+}
+
+// 4 tiêu chí IELTS Writing
+export interface WritingScores {
+  tr: number;   // Task Response
+  cc: number;   // Coherence & Cohesion
+  lr: number;   // Lexical Resource
+  gra: number;  // Grammatical Range & Accuracy
+}
+
+export interface Level {
+  cefr: string;
+  ielts_band: number | null;
+  internal_name: string | null;
+  sort_order: number;
+}
