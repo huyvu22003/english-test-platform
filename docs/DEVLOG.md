@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-06-23 — Phase C (Roster + đăng nhập bằng mã + chẩn đoán)
+- **Tác nhân:** AI · **Nhánh/PR:** `feat/phase-c-roster-diagnostics`
+- **Mục tiêu:** quản lý học viên/lớp, cho học sinh đăng nhập nhanh bằng mã, và chẩn đoán điểm yếu để dạy đúng chỗ.
+- **Đã làm:**
+  - Schema: RPC `rpc_student_by_code` (anon, SECURITY DEFINER).
+  - Frontend: `RosterPage` (CRUD lớp + học viên), `DiagnosticsPage` (trung bình 4 tiêu chí theo lớp/học viên, tô tiêu chí yếu nhất), `StudentHome` thêm đăng nhập bằng mã; nav admin + router.
+- **Quyết định:** ADR-015 — đăng nhập bằng MÃ học viên (không dùng magic-link bây giờ để khỏi phụ thuộc email provider).
+- **Kết quả:** `npm run build` PASS.
+- **Bước tiếp:** Phase D (placement tự chấm) / mở rộng chẩn đoán theo tag.
+
 ## 2026-06-23 — Đổi định hướng + Phase A+B (Writing chấm tay)
 - **Tác nhân:** AI (theo chủ dự án) · **Nhánh/PR:** `feat/phase-a-b-writing`
 - **Mục tiêu:** định vị lại sản phẩm thành hệ đánh giá năng lực & tiến bộ; dựng Writing-first chấm tay từ nội dung app v1 (11 topic).

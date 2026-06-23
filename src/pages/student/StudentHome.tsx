@@ -2,7 +2,7 @@
 // (hệ bốc ngẫu nhiên 1 đề trong chủ đề). Có lối vào xem tiến bộ.
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listWritingTopics } from "../../lib/api";
+import { listWritingTopics, studentByCode } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { isConfigured } from "../../lib/supabase";
 import { ErrorBox, Spinner } from "../../components/common";
@@ -13,9 +13,28 @@ export default function StudentHome() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [touched, setTouched] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeMsg, setCodeMsg] = useState<string | null>(null);
+  const [codeBusy, setCodeBusy] = useState(false);
   const topics = useAsync<WritingTopic[]>(listWritingTopics, []);
 
   const ready = name.trim().length > 1 && /\S+@\S+\.\S+/.test(email);
+
+  async function loginByCode() {
+    if (!code.trim()) return;
+    setCodeBusy(true); setCodeMsg(null);
+    try {
+      const s = await studentByCode(code.trim());
+      if (!s) { setCodeMsg("Không tìm thấy mã học viên này."); return; }
+      setName(s.full_name);
+      if (s.email) setEmail(s.email);
+      setCodeMsg(`Xin chào ${s.full_name}${s.class_name ? ` · ${s.class_name}` : ""}!`);
+    } catch (e) {
+      setCodeMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCodeBusy(false);
+    }
+  }
 
   function start(topicId: string) {
     setTouched(true);
@@ -39,6 +58,16 @@ export default function StudentHome() {
       )}
 
       <div className="card">
+        <div className="row-form code-login">
+          <input placeholder="Có mã học viên? Nhập tại đây…" value={code}
+            onChange={(e) => setCode(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && loginByCode()} />
+          <button className="btn small" disabled={codeBusy} onClick={loginByCode}>
+            {codeBusy ? "…" : "Nhận diện"}
+          </button>
+          {codeMsg && <span className="muted small">{codeMsg}</span>}
+        </div>
+        <div className="or-line"><span>hoặc nhập thủ công</span></div>
         <div className="grid2">
           <label className="field">
             <span>Họ và tên</span>

@@ -98,6 +98,13 @@ Trạng thái: ✅ Đang áp dụng · 🔁 Đã thay thế · 💤 Tạm hoãn
 - **Vì sao:** Công bằng giữa học sinh (giống v1); dữ liệu cũ trong Google Sheet không cần mang sang để khởi động sạch.
 - **Hệ quả:** Giáo viên bổ sung đề cho từng chủ đề dễ dàng. v1 vẫn chạy tới khi v2 thay thế xong.
 
+## ADR-015 — Đăng nhập học viên bằng MÃ (chưa dùng magic-link)
+- **Ngày:** 2026-06-23 · **Trạng thái:** ✅
+- **Bối cảnh:** Cần nối bài làm vào hồ sơ học viên với ít ma sát; magic-link cần cấu hình email provider.
+- **Quyết định:** Học sinh nhập **mã học viên** (GV cấp) → `rpc_student_by_code` điền sẵn tên/email; vẫn cho nhập thủ công tên/email.
+- **Vì sao:** Mã hoạt động ngay, không phụ thuộc hạ tầng email; đủ cho low-stakes. Magic-link để sau nếu cần xác thực thật.
+- **Hệ quả:** Nối hồ sơ tốt nhất khi học viên có email/mã trong roster. Quản lý roster ở trang `Lớp & Học viên`.
+
 ---
 
 ## Template thêm ADR mới (sao chép phần dưới)

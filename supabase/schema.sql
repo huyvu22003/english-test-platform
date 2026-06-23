@@ -446,3 +446,22 @@ grant execute on function rpc_list_writing_topics() to anon, authenticated;
 grant execute on function rpc_pick_prompt(uuid) to anon, authenticated;
 grant execute on function rpc_submit_writing(uuid, text, text, text, int, text, timestamptz) to anon, authenticated;
 grant execute on function rpc_get_progress(text) to anon, authenticated;
+
+
+-- =====================================================================
+-- PHASE C — Đăng nhập học viên bằng MÃ + chẩn đoán
+-- =====================================================================
+
+-- Học sinh nhập MÃ học viên để nhận diện (anon không đọc trực tiếp bảng students).
+-- Trả hồ sơ tối thiểu để điền sẵn tên/email rồi vào làm bài.
+create or replace function rpc_student_by_code(p_code text)
+returns jsonb language sql security definer set search_path = public as $$
+  select to_jsonb(x) from (
+    select s.id, s.full_name, s.email, c.name as class_name
+    from students s left join classes c on c.id = s.class_id
+    where lower(s.code) = lower(btrim(p_code))
+    limit 1
+  ) x;
+$$;
+
+grant execute on function rpc_student_by_code(text) to anon, authenticated;

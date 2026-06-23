@@ -2,8 +2,8 @@
 // để component không phải biết chi tiết. Đáp án học sinh luôn đi qua RPC.
 import { supabase } from "./supabase";
 import type {
-  AnswerMap, ExamListItem, Level, Passage, PickedPrompt, ProgressItem,
-  PublicTest, Question, Submission, SubmitResult, Test, Topic,
+  AnswerMap, ClassRow, ExamListItem, Level, Passage, PickedPrompt, ProgressItem,
+  PublicTest, Question, Student, StudentByCode, Submission, SubmitResult, Test, Topic,
   WritingScores, WritingTopic,
 } from "./types";
 
@@ -104,6 +104,35 @@ export async function gradeWriting(id: string, s: WritingScores, feedback: strin
     overall_band: overall, cefr: bandToCefr(overall), feedback,
     status: "graded", graded_at: new Date().toISOString(),
   }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+// ---------- Phase C: tra mã học viên (anon) ----------
+export async function studentByCode(code: string): Promise<StudentByCode | null> {
+  const res = await db().rpc("rpc_student_by_code", { p_code: code });
+  return (unwrap(res) ?? null) as StudentByCode | null;
+}
+
+// ---------- Phase C: Roster (giáo viên) ----------
+export async function listClasses(): Promise<ClassRow[]> {
+  return unwrap(await db().from("classes").select("*").order("name"));
+}
+export async function saveClass(c: Partial<ClassRow>): Promise<ClassRow> {
+  return unwrap(await db().from("classes").upsert(c).select().single()) as ClassRow;
+}
+export async function deleteClass(id: string): Promise<void> {
+  const { error } = await db().from("classes").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function listStudents(): Promise<Student[]> {
+  return unwrap(await db().from("students").select("*").order("full_name"));
+}
+export async function saveStudent(s: Partial<Student>): Promise<Student> {
+  return unwrap(await db().from("students").upsert(s).select().single()) as Student;
+}
+export async function deleteStudent(id: string): Promise<void> {
+  const { error } = await db().from("students").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }
 

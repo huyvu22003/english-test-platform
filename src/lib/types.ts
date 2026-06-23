@@ -155,3 +155,26 @@ export interface Level {
   internal_name: string | null;
   sort_order: number;
 }
+
+// ---------- Phase C — Roster & chẩn đoán ----------
+export interface ClassRow {
+  id: string;
+  name: string;
+  created_at?: string;
+}
+
+export interface Student {
+  id: string;
+  code: string | null;
+  full_name: string;
+  email: string | null;
+  class_id: string | null;
+  created_at?: string;
+}
+
+export interface StudentByCode {
+  id: string;
+  full_name: string;
+  email: string | null;
+  class_name: string | null;
+}
