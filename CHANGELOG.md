@@ -7,6 +7,15 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Thêm — Phase D: Placement tự chấm ra CEFR (engine "threshold")
+- **Engine threshold:** đề `purpose='placement'` gồm câu hỏi gắn `cefr_level`; chấm server → CEFR = mức cao nhất đạt liên tiếp (đúng ≥ `pass_threshold`). RPC `rpc_list_placements`, `rpc_submit_placement`; hàm `etp_is_correct` (tách dùng lại). VÌ SAO: tự động xếp lớp đầu vào — ADR-016, hiện thực khớp nối engine (ADR-013).
+- **Schema:** `questions.cefr_level`, `tests.pass_threshold`, `submissions.result_detail`; mở rộng skill `use_of_english`.
+- **`supabase/seed_placement.sql`:** đề xếp lớp DEMO (Use of English, 12 câu A2–C1, câu hỏi gốc).
+- **Học sinh:** mục "Kiểm tra xếp lớp" → làm trắc nghiệm (tái dùng render MCQ) → **kết quả CEFR + chi tiết theo mức** ngay.
+- **Giáo viên:** soạn đề chọn `purpose`/ngưỡng; gắn **mức CEFR** cho từng câu hỏi; tạo chủ đề kỹ năng Use of English.
+
+
+
 ### Thêm — Phase C: Roster + đăng nhập bằng mã + chẩn đoán điểm yếu
 - **Đăng nhập học viên bằng MÃ**: RPC `rpc_student_by_code` + ô nhập mã ở trang học sinh (điền sẵn tên/email). VÌ SAO: giảm ma sát, nối bài làm vào hồ sơ (ADR-015).
 - **Quản lý roster** (GV): trang `Lớp & Học viên` — CRUD lớp/khóa + học viên (mã, tên, email, lớp).

@@ -1,8 +1,9 @@
 // Kiểu dữ liệu dùng chung — phản ánh các bảng trong supabase/schema.sql.
 // Giữ tối giản, chỉ những trường app dùng.
 
-export type Skill = "writing" | "reading" | "listening";
+export type Skill = "writing" | "reading" | "listening" | "use_of_english";
 export type QType = "single" | "multi" | "tfng" | "fill";
+export type Cefr = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 
 export interface Topic {
   id: string;
@@ -20,6 +21,7 @@ export interface Test {
   title: string | null;
   prompt: string | null;          // đề bài Task 2 (writing)
   purpose: "placement" | "progress" | "exit";
+  pass_threshold: number;         // ngưỡng đạt mỗi mức (placement)
   time_limit_min: number;
   min_words: number;
   active: boolean;
@@ -46,6 +48,7 @@ export interface Question {
   options: string[];
   correct: string | string[]; // theo GIÁ TRỊ lựa chọn (xem schema)
   points: number;
+  cefr_level: Cefr | null;     // gắn mức cho placement
 }
 
 // Câu hỏi phía HỌC SINH (KHÔNG có `correct` — do rpc_get_test loại bỏ).
@@ -177,4 +180,26 @@ export interface StudentByCode {
   full_name: string;
   email: string | null;
   class_name: string | null;
+}
+
+// ---------- Phase D — Placement tự chấm ----------
+export interface PlacementItem {
+  test_id: string;
+  title: string;
+  skill: Skill;
+  time_limit_min: number;
+  num_q: number;
+}
+
+export interface PlacementLevelStat {
+  cefr: Cefr;
+  total: number;
+  correct: number;
+  passed: boolean;
+}
+
+export interface PlacementResult {
+  submission_id: string;
+  cefr: Cefr | null;        // null = chưa đạt A1
+  detail: PlacementLevelStat[];
 }

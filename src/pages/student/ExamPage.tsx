@@ -200,7 +200,7 @@ export default function ExamPage() {
   );
 }
 
-function QuestionView({
+export function QuestionView({
   index, q, value, onChange,
 }: {
   index: number;

@@ -2,9 +2,9 @@
 // để component không phải biết chi tiết. Đáp án học sinh luôn đi qua RPC.
 import { supabase } from "./supabase";
 import type {
-  AnswerMap, ClassRow, ExamListItem, Level, Passage, PickedPrompt, ProgressItem,
-  PublicTest, Question, Student, StudentByCode, Submission, SubmitResult, Test, Topic,
-  WritingScores, WritingTopic,
+  AnswerMap, ClassRow, ExamListItem, Level, Passage, PickedPrompt, PlacementItem,
+  PlacementResult, ProgressItem, PublicTest, Question, Student, StudentByCode,
+  Submission, SubmitResult, Test, Topic, WritingScores, WritingTopic,
 } from "./types";
 
 // Trả client hoặc báo lỗi rõ ràng khi chưa cấu hình .env (tránh crash khó hiểu).
@@ -105,6 +105,24 @@ export async function gradeWriting(id: string, s: WritingScores, feedback: strin
     status: "graded", graded_at: new Date().toISOString(),
   }).eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+// ---------- Phase D: Placement tự chấm (anon) ----------
+export async function listPlacements(): Promise<PlacementItem[]> {
+  const res = await db().rpc("rpc_list_placements");
+  return (unwrap(res) ?? []) as PlacementItem[];
+}
+
+export async function submitPlacement(args: {
+  testId: string; name: string; email: string; answers: AnswerMap;
+  violations: number; log: string; startedAt: string;
+}): Promise<PlacementResult> {
+  const res = await db().rpc("rpc_submit_placement", {
+    p_test_id: args.testId, p_name: args.name, p_email: args.email,
+    p_answers: args.answers, p_violations: args.violations, p_log: args.log,
+    p_started_at: args.startedAt,
+  });
+  return unwrap(res) as PlacementResult;
 }
 
 // ---------- Phase C: tra mã học viên (anon) ----------

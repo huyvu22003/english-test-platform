@@ -465,3 +465,117 @@ returns jsonb language sql security definer set search_path = public as $$
 $$;
 
 grant execute on function rpc_student_by_code(text) to anon, authenticated;
+
+
+-- =====================================================================
+-- PHASE D — Placement tự chấm ra CEFR (engine "threshold")
+--   Đề placement = 1 test (purpose='placement') gồm câu hỏi gắn cefr_level.
+--   Chấm: với mỗi mức, tính tỉ lệ đúng; "đạt mức" nếu >= pass_threshold.
+--   Kết quả CEFR = mức cao nhất ĐẠT LIÊN TIẾP (gặp mức trượt đầu tiên thì dừng).
+-- =====================================================================
+
+-- Use of English là 1 "kỹ năng" placement -> mở rộng enum skill.
+do $$ begin
+  alter table topics drop constraint if exists topics_skill_check;
+  alter table topics add constraint topics_skill_check
+    check (skill in ('writing','reading','listening','use_of_english'));
+exception when others then null; end $$;
+
+alter table questions add column if not exists cefr_level text
+  check (cefr_level in ('A1','A2','B1','B2','C1','C2'));
+alter table tests add column if not exists pass_threshold numeric not null default 0.6;
+alter table submissions add column if not exists result_detail jsonb;  -- thống kê theo mức
+
+-- Hàm so khớp 1 câu (tách dùng lại) — cùng logic với rpc_submit.
+create or replace function etp_is_correct(p_qtype text, p_correct jsonb, p_ans jsonb)
+returns boolean language plpgsql immutable as $$
+declare v_cs text[]; v_as text[]; v_a text;
+begin
+  if p_ans is null then return false; end if;
+  v_a := case when jsonb_typeof(p_ans) = 'array' then p_ans->>0 else p_ans #>> '{}' end;
+  if p_qtype in ('single','tfng') then
+    return etp_norm(v_a) = etp_norm(
+      case when jsonb_typeof(p_correct) = 'array' then p_correct->>0 else p_correct #>> '{}' end);
+  elsif p_qtype = 'fill' then
+    if jsonb_typeof(p_correct) = 'array' then
+      return exists(select 1 from jsonb_array_elements_text(p_correct) c where etp_norm(c) = etp_norm(v_a));
+    else
+      return etp_norm(p_correct #>> '{}') = etp_norm(v_a);
+    end if;
+  elsif p_qtype = 'multi' then
+    if jsonb_typeof(p_correct) = 'array' and jsonb_typeof(p_ans) = 'array' then
+      select array_agg(distinct etp_norm(c) order by etp_norm(c)) into v_cs from jsonb_array_elements_text(p_correct) c;
+      select array_agg(distinct etp_norm(a) order by etp_norm(a)) into v_as from jsonb_array_elements_text(p_ans) a;
+      return v_cs = v_as;
+    end if;
+  end if;
+  return false;
+end;
+$$;
+
+-- Liệt kê đề placement đang mở (cho học sinh).
+create or replace function rpc_list_placements()
+returns jsonb language sql security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'test_id', t.id, 'title', coalesce(t.title, tp.name),
+           'skill', tp.skill, 'time_limit_min', t.time_limit_min,
+           'num_q', (select count(*) from questions q where q.test_id = t.id)
+         ) order by tp.sort_order, t.version_label), '[]')
+  from tests t join topics tp on tp.id = t.topic_id
+  where t.active and t.purpose = 'placement'
+    and exists (select 1 from questions q where q.test_id = t.id);
+$$;
+
+-- Nộp + chấm placement: ra CEFR theo ngưỡng từng mức + lưu thống kê chi tiết.
+create or replace function rpc_submit_placement(
+  p_test_id uuid, p_name text, p_email text, p_answers jsonb,
+  p_violations int, p_log text, p_started_at timestamptz
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_levels text[] := array['A1','A2','B1','B2','C1','C2'];
+  v_lvl text; v_total int; v_correct int; v_pass boolean;
+  v_result text := null; v_stop boolean := false;
+  v_detail jsonb := '[]'::jsonb; v_threshold numeric;
+  v_student uuid; v_topic text; v_id uuid; q record;
+begin
+  select coalesce(pass_threshold, 0.6) into v_threshold from tests where id = p_test_id;
+  select tp.name into v_topic from tests t join topics tp on tp.id = t.topic_id where t.id = p_test_id;
+
+  foreach v_lvl in array v_levels loop
+    v_total := 0; v_correct := 0;
+    for q in select id, qtype, correct from questions where test_id = p_test_id and cefr_level = v_lvl loop
+      v_total := v_total + 1;
+      if etp_is_correct(q.qtype, q.correct, p_answers -> (q.id::text)) then
+        v_correct := v_correct + 1;
+      end if;
+    end loop;
+    if v_total > 0 then
+      v_pass := (v_correct::numeric / v_total) >= v_threshold;
+      v_detail := v_detail || jsonb_build_object('cefr', v_lvl, 'total', v_total, 'correct', v_correct, 'passed', v_pass);
+      if not v_stop then
+        if v_pass then v_result := v_lvl; else v_stop := true; end if;
+      end if;
+    end if;
+  end loop;
+
+  -- nối hồ sơ học viên theo email (như writing)
+  if p_email is not null and length(btrim(p_email)) > 0 then
+    select id into v_student from students where lower(email) = lower(btrim(p_email)) limit 1;
+    if v_student is null then
+      insert into students(full_name, email) values (p_name, btrim(p_email)) returning id into v_student;
+    end if;
+  end if;
+
+  insert into submissions(test_id, topic_name, student_id, student_name, student_email,
+                          answers, cefr, result_detail, status, violations, violation_log, started_at)
+  values (p_test_id, v_topic, v_student, p_name, p_email,
+          p_answers, v_result, v_detail, 'graded', coalesce(p_violations,0), p_log, p_started_at)
+  returning id into v_id;
+
+  return jsonb_build_object('submission_id', v_id, 'cefr', v_result, 'detail', v_detail);
+end;
+$$;
+
+grant execute on function rpc_list_placements() to anon, authenticated;
+grant execute on function rpc_submit_placement(uuid, text, text, jsonb, int, text, timestamptz) to anon, authenticated;

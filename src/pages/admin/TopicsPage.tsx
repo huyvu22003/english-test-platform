@@ -37,6 +37,7 @@ export default function TopicsPage() {
         <select value={skill} onChange={(e) => setSkill(e.target.value as Skill)}>
           <option value="reading">Đọc</option>
           <option value="listening">Nghe</option>
+          <option value="use_of_english">Use of English</option>
           <option value="writing">Viết</option>
         </select>
         <button className="btn primary" onClick={addTopic}>+ Thêm chủ đề</button>

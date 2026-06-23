@@ -73,9 +73,12 @@ function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => voi
   const [version, setVersion] = useState(test.version_label);
   const [time, setTime] = useState(test.time_limit_min);
   const [minWords, setMinWords] = useState(test.min_words);
+  const [purpose, setPurpose] = useState<Test["purpose"]>(test.purpose);
+  const [threshold, setThreshold] = useState(test.pass_threshold ?? 0.6);
   const [active, setActive] = useState(test.active);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const isPlacement = purpose === "placement";
 
   async function save() {
     setErr(null); setMsg(null);
@@ -83,7 +86,8 @@ function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => voi
       await saveTest({
         id: test.id, topic_id: test.topic_id,
         title: title.trim() || null, prompt: prompt.trim() || null,
-        version_label: version.trim() || "A",
+        version_label: version.trim() || "A", purpose,
+        pass_threshold: Number(threshold) || 0.6,
         time_limit_min: Number(time) || 0, min_words: Number(minWords) || 0, active,
       });
       setMsg("Đã lưu.");
@@ -111,12 +115,27 @@ function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => voi
         <label className="field"><span>Thời gian (phút)</span>
           <input type="number" value={time} onChange={(e) => setTime(Number(e.target.value))} />
         </label>
+        <label className="field"><span>Mục đích</span>
+          <select value={purpose} onChange={(e) => setPurpose(e.target.value as Test["purpose"])}>
+            <option value="progress">Luyện tập (progress)</option>
+            <option value="placement">Xếp lớp (placement — tự chấm CEFR)</option>
+            <option value="exit">Đầu ra (exit)</option>
+          </select>
+        </label>
         {isWriting && (
           <label className="field"><span>Số từ tối thiểu</span>
             <input type="number" value={minWords} onChange={(e) => setMinWords(Number(e.target.value))} />
           </label>
         )}
+        {isPlacement && (
+          <label className="field"><span>Ngưỡng đạt mỗi mức (0–1)</span>
+            <input type="number" min={0} max={1} step="0.05" value={threshold} onChange={(e) => setThreshold(Number(e.target.value))} />
+          </label>
+        )}
       </div>
+      {isPlacement && (
+        <p className="muted small">Đề xếp lớp: gắn <strong>mức CEFR</strong> cho từng câu hỏi bên dưới. Kết quả = mức cao nhất đạt liên tiếp (đúng ≥ ngưỡng).</p>
+      )}
       <label className="check">
         <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
         <span>Mở cho học sinh (active)</span>
@@ -238,6 +257,7 @@ function QuestionForm({
   const [qtype, setQtype] = useState<QType>(initial?.qtype ?? "single");
   const [prompt, setPrompt] = useState(initial?.prompt ?? "");
   const [points, setPoints] = useState(initial?.points ?? 1);
+  const [cefr, setCefr] = useState<string>(initial?.cefr_level ?? "");
   const [passageId, setPassageId] = useState<string>(initial?.passage_id ?? "");
   const [options, setOptions] = useState<string[]>(
     initial?.options && initial.options.length ? initial.options : ["", ""]
@@ -294,6 +314,7 @@ function QuestionForm({
         options: opts,
         correct,
         points: Number(points) || 1,
+        cefr_level: (cefr || null) as Question["cefr_level"],
       });
       onSaved();
     } catch (e) {
@@ -316,6 +337,12 @@ function QuestionForm({
         </label>
         <label className="field"><span>Điểm</span>
           <input type="number" step="0.5" value={points} onChange={(e) => setPoints(Number(e.target.value))} />
+        </label>
+        <label className="field"><span>Mức CEFR (cho đề xếp lớp)</span>
+          <select value={cefr} onChange={(e) => setCefr(e.target.value)}>
+            <option value="">— Không gắn —</option>
+            {["A1", "A2", "B1", "B2", "C1", "C2"].map((l) => <option key={l} value={l}>{l}</option>)}
+          </select>
         </label>
       </div>
 

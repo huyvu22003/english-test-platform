@@ -13,6 +13,7 @@ const SKILL_LABEL: Record<Skill, string> = {
   writing: "Viết",
   reading: "Đọc",
   listening: "Nghe",
+  use_of_english: "Use of English",
 };
 
 export function SkillBadge({ skill }: { skill: Skill }) {
