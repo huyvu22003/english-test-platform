@@ -6,6 +6,19 @@
 
 ---
 
+## 2026-06-23 — Đổi định hướng + Phase A+B (Writing chấm tay)
+- **Tác nhân:** AI (theo chủ dự án) · **Nhánh/PR:** `feat/phase-a-b-writing`
+- **Mục tiêu:** định vị lại sản phẩm thành hệ đánh giá năng lực & tiến bộ; dựng Writing-first chấm tay từ nội dung app v1 (11 topic).
+- **Đã làm:**
+  - `docs/VISION.md` (đặc tả) + ADR-009..014 + cập nhật `PLAN/PROGRESS`.
+  - **Schema:** `levels` (CEFR↔IELTS), roster `students`/`classes`, `tests.prompt/purpose`, cột chấm tay 4 tiêu chí + `etp_band_to_cefr`; RPC `rpc_list_writing_topics`/`rpc_pick_prompt`/`rpc_submit_writing`/`rpc_get_progress`.
+  - **`seed.sql`:** trích 11 chủ đề Writing (13 đề) từ `app_testwriting.xlsx`.
+  - **Frontend:** StudentHome (chọn chủ đề) · WritingExamPage (bốc đề + viết + khóa) · ResultPage (chờ chấm) · ProgressPage (đường band) · SubmissionsPage (chấm 4 tiêu chí) · TestEditor (nhập prompt).
+- **Quyết định:** xem ADR-009 (đổi định vị), 010 (CEFR lõi), 011 (roster), 012 (chấm tay 4 tiêu chí), 013 (engine tách rời), 014 (bốc ngẫu nhiên + không di trú).
+- **Vướng & cách xử lý:** giữ luồng MCQ cũ (ExamPage) không đụng; thêm luồng Writing song song để không phá Phase 1–3.
+- **Kết quả:** `npm run build` PASS. Chưa chạy thật (cần Supabase + seed).
+- **Bước tiếp:** smoke test trên Supabase; Phase C (chẩn đoán) / D (placement tự chấm).
+
 ## 2026-06-23 — Lập quy trình ghi/đọc log cho bàn giao
 - **Tác nhân:** AI (theo yêu cầu chủ dự án) · **Nhánh/PR:** `docs/quy-trinh-log`
 - **Mục tiêu:** để bất kỳ dev tiếp nhận nào cũng nắm rõ quy trình, ý tưởng, tiến độ, các bước từ đầu.

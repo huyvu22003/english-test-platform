@@ -6,6 +6,7 @@
 1. Vào https://supabase.com → đăng nhập → **New project**.
 2. Đặt tên (vd `english-test-platform`), chọn region gần (Singapore), đặt **Database password** (lưu lại).
 3. Vào **SQL Editor → New query** → dán toàn bộ `supabase/schema.sql` → **Run**. (Tạo bảng + RLS + RPC.)
+   - Sau đó chạy tiếp `supabase/seed.sql` (cùng cách) để **nạp 11 chủ đề Writing** (13 đề) sẵn cho học sinh luyện. *(Chạy 1 lần, trên DB mới.)*
 4. Vào **Project Settings → API** → copy:
    - **Project URL** (dạng `https://xxxx.supabase.co`)
    - **anon public key**

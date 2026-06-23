@@ -60,6 +60,44 @@ Trạng thái: ✅ Đang áp dụng · 🔁 Đã thay thế · 💤 Tạm hoãn
 - **Vì sao:** Đơn giản, ít hạ tầng; TypeScript bắt lỗi sớm; gộp 1 app dễ chia sẻ code/kiểu dữ liệu.
 - **Hệ quả:** Phân quyền admin/học sinh bằng route + Auth, không tách 2 dự án.
 
+## ADR-009 — Đổi định vị: hệ đánh giá năng lực & theo dõi tiến bộ (không phải nền tảng thi)
+- **Ngày:** 2026-06-23 · **Trạng thái:** ✅
+- **Bối cảnh:** Mục tiêu thật của trung tâm là **xếp lớp + kiểm tra trong quá trình học**; thi đầu ra là tương lai chưa cụ thể.
+- **Quyết định:** Định vị lại sản phẩm quanh 3 thời điểm (placement/progress/exit), ưu tiên *progress* trước; học viên có danh tính (low-stakes).
+- **Vì sao:** Khung "nền tảng thi high-stakes" tối ưu sai chỗ (chống gian lận) thay vì *độ chính xác xếp trình độ + dữ liệu tiến bộ*.
+- **Hệ quả:** Hạ ưu tiên chống gian lận xuống Phase F; nâng CEFR + roster + tiến bộ lên đầu. Xem `docs/VISION.md`.
+
+## ADR-010 — CEFR là thang lõi, IELTS band là ánh xạ
+- **Ngày:** 2026-06-23 · **Trạng thái:** ✅
+- **Quyết định:** Bảng `levels` (A1–C2 ↔ ielts_band ↔ tên lớp nội bộ). Mọi kết quả quy về CEFR.
+- **Vì sao:** CEFR mô tả được *làm được gì* ở mỗi mức, chuẩn quốc tế; IELTS band để tham chiếu quen thuộc.
+- **Hệ quả:** Band IELTS (gồm band Writing chấm tay) → CEFR qua `etp_band_to_cefr`. Bảng ánh xạ chỉnh được tập trung 1 chỗ.
+
+## ADR-011 — Roster học viên (định danh theo email), không ẩn danh hoàn toàn
+- **Ngày:** 2026-06-23 · **Trạng thái:** ✅
+- **Quyết định:** Bảng `students`; khi nộp bài, upsert học viên theo email và gắn `submission.student_id`.
+- **Vì sao:** Cần nối các lần làm để **vẽ tiến bộ theo thời gian** — giá trị cốt lõi.
+- **Hệ quả:** Đăng nhập nhẹ (email/mã học viên, chưa cần mật khẩu). Tiến bộ tra theo email tại `/progress`.
+
+## ADR-012 — Đợt đầu = Writing Task 2, CHẤM TAY 4 tiêu chí IELTS
+- **Ngày:** 2026-06-23 · **Trạng thái:** ✅
+- **Bối cảnh:** Nội dung sẵn có là 11 chủ đề Writing từ app v1; trung tâm muốn giáo viên chấm.
+- **Quyết định:** `scoring_method='manual'`; GV chấm 4 tiêu chí (TR/CC/LR/GRA) 0–9 → overall (trung bình, làm tròn 0.5) → CEFR.
+- **Vì sao:** Chấm Writing tự động không đáng tin; 4 tiêu chí cho học sinh biết điểm yếu cụ thể (giá trị học tập).
+- **Hệ quả:** Bài có vòng đời `submitted`→`graded`; dashboard có hàng đợi chấm. Engine `manual` là 1 nhánh trong khớp nối #3 (ADR-013).
+
+## ADR-013 — Engine xếp trình độ tách rời sau một "contract" ổn định
+- **Ngày:** 2026-06-23 · **Trạng thái:** ✅
+- **Quyết định:** Kết quả luôn ở dạng chuẩn (overall_band + cefr theo kỹ năng); cách tính chọn theo `scoring_method`. Nay = `manual`.
+- **Vì sao:** Để tương lai cắm thêm `threshold` (placement tự chấm) → `multistage` → `IRT/CAT` mà không sửa báo cáo/tiến bộ.
+- **Hệ quả:** Lưu dữ liệu "như thể sẽ lên IRT" (giữ từng bài/đáp án) ngay từ đầu. Xem VISION §4.
+
+## ADR-014 — Bốc đề NGẪU NHIÊN trong chủ đề; KHÔNG di trú dữ liệu v1
+- **Ngày:** 2026-06-23 · **Trạng thái:** ✅
+- **Quyết định:** 1 chủ đề ↔ nhiều đề (`tests`); `rpc_pick_prompt` bốc ngẫu nhiên 1 đề. DB v2 bắt đầu trắng.
+- **Vì sao:** Công bằng giữa học sinh (giống v1); dữ liệu cũ trong Google Sheet không cần mang sang để khởi động sạch.
+- **Hệ quả:** Giáo viên bổ sung đề cho từng chủ đề dễ dàng. v1 vẫn chạy tới khi v2 thay thế xong.
+
 ---
 
 ## Template thêm ADR mới (sao chép phần dưới)
