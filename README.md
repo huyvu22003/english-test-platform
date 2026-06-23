@@ -34,4 +34,11 @@ english-test-platform/
 2. `npm install && npm run dev` → http://localhost:5173
 
 ## Trạng thái
-**Phase 0 — Nền móng** (đang làm): cấu trúc + schema + tài liệu + scaffold. Xem lộ trình trong `docs/PLAN.md` §5.
+**Phase 1–3 — đã dựng** (chờ kết nối Supabase để chạy thật):
+- Đăng nhập giáo viên (Supabase Auth) + khung trang quản trị.
+- CRUD **chủ đề / đề / đoạn văn·audio / câu hỏi** (single·multi·tfng·fill) bằng form trong app.
+- Học sinh: chọn đề → làm bài **Viết** hoặc **trắc nghiệm** với **khóa toàn màn hình + ghi log gian lận** → nộp.
+- **Chấm điểm ở server** (RPC `rpc_submit`) — đáp án không xuống client — kèm quy đổi **band** (xấp xỉ).
+- **Dashboard**: lọc bài nộp, xem bài Viết/nhật ký vi phạm, chấm tay, **xuất CSV**.
+
+Còn lại (Phase 3–4): upload media R2 (hiện nhập link thủ công), buổi thi/mã thi, phân quyền nhiều GV, import Excel. Xem `docs/PLAN.md` §5.

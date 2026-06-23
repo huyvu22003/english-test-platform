@@ -44,11 +44,13 @@ Xem `supabase/schema.sql` (đã viết). Tóm tắt bảng:
 
 | Phase | Nội dung | Trạng thái |
 |---|---|---|
-| **0. Nền móng** | Cấu trúc dự án + schema + tài liệu + scaffold React chạy được + kết nối Supabase | 🔄 đang làm |
-| **1. Auth + Admin Viết** | Đăng nhập GV; CRUD chủ đề/đề Viết; HS thi Viết (port khóa fullscreen từ v1); lưu submission | |
-| **2. Reading/Listening** | Nhập câu hỏi + **upload audio R2**; phát đề xoay vòng + xáo trộn; **chấm server (rpc_submit)** + quy đổi band; màn kết quả | |
-| **3. Dashboard** | Thống kê điểm theo HS/lớp/đề; buổi thi/mã thi; xuất Excel/PDF; ngân hàng câu hỏi | |
-| **4. Hoàn thiện** | Nhiều GV/phân quyền, mobile/fallback fullscreen, tối ưu UX, tài liệu vận hành | |
+| **0. Nền móng** | Cấu trúc dự án + schema + tài liệu + scaffold React chạy được + kết nối Supabase | ✅ xong |
+| **1. Auth + Admin Viết** | Đăng nhập GV; CRUD chủ đề/đề Viết; HS thi Viết (khóa fullscreen + log gian lận); lưu submission | ✅ xong |
+| **2. Reading/Listening** | Nhập câu hỏi (single/multi/tfng/fill); xáo trộn câu + đáp án; **chấm server (rpc_submit)** + quy đổi band; màn kết quả | ✅ xong (audio nhập link; **upload R2** còn lại) |
+| **3. Dashboard** | Thống kê/lọc điểm theo HS/chủ đề; chấm tay bài Viết; **xuất CSV**; xem nhật ký vi phạm | ✅ xong (buổi thi/mã thi + import Excel còn lại) |
+| **4. Hoàn thiện** | Nhiều GV/phân quyền, upload R2, buổi thi/mã thi, mobile/fallback fullscreen, import Excel, tối ưu UX | 🔜 |
+
+> Quy ước đáp án: `questions.correct` lưu theo **giá trị** lựa chọn (không theo chữ cái) để xáo trộn đáp án vẫn chấm đúng — chi tiết trong `supabase/schema.sql`.
 
 **Di trú từ v1:** script đọc Google Sheet hiện tại → đổ vào `topics/tests/questions` (làm ở Phase 1–2). Bản v1 không tắt cho tới khi v2 thay thế xong.
 
