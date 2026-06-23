@@ -173,6 +173,22 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .viol-box summary { cursor: pointer; color: var(--muted); font-size: 13px; }
 .chart { display: block; margin-top: 8px; }
 
+/* Phase C — roster + chẩn đoán */
+.code-login { gap: 8px; }
+.code-login input { max-width: 280px; }
+.or-line { text-align: center; color: var(--muted); font-size: 13px; margin: 12px 0; border-top: 1px solid var(--line); }
+.or-line span { position: relative; top: -10px; background: var(--panel); padding: 0 10px; }
+.chip-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding: 0; }
+.chip { background: #f1eef6; border: 1px solid var(--line); border-radius: 999px; padding: 4px 6px 4px 12px; display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.chip .x { border: none; background: none; cursor: pointer; color: var(--danger); font-size: 16px; line-height: 1; padding: 0 4px; }
+.crit-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 8px 0; }
+.crit-card { border: 1px solid var(--line); border-radius: 10px; padding: 14px; text-align: center; background: #fafafe; }
+.crit-card.weak { border-color: var(--danger); background: #fff5f5; }
+.crit-val { font-size: 28px; font-weight: 800; color: var(--brand); }
+.crit-card.weak .crit-val { color: var(--danger); }
+.crit-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
+
 @media (max-width: 760px) {
   .admin { grid-template-columns: 1fr; }
   .sidebar { flex-direction: row; align-items: center; gap: 10px; }

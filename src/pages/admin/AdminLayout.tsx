@@ -20,7 +20,13 @@ export default function AdminLayout() {
             Chủ đề &amp; Đề thi
           </NavLink>
           <NavLink to="/admin/submissions" className={({ isActive }) => (isActive ? "active" : "")}>
-            Bài nộp &amp; Điểm
+            Hàng đợi chấm
+          </NavLink>
+          <NavLink to="/admin/roster" className={({ isActive }) => (isActive ? "active" : "")}>
+            Lớp &amp; Học viên
+          </NavLink>
+          <NavLink to="/admin/diagnostics" className={({ isActive }) => (isActive ? "active" : "")}>
+            Chẩn đoán
           </NavLink>
         </nav>
         <div className="sidebar-foot">

@@ -11,6 +11,8 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import TopicsPage from "./pages/admin/TopicsPage";
 import TestEditorPage from "./pages/admin/TestEditorPage";
 import SubmissionsPage from "./pages/admin/SubmissionsPage";
+import RosterPage from "./pages/admin/RosterPage";
+import DiagnosticsPage from "./pages/admin/DiagnosticsPage";
 
 // Chặn vào trang quản trị khi chưa đăng nhập.
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -46,6 +48,8 @@ export default function App() {
             <Route path="topics" element={<TopicsPage />} />
             <Route path="tests/:testId" element={<TestEditorPage />} />
             <Route path="submissions" element={<SubmissionsPage />} />
+            <Route path="roster" element={<RosterPage />} />
+            <Route path="diagnostics" element={<DiagnosticsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

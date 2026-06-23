@@ -7,6 +7,14 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Thêm — Phase C: Roster + đăng nhập bằng mã + chẩn đoán điểm yếu
+- **Đăng nhập học viên bằng MÃ**: RPC `rpc_student_by_code` + ô nhập mã ở trang học sinh (điền sẵn tên/email). VÌ SAO: giảm ma sát, nối bài làm vào hồ sơ (ADR-015).
+- **Quản lý roster** (GV): trang `Lớp & Học viên` — CRUD lớp/khóa + học viên (mã, tên, email, lớp).
+- **Chẩn đoán điểm yếu** (GV): trang `Chẩn đoán` — trung bình 4 tiêu chí IELTS theo lớp & theo học viên, tô đỏ tiêu chí yếu nhất để ưu tiên ôn.
+- Điều hướng admin tách "Hàng đợi chấm / Lớp & Học viên / Chẩn đoán".
+
+
+
 ### Thêm — Phase A+B: Hệ đánh giá năng lực + Writing chấm tay
 - **Định hướng mới** (`docs/VISION.md`, ADR-009..014): hệ đánh giá năng lực & theo dõi tiến bộ; thang **CEFR** (map IELTS); roster học viên.
 - **Schema:** bảng `levels` (CEFR↔IELTS↔lớp), `students`/`classes`; `tests.prompt`+`tests.purpose`; cột chấm tay 4 tiêu chí IELTS + `overall_band`/`cefr`/`status`/`feedback` trong `submissions`; `etp_band_to_cefr`. RPC: `rpc_list_writing_topics`, `rpc_pick_prompt`, `rpc_submit_writing`, `rpc_get_progress`. VÌ SAO: xem ADR-010..014.
