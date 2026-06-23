@@ -7,6 +7,13 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Thêm — Phase E (phần 1): Nhập nội dung từ Excel/CSV
+- Trang **Nhập từ Excel** (`/admin/import`): import hàng loạt **đề Viết** (topic + prompt) và **câu hỏi trắc nghiệm** (gắn `cefr_level`, options, correct) từ CSV (mở/lưu bằng Excel, UTF‑8). Có **tải mẫu**, xem trước, báo cáo lỗi theo dòng.
+- `src/lib/csv.ts`: parser CSV gọn (hỗ trợ ô có phẩy/xuống dòng/nháy kép, bỏ BOM) — **không thêm thư viện** (ADR-017).
+- VÌ SAO: giúp giáo viên nạp nội dung nhanh thay vì gõ tay từng câu; tự tạo topic/đề và gom câu theo `topic + test_title`.
+
+
+
 ### Thêm — Phase D: Placement tự chấm ra CEFR (engine "threshold")
 - **Engine threshold:** đề `purpose='placement'` gồm câu hỏi gắn `cefr_level`; chấm server → CEFR = mức cao nhất đạt liên tiếp (đúng ≥ `pass_threshold`). RPC `rpc_list_placements`, `rpc_submit_placement`; hàm `etp_is_correct` (tách dùng lại). VÌ SAO: tự động xếp lớp đầu vào — ADR-016, hiện thực khớp nối engine (ADR-013).
 - **Schema:** `questions.cefr_level`, `tests.pass_threshold`, `submissions.result_detail`; mở rộng skill `use_of_english`.

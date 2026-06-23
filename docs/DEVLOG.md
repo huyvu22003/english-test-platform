@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-06-23 — Phase E phần 1 (Import Excel/CSV)
+- **Tác nhân:** AI · **Nhánh/PR:** `feat/phase-e-import`
+- **Mục tiêu:** nạp nội dung hàng loạt (đề Viết + câu trắc nghiệm) thay vì gõ tay.
+- **Đã làm:** `src/lib/csv.ts` (parser CSV, không thêm lib); `ImportPage` 2 chế độ (Viết / Trắc nghiệm) với tải mẫu + xem trước + import (tự tạo topic/đề, gom câu theo topic+test_title); nav + route.
+- **Quyết định:** ADR-017 — dùng CSV (Excel lưu được) thay vì thêm thư viện .xlsx (tránh phụ thuộc/rủi ro bảo mật).
+- **Kết quả:** `npm run build` PASS.
+- **Bước tiếp:** (tùy chọn) refactor ngân hàng `items` để tái sử dụng câu; hỗ trợ .xlsx trực tiếp nếu cần.
+
 ## 2026-06-23 — Phase D (Placement tự chấm ra CEFR)
 - **Tác nhân:** AI · **Nhánh/PR:** `feat/phase-d-placement`
 - **Mục tiêu:** tự động xếp lớp đầu vào — trắc nghiệm ra CEFR theo ngưỡng.

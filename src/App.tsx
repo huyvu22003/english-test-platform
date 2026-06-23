@@ -14,6 +14,7 @@ import TestEditorPage from "./pages/admin/TestEditorPage";
 import SubmissionsPage from "./pages/admin/SubmissionsPage";
 import RosterPage from "./pages/admin/RosterPage";
 import DiagnosticsPage from "./pages/admin/DiagnosticsPage";
+import ImportPage from "./pages/admin/ImportPage";
 
 // Chặn vào trang quản trị khi chưa đăng nhập.
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="submissions" element={<SubmissionsPage />} />
             <Route path="roster" element={<RosterPage />} />
             <Route path="diagnostics" element={<DiagnosticsPage />} />
+            <Route path="import" element={<ImportPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
