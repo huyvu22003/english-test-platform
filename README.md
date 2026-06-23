@@ -12,11 +12,15 @@ Nền tảng thi tiếng Anh có **database đầy đủ** cho trung tâm **IELT
 ## Tài liệu (đọc theo thứ tự)
 | File | Nội dung |
 |---|---|
-| [`docs/PLAN.md`](docs/PLAN.md) | Kiến trúc, mô hình dữ liệu, tính năng, lộ trình (đọc đầu tiên) |
+| [`docs/ONBOARDING.md`](docs/ONBOARDING.md) | **Bắt đầu từ đâu** — dành cho dev mới tiếp nhận (đọc đầu tiên) |
+| [`docs/PLAN.md`](docs/PLAN.md) | Kiến trúc, mô hình dữ liệu, tính năng, lộ trình |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | **Vì sao** — nhật ký quyết định kiến trúc (ADR) |
+| [`docs/PROGRESS.md`](docs/PROGRESS.md) | **Đang ở đâu** — tiến độ, việc tiếp theo, nợ kỹ thuật |
+| [`docs/DEVLOG.md`](docs/DEVLOG.md) | **Đổi gì** — nhật ký phát triển theo thời gian |
 | [`docs/SETUP.md`](docs/SETUP.md) | Việc bạn tự làm: tạo Supabase, chạy schema, R2, `.env` |
 | [`supabase/schema.sql`](supabase/schema.sql) | Lược đồ database (chạy trong Supabase) |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Quy tắc commit + ghi CHANGELOG |
-| [`CHANGELOG.md`](CHANGELOG.md) | Lịch sử thay đổi |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | **Quy trình** ghi log & đọc log + quy tắc commit |
+| [`CHANGELOG.md`](CHANGELOG.md) | Lịch sử thay đổi theo bản |
 
 ## Cấu trúc
 ```
