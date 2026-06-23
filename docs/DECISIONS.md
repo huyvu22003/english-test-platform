@@ -112,6 +112,13 @@ Trạng thái: ✅ Đang áp dụng · 🔁 Đã thay thế · 💤 Tạm hoãn
 - **Vì sao:** Đơn giản, dễ hiểu, đủ tốt để xếp lớp; là engine `threshold` trong khớp nối ADR-013. Lưu `result_detail` (thống kê từng mức) để minh bạch và nuôi dữ liệu cho IRT sau.
 - **Hệ quả:** Mỗi đề placement nên phủ đủ các mức; ngưỡng chỉnh được. Combine nhiều kỹ năng → 1 trình độ tổng là bước sau. Engine nâng cấp (multistage/IRT) cắm thêm mà không đổi `results`.
 
+## ADR-017 — Import bằng CSV (không thêm thư viện .xlsx)
+- **Ngày:** 2026-06-23 · **Trạng thái:** ✅
+- **Bối cảnh:** Cần import hàng loạt nội dung từ Excel; thư viện đọc .xlsx trong trình duyệt (SheetJS) khá nặng và từng có cảnh báo bảo mật.
+- **Quyết định:** Hỗ trợ **CSV** (Excel lưu/mở được, UTF‑8 + BOM cho tiếng Việt); tự viết parser nhỏ trong `src/lib/csv.ts`.
+- **Vì sao:** Không thêm phụ thuộc; an toàn, đủ dùng. GV "Lưu dạng CSV UTF‑8" từ Excel là nhập được.
+- **Hệ quả:** Nếu sau này cần upload .xlsx trực tiếp, thêm parser là việc bổ sung độc lập.
+
 ---
 
 ## Template thêm ADR mới (sao chép phần dưới)

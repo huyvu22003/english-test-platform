@@ -28,6 +28,9 @@ export default function AdminLayout() {
           <NavLink to="/admin/diagnostics" className={({ isActive }) => (isActive ? "active" : "")}>
             Chẩn đoán
           </NavLink>
+          <NavLink to="/admin/import" className={({ isActive }) => (isActive ? "active" : "")}>
+            Nhập từ Excel
+          </NavLink>
         </nav>
         <div className="sidebar-foot">
           <div className="muted small">{session?.user.email}</div>
