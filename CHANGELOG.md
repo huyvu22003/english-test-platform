@@ -7,6 +7,11 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Tài liệu — Quy trình ghi/đọc log cho bàn giao
+- Thêm `docs/ONBOARDING.md` (bắt đầu từ đâu), `docs/DECISIONS.md` (ADR — vì sao), `docs/PROGRESS.md` (đang ở đâu), `docs/DEVLOG.md` (diễn biến theo thời gian). VÌ SAO: để bất kỳ dev tiếp nhận nào cũng nắm rõ quy trình, ý tưởng, tiến độ từ đầu.
+- Bổ sung `CONTRIBUTING.md`: vòng đời ghi log bắt buộc (Code→Build→CHANGELOG→DEVLOG→PROGRESS→DECISIONS→PR) + bảng "thay đổi nào ghi vào đâu" + cách đọc log + template.
+- README: bảng "Tài liệu" trỏ tới bộ tài liệu mới.
+
 ### Thêm — Phase 1–3: Ứng dụng đầy đủ (auth + admin + thi + chấm + dashboard)
 - **Đăng nhập giáo viên** (Supabase Auth) + khung quản trị (`src/lib/auth.tsx`, `pages/admin/`). VÌ SAO: GV cần đăng nhập để quản lý nội dung; RLS chỉ mở cho `authenticated`.
 - **Admin CRUD** chủ đề/đề/đoạn văn·audio/câu hỏi bằng form (`TopicsPage`, `TestEditorPage`). Hỗ trợ 4 loại câu: single·multi·tfng·fill.
