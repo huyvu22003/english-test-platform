@@ -105,6 +105,13 @@ Trạng thái: ✅ Đang áp dụng · 🔁 Đã thay thế · 💤 Tạm hoãn
 - **Vì sao:** Mã hoạt động ngay, không phụ thuộc hạ tầng email; đủ cho low-stakes. Magic-link để sau nếu cần xác thực thật.
 - **Hệ quả:** Nối hồ sơ tốt nhất khi học viên có email/mã trong roster. Quản lý roster ở trang `Lớp & Học viên`.
 
+## ADR-016 — Placement chấm theo NGƯỠNG (threshold), mức cao nhất đạt liên tiếp
+- **Ngày:** 2026-06-23 · **Trạng thái:** ✅
+- **Bối cảnh:** Cần tự động xếp lớp đầu vào ra CEFR; chưa làm IRT/CAT (phức tạp).
+- **Quyết định:** Câu hỏi gắn `cefr_level`; với mỗi mức tính tỉ lệ đúng, "đạt" nếu ≥ `tests.pass_threshold` (mặc định 0.6); CEFR = **mức cao nhất đạt liên tiếp** (gặp mức trượt đầu tiên thì dừng).
+- **Vì sao:** Đơn giản, dễ hiểu, đủ tốt để xếp lớp; là engine `threshold` trong khớp nối ADR-013. Lưu `result_detail` (thống kê từng mức) để minh bạch và nuôi dữ liệu cho IRT sau.
+- **Hệ quả:** Mỗi đề placement nên phủ đủ các mức; ngưỡng chỉnh được. Combine nhiều kỹ năng → 1 trình độ tổng là bước sau. Engine nâng cấp (multistage/IRT) cắm thêm mà không đổi `results`.
+
 ---
 
 ## Template thêm ADR mới (sao chép phần dưới)

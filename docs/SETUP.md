@@ -7,6 +7,7 @@
 2. Đặt tên (vd `english-test-platform`), chọn region gần (Singapore), đặt **Database password** (lưu lại).
 3. Vào **SQL Editor → New query** → dán toàn bộ `supabase/schema.sql` → **Run**. (Tạo bảng + RLS + RPC.)
    - Sau đó chạy tiếp `supabase/seed.sql` (cùng cách) để **nạp 11 chủ đề Writing** (13 đề) sẵn cho học sinh luyện. *(Chạy 1 lần, trên DB mới.)*
+   - (Tùy chọn) chạy `supabase/seed_placement.sql` để nạp **đề xếp lớp DEMO** (Use of English, 12 câu A2–C1) thử engine tự chấm CEFR.
 4. Vào **Project Settings → API** → copy:
    - **Project URL** (dạng `https://xxxx.supabase.co`)
    - **anon public key**

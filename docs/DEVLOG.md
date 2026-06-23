@@ -6,6 +6,17 @@
 
 ---
 
+## 2026-06-23 — Phase D (Placement tự chấm ra CEFR)
+- **Tác nhân:** AI · **Nhánh/PR:** `feat/phase-d-placement`
+- **Mục tiêu:** tự động xếp lớp đầu vào — trắc nghiệm ra CEFR theo ngưỡng.
+- **Đã làm:**
+  - Schema: `questions.cefr_level`, `tests.pass_threshold`, `submissions.result_detail`, skill `use_of_english`; hàm `etp_is_correct`; RPC `rpc_list_placements`, `rpc_submit_placement` (engine threshold).
+  - `seed_placement.sql`: đề DEMO Use of English (12 câu gốc, A2–C1).
+  - Frontend: `PlacementExamPage` (tái dùng `QuestionView` từ ExamPage), `ResultPage` hiện CEFR + chi tiết mức; StudentHome thêm mục xếp lớp; TestEditor thêm `purpose`/ngưỡng + gắn CEFR câu hỏi; TopicsPage thêm skill Use of English.
+- **Quyết định:** ADR-016 — engine threshold (mức cao nhất đạt liên tiếp); hiện thực khớp nối engine của ADR-013.
+- **Kết quả:** `npm run build` PASS.
+- **Bước tiếp:** combine CEFR nhiều kỹ năng → 1 trình độ tổng; Reading/Listening thật; Phase E.
+
 ## 2026-06-23 — Phase C (Roster + đăng nhập bằng mã + chẩn đoán)
 - **Tác nhân:** AI · **Nhánh/PR:** `feat/phase-c-roster-diagnostics`
 - **Mục tiêu:** quản lý học viên/lớp, cho học sinh đăng nhập nhanh bằng mã, và chẩn đoán điểm yếu để dạy đúng chỗ.

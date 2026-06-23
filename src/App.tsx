@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./lib/auth";
 import StudentHome from "./pages/student/StudentHome";
 import ExamPage from "./pages/student/ExamPage";
 import WritingExamPage from "./pages/student/WritingExamPage";
+import PlacementExamPage from "./pages/student/PlacementExamPage";
 import ResultPage from "./pages/student/ResultPage";
 import ProgressPage from "./pages/student/ProgressPage";
 import LoginPage from "./pages/admin/LoginPage";
@@ -30,6 +31,7 @@ export default function App() {
           {/* Học sinh */}
           <Route path="/" element={<StudentHome />} />
           <Route path="/writing/:topicId" element={<WritingExamPage />} />
+          <Route path="/placement/:testId" element={<PlacementExamPage />} />
           <Route path="/exam/:testId" element={<ExamPage />} />
           <Route path="/result" element={<ResultPage />} />
           <Route path="/progress" element={<ProgressPage />} />

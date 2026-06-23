@@ -2,11 +2,11 @@
 // (hệ bốc ngẫu nhiên 1 đề trong chủ đề). Có lối vào xem tiến bộ.
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listWritingTopics, studentByCode } from "../../lib/api";
+import { listPlacements, listWritingTopics, studentByCode } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { isConfigured } from "../../lib/supabase";
-import { ErrorBox, Spinner } from "../../components/common";
-import type { WritingTopic } from "../../lib/types";
+import { ErrorBox, SkillBadge, Spinner } from "../../components/common";
+import type { PlacementItem, WritingTopic } from "../../lib/types";
 
 export default function StudentHome() {
   const nav = useNavigate();
@@ -17,8 +17,15 @@ export default function StudentHome() {
   const [codeMsg, setCodeMsg] = useState<string | null>(null);
   const [codeBusy, setCodeBusy] = useState(false);
   const topics = useAsync<WritingTopic[]>(listWritingTopics, []);
+  const placements = useAsync<PlacementItem[]>(listPlacements, []);
 
   const ready = name.trim().length > 1 && /\S+@\S+\.\S+/.test(email);
+
+  function startPlacement(testId: string) {
+    setTouched(true);
+    if (!ready) return;
+    nav(`/placement/${testId}`, { state: { name: name.trim(), email: email.trim() } });
+  }
 
   async function loginByCode() {
     if (!code.trim()) return;
@@ -82,6 +89,23 @@ export default function StudentHome() {
           <p className="warn-text">Vui lòng nhập đúng họ tên và email (email dùng để theo dõi tiến bộ).</p>
         )}
       </div>
+
+      {placements.data && placements.data.length > 0 && (
+        <>
+          <h2 className="section">Kiểm tra xếp lớp (tự chấm → CEFR)</h2>
+          <div className="exam-list">
+            {placements.data.map((p) => (
+              <div className="card test-row" key={p.test_id}>
+                <div>
+                  <strong>{p.title}</strong> <SkillBadge skill={p.skill} />
+                  <span className="muted"> · {p.num_q} câu · {p.time_limit_min}′</span>
+                </div>
+                <button className="btn primary" onClick={() => startPlacement(p.test_id)}>Làm bài</button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <h2 className="section">Chủ đề luyện viết</h2>
       {topics.loading && <Spinner />}
