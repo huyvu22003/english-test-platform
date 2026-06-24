@@ -31,6 +31,9 @@ export default function AdminLayout() {
           <NavLink to="/admin/import" className={({ isActive }) => (isActive ? "active" : "")}>
             Nhập từ Excel
           </NavLink>
+          <NavLink to="/admin/sessions" className={({ isActive }) => (isActive ? "active" : "")}>
+            Buổi thi &amp; Mã thi
+          </NavLink>
         </nav>
         <div className="sidebar-foot">
           <div className="muted small">{session?.user.email}</div>

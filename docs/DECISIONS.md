@@ -119,6 +119,13 @@ Trạng thái: ✅ Đang áp dụng · 🔁 Đã thay thế · 💤 Tạm hoãn
 - **Vì sao:** Không thêm phụ thuộc; an toàn, đủ dùng. GV "Lưu dạng CSV UTF‑8" từ Excel là nhập được.
 - **Hệ quả:** Nếu sau này cần upload .xlsx trực tiếp, thêm parser là việc bổ sung độc lập.
 
+## ADR-018 — High-stakes bằng BUỔI THI + MÃ THI (server kiểm soát), không proctoring nặng
+- **Ngày:** 2026-06-23 · **Trạng thái:** ✅
+- **Bối cảnh:** Phase F cần chế độ thi đầu ra/mock đáng tin hơn, nhưng vẫn chạy trên trình duyệt.
+- **Quyết định:** `exam_sessions` gắn 1 đề + `access_code` + cửa sổ thời gian; server kiểm: đúng giờ, **một-lần-nộp** (`one_submission`), chấm và lưu `session_id`. Client siết chống gian lận bằng **tự nộp khi vi phạm ≥ ngưỡng**.
+- **Vì sao:** Trình duyệt không chặn gian lận 100%; tổ chức theo buổi + mã + một-lần-nộp đã đủ cho mock/exit của trung tâm, không cần proctoring/camera phức tạp.
+- **Hệ quả:** Tính toàn vẹn dựa vào kiểm soát phía server (giờ + một-lần-nộp) + log/răn đe phía client. Có thể nâng cấp (xáo đề theo HS, IP/thiết bị) khi cần.
+
 ---
 
 ## Template thêm ADR mới (sao chép phần dưới)

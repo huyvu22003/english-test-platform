@@ -54,6 +54,7 @@ export default function StudentHome() {
       <header className="topbar">
         <h1>English Test Platform</h1>
         <span className="row-form">
+          <Link className="link" to="/exam-room">Vào phòng thi</Link>
           <Link className="link" to="/progress">Xem tiến bộ</Link>
           <Link className="link" to="/admin/login">Giáo viên →</Link>
         </span>

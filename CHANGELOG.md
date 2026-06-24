@@ -7,6 +7,12 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Thêm — Phase F: Buổi thi (exit/mock) + Mã thi + một-lần-nộp
+- **Buổi thi**: tái dùng `exam_sessions` + cột mới (`test_id`, `one_submission`, `max_violations`, `show_result`). GV tạo buổi gắn 1 đề + **mã thi** + cửa sổ thời gian; trang `/admin/sessions`.
+- **Mã thi (anon)**: `rpc_session_by_code` (kiểm tra cửa sổ thời gian) → học sinh vào `/exam-room` → `/session/:id`.
+- **Nộp/chấm**: `rpc_submit_session` — chặn **nộp lại** (one_submission); chấm theo kỹ năng (writing → chấm tay; trắc nghiệm → tự chấm + band); tùy chọn **hiện điểm** ngay.
+- **Chống gian lận siết**: `SessionExamPage` **tự nộp** khi vi phạm ≥ ngưỡng buổi thi. VÌ SAO: high-stakes — ADR-018.
+
 ### Thêm — Phase E (phần 1): Nhập nội dung từ Excel/CSV
 - Trang **Nhập từ Excel** (`/admin/import`): import hàng loạt **đề Viết** (topic + prompt) và **câu hỏi trắc nghiệm** (gắn `cefr_level`, options, correct) từ CSV (mở/lưu bằng Excel, UTF‑8). Có **tải mẫu**, xem trước, báo cáo lỗi theo dòng.
 - `src/lib/csv.ts`: parser CSV gọn (hỗ trợ ô có phẩy/xuống dòng/nháy kép, bỏ BOM) — **không thêm thư viện** (ADR-017).

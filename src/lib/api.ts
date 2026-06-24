@@ -2,9 +2,10 @@
 // để component không phải biết chi tiết. Đáp án học sinh luôn đi qua RPC.
 import { supabase } from "./supabase";
 import type {
-  AnswerMap, ClassRow, ExamListItem, Level, Passage, PickedPrompt, PlacementItem,
-  PlacementResult, ProgressItem, PublicTest, Question, Student, StudentByCode,
-  Submission, SubmitResult, Test, Topic, WritingScores, WritingTopic,
+  AnswerMap, ClassRow, ExamListItem, ExamSession, Level, Passage, PickedPrompt,
+  PlacementItem, PlacementResult, ProgressItem, PublicTest, Question, SessionByCode,
+  SessionSubmitResult, Skill, Student, StudentByCode, Submission, SubmitResult, Test,
+  TestWithTopic, Topic, WritingScores, WritingTopic,
 } from "./types";
 
 // Trả client hoặc báo lỗi rõ ràng khi chưa cấu hình .env (tránh crash khó hiểu).
@@ -123,6 +124,48 @@ export async function submitPlacement(args: {
     p_started_at: args.startedAt,
   });
   return unwrap(res) as PlacementResult;
+}
+
+// ---------- Phase F: buổi thi / mã thi ----------
+export async function sessionByCode(code: string): Promise<SessionByCode | null> {
+  const res = await db().rpc("rpc_session_by_code", { p_code: code });
+  return (unwrap(res) ?? null) as SessionByCode | null;
+}
+
+export async function submitSession(args: {
+  sessionId: string; name: string; email: string;
+  answers: AnswerMap; essay: string | null;
+  violations: number; log: string; startedAt: string;
+}): Promise<SessionSubmitResult> {
+  const res = await db().rpc("rpc_submit_session", {
+    p_session_id: args.sessionId, p_name: args.name, p_email: args.email,
+    p_answers: args.answers, p_essay: args.essay, p_violations: args.violations,
+    p_log: args.log, p_started_at: args.startedAt,
+  });
+  return unwrap(res) as SessionSubmitResult;
+}
+
+// Giáo viên: danh sách đề (kèm tên chủ đề + kỹ năng) để chọn khi tạo buổi thi.
+export async function listAllTests(): Promise<TestWithTopic[]> {
+  const rows = unwrap<{
+    id: string; title: string | null; version_label: string; purpose: string;
+    topics: { name: string; skill: Skill } | null;
+  }[]>(await db().from("tests").select("id,title,version_label,purpose,topics(name,skill)").order("created_at"));
+  return rows.map((r) => ({
+    id: r.id, title: r.title, version_label: r.version_label, purpose: r.purpose,
+    topic_name: r.topics?.name ?? "?", skill: (r.topics?.skill ?? "reading") as Skill,
+  }));
+}
+
+export async function listSessions(): Promise<ExamSession[]> {
+  return unwrap(await db().from("exam_sessions").select("*").order("created_at", { ascending: false }));
+}
+export async function saveSession(s: Partial<ExamSession>): Promise<ExamSession> {
+  return unwrap(await db().from("exam_sessions").upsert(s).select().single()) as ExamSession;
+}
+export async function deleteSession(id: string): Promise<void> {
+  const { error } = await db().from("exam_sessions").delete().eq("id", id);
+  if (error) throw new Error(error.message);
 }
 
 // ---------- Phase C: tra mã học viên (anon) ----------
