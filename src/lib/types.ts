@@ -203,3 +203,49 @@ export interface PlacementResult {
   cefr: Cefr | null;        // null = chưa đạt A1
   detail: PlacementLevelStat[];
 }
+
+// ---------- Phase F — Buổi thi / mã thi ----------
+export interface ExamSession {
+  id: string;
+  name: string;
+  test_id: string | null;
+  access_code: string | null;
+  open_at: string | null;
+  close_at: string | null;
+  one_submission: boolean;
+  max_violations: number;
+  show_result: boolean;
+  created_at?: string;
+}
+
+// Đề (kèm tên chủ đề + kỹ năng) để GV chọn khi tạo buổi thi.
+export interface TestWithTopic {
+  id: string;
+  title: string | null;
+  version_label: string;
+  purpose: string;
+  topic_name: string;
+  skill: Skill;
+}
+
+export interface SessionByCode {
+  status: "open" | "not_open" | "closed" | "no_test";
+  session_id?: string;
+  name?: string;
+  test_id?: string;
+  skill?: Skill;
+  one_submission?: boolean;
+  max_violations?: number;
+  open_at?: string;
+  close_at?: string;
+}
+
+export interface SessionSubmitResult {
+  submission_id: string;
+  skill: Skill;
+  status: "submitted" | "graded";
+  show_result: boolean;
+  score?: number | null;
+  max_score?: number | null;
+  band?: number | null;
+}

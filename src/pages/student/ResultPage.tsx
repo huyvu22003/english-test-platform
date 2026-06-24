@@ -1,11 +1,12 @@
 // Màn sau khi nộp. Writing: chấm tay → "chờ chấm". Placement: tự chấm → CEFR + chi tiết.
 import { Link, Navigate, useLocation } from "react-router-dom";
-import type { PlacementResult, SubmitResult } from "../../lib/types";
+import type { PlacementResult, SessionSubmitResult, SubmitResult } from "../../lib/types";
 
 interface ResultState {
   writing?: boolean;
   result?: SubmitResult;
   placement?: PlacementResult;
+  session?: SessionSubmitResult;
   name?: string;
   topic?: string;
   auto?: boolean;
@@ -14,16 +15,18 @@ interface ResultState {
 export default function ResultPage() {
   const loc = useLocation();
   const st = (loc.state ?? {}) as ResultState;
-  if (!st.writing && !st.result && !st.placement) return <Navigate to="/" replace />;
+  if (!st.writing && !st.result && !st.placement && !st.session) return <Navigate to="/" replace />;
 
   return (
     <div className="wrap">
       <div className="card result">
         <h1>{st.placement ? "Kết quả xếp lớp 🎯" : "Đã nộp bài ✅"}</h1>
-        {st.auto && <p className="warn-text">Bài được tự nộp do hết giờ.</p>}
+        {st.auto && <p className="warn-text">Bài được tự nộp (hết giờ hoặc vượt ngưỡng vi phạm).</p>}
         <p className="muted">{st.name}{st.topic ? ` · ${st.topic}` : ""}</p>
 
-        {st.placement ? (
+        {st.session ? (
+          <SessionView res={st.session} />
+        ) : st.placement ? (
           <PlacementView res={st.placement} />
         ) : st.writing ? (
           <p className="big-note">
@@ -41,6 +44,21 @@ export default function ResultPage() {
       </div>
     </div>
   );
+}
+
+function SessionView({ res }: { res: SessionSubmitResult }) {
+  if (res.skill === "writing") {
+    return <p className="big-note">Bài thi đã được lưu. <strong>Giáo viên sẽ chấm tay</strong> và phản hồi sau.</p>;
+  }
+  if (res.show_result && res.score != null) {
+    return (
+      <div className="score-box">
+        <div className="score-main">{res.score}<span className="muted"> / {res.max_score}</span></div>
+        {res.band != null && <div className="band">Band: <strong>{res.band}</strong></div>}
+      </div>
+    );
+  }
+  return <p className="big-note">Đã ghi nhận bài thi của bạn. Điểm sẽ được công bố theo quy định của buổi thi.</p>;
 }
 
 function PlacementView({ res }: { res: PlacementResult }) {

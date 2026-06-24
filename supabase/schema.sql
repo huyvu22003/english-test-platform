@@ -579,3 +579,104 @@ $$;
 
 grant execute on function rpc_list_placements() to anon, authenticated;
 grant execute on function rpc_submit_placement(uuid, text, text, jsonb, int, text, timestamptz) to anon, authenticated;
+
+
+-- =====================================================================
+-- PHASE F — Buổi thi (exit/mock) + MÃ THI + một lần nộp + chống gian lận siết
+--   Tái dùng bảng exam_sessions; học sinh vào bằng access_code, làm 1 đề cố định.
+-- =====================================================================
+
+alter table exam_sessions add column if not exists test_id uuid references tests(id);
+alter table exam_sessions add column if not exists one_submission boolean not null default true;
+alter table exam_sessions add column if not exists max_violations int not null default 0;   -- 0 = không tự nộp
+alter table exam_sessions add column if not exists show_result boolean not null default false;
+
+-- Tra buổi thi theo MÃ THI (anon). Kiểm tra cửa sổ thời gian; trả thông tin để vào làm.
+create or replace function rpc_session_by_code(p_code text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare s exam_sessions; v_skill text;
+begin
+  select * into s from exam_sessions where lower(access_code) = lower(btrim(p_code)) limit 1;
+  if not found then return null; end if;
+  if s.test_id is null then return jsonb_build_object('status','no_test'); end if;
+  if s.open_at is not null and now() < s.open_at then
+    return jsonb_build_object('status','not_open','open_at',s.open_at);
+  end if;
+  if s.close_at is not null and now() > s.close_at then
+    return jsonb_build_object('status','closed','close_at',s.close_at);
+  end if;
+  select tp.skill into v_skill from tests t join topics tp on tp.id = t.topic_id where t.id = s.test_id;
+  return jsonb_build_object(
+    'status','open','session_id',s.id,'name',s.name,'test_id',s.test_id,'skill',v_skill,
+    'one_submission',s.one_submission,'max_violations',s.max_violations);
+end;
+$$;
+
+-- Nộp bài trong buổi thi: kiểm tra cửa sổ + một-lần-nộp; chấm theo kỹ năng
+--   (writing → chấm tay; còn lại → tự chấm MCQ + band). Lưu kèm session_id.
+create or replace function rpc_submit_session(
+  p_session_id uuid, p_name text, p_email text, p_answers jsonb, p_essay text,
+  p_violations int, p_log text, p_started_at timestamptz
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  s exam_sessions; v_skill text; v_topic text; v_student uuid; v_id uuid;
+  v_score numeric := 0; v_max numeric := 0; v_band numeric; v_percent numeric;
+  v_status text; q record;
+begin
+  select * into s from exam_sessions where id = p_session_id;
+  if not found then raise exception 'Buổi thi không tồn tại'; end if;
+  if s.open_at is not null and now() < s.open_at then raise exception 'Buổi thi chưa mở'; end if;
+  if s.close_at is not null and now() > s.close_at then raise exception 'Buổi thi đã đóng'; end if;
+  if s.one_submission and exists(
+       select 1 from submissions where session_id = p_session_id
+       and lower(student_email) = lower(btrim(p_email))) then
+    raise exception 'Bạn đã nộp bài cho buổi thi này rồi';
+  end if;
+
+  select tp.skill, tp.name into v_skill, v_topic
+  from tests t join topics tp on tp.id = t.topic_id where t.id = s.test_id;
+
+  if p_email is not null and length(btrim(p_email)) > 0 then
+    select id into v_student from students where lower(email) = lower(btrim(p_email)) limit 1;
+    if v_student is null then
+      insert into students(full_name, email) values (p_name, btrim(p_email)) returning id into v_student;
+    end if;
+  end if;
+
+  if v_skill = 'writing' then
+    v_status := 'submitted';   -- giáo viên chấm tay
+  else
+    for q in select id, qtype, correct, points from questions where test_id = s.test_id loop
+      v_max := v_max + coalesce(q.points, 0);
+      if etp_is_correct(q.qtype, q.correct, p_answers -> (q.id::text)) then
+        v_score := v_score + coalesce(q.points, 0);
+      end if;
+    end loop;
+    v_percent := case when v_max > 0 then round(v_score * 100.0 / v_max, 1) else null end;
+    v_band := etp_band(v_skill, v_percent);
+    v_status := 'graded';
+  end if;
+
+  insert into submissions(test_id, session_id, topic_name, student_id, student_name, student_email,
+                          answers, essay, score, max_score, band, status,
+                          violations, violation_log, started_at)
+  values (s.test_id, p_session_id, v_topic, v_student, p_name, p_email,
+          case when v_skill = 'writing' then null else p_answers end,
+          case when v_skill = 'writing' then p_essay else null end,
+          case when v_skill = 'writing' then null else v_score end,
+          case when v_skill = 'writing' then null else v_max end,
+          case when v_skill = 'writing' then null else v_band end,
+          v_status, coalesce(p_violations,0), p_log, p_started_at)
+  returning id into v_id;
+
+  return jsonb_build_object(
+    'submission_id', v_id, 'skill', v_skill, 'status', v_status, 'show_result', s.show_result,
+    'score', case when s.show_result and v_skill <> 'writing' then v_score end,
+    'max_score', case when s.show_result and v_skill <> 'writing' then v_max end,
+    'band', case when s.show_result and v_skill <> 'writing' then v_band end);
+end;
+$$;
+
+grant execute on function rpc_session_by_code(text) to anon, authenticated;
+grant execute on function rpc_submit_session(uuid, text, text, jsonb, text, int, text, timestamptz) to anon, authenticated;

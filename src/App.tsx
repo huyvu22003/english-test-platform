@@ -7,6 +7,8 @@ import WritingExamPage from "./pages/student/WritingExamPage";
 import PlacementExamPage from "./pages/student/PlacementExamPage";
 import ResultPage from "./pages/student/ResultPage";
 import ProgressPage from "./pages/student/ProgressPage";
+import SessionEntryPage from "./pages/student/SessionEntryPage";
+import SessionExamPage from "./pages/student/SessionExamPage";
 import LoginPage from "./pages/admin/LoginPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import TopicsPage from "./pages/admin/TopicsPage";
@@ -15,6 +17,7 @@ import SubmissionsPage from "./pages/admin/SubmissionsPage";
 import RosterPage from "./pages/admin/RosterPage";
 import DiagnosticsPage from "./pages/admin/DiagnosticsPage";
 import ImportPage from "./pages/admin/ImportPage";
+import SessionsPage from "./pages/admin/SessionsPage";
 
 // Chặn vào trang quản trị khi chưa đăng nhập.
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -34,6 +37,8 @@ export default function App() {
           <Route path="/writing/:topicId" element={<WritingExamPage />} />
           <Route path="/placement/:testId" element={<PlacementExamPage />} />
           <Route path="/exam/:testId" element={<ExamPage />} />
+          <Route path="/exam-room" element={<SessionEntryPage />} />
+          <Route path="/session/:sessionId" element={<SessionExamPage />} />
           <Route path="/result" element={<ResultPage />} />
           <Route path="/progress" element={<ProgressPage />} />
 
@@ -54,6 +59,7 @@ export default function App() {
             <Route path="roster" element={<RosterPage />} />
             <Route path="diagnostics" element={<DiagnosticsPage />} />
             <Route path="import" element={<ImportPage />} />
+            <Route path="sessions" element={<SessionsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

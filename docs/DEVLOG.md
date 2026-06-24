@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-06-23 — Phase F (Buổi thi + mã thi + một-lần-nộp)
+- **Tác nhân:** AI · **Nhánh/PR:** `feat/phase-f-sessions`
+- **Mục tiêu:** chế độ high-stakes (exit/mock) — thi theo buổi, vào bằng mã, kiểm soát nộp & gian lận.
+- **Đã làm:**
+  - Schema: thêm cột `exam_sessions` (test_id, one_submission, max_violations, show_result); RPC `rpc_session_by_code`, `rpc_submit_session` (chặn nộp lại, chấm theo kỹ năng, lưu session_id).
+  - Frontend: `SessionsPage` (GV tạo/xóa buổi + sinh mã + cửa sổ thời gian), `SessionEntryPage` (HS nhập mã), `SessionExamPage` (làm bài MCQ/viết, tự nộp khi vượt ngưỡng vi phạm), `ResultPage` xử lý kết quả buổi thi; nav + route + lối "Vào phòng thi".
+- **Quyết định:** ADR-018 — high-stakes bằng buổi thi + mã (server kiểm soát), không proctoring nặng.
+- **Kết quả:** `npm run build` PASS.
+- **Bước tiếp:** smoke test toàn hệ trên Supabase; (tùy chọn) xáo đề theo HS, xuất bảng điểm buổi thi.
+
 ## 2026-06-23 — Phase E phần 1 (Import Excel/CSV)
 - **Tác nhân:** AI · **Nhánh/PR:** `feat/phase-e-import`
 - **Mục tiêu:** nạp nội dung hàng loạt (đề Viết + câu trắc nghiệm) thay vì gõ tay.
