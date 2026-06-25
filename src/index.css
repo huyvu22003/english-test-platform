@@ -75,7 +75,7 @@ textarea { resize: vertical; }
   border: 1px solid var(--line); background: #fff; color: var(--ink);
 }
 .btn:hover { background: #f3f4f6; }
-.btn.primary { background: linear-gradient(135deg, var(--brand), var(--brand2)); color: #fff; border: none; }
+.btn.primary { background: var(--grad); color: #fff; border: none; }
 .btn.primary:hover { opacity: .92; }
 .btn.ghost { background: transparent; border-color: transparent; }
 .btn.ghost:hover { background: #f3f4f6; }
@@ -198,4 +198,43 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   .sidebar nav { flex-direction: row; }
   .sidebar-foot { margin-left: auto; }
   .grid2 { grid-template-columns: 1fr; }
+  .hero { padding: 18px; }
 }
+
+/* ============================================================
+   THƯƠNG HIỆU & THEME (logo + nền gradient ấm)
+   ============================================================ */
+:root {
+  --grad: linear-gradient(135deg, #f7941d 0%, #ec3a2b 100%);          /* cam → đỏ (nút primary, mark) */
+  --hero: linear-gradient(135deg, #7a2b8f 0%, #5e2270 55%, #c0392b 130%); /* nền ấm tím→đỏ (hero/auth) */
+}
+
+/* logo (component Logo.tsx) */
+.logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; color: var(--ink); line-height: 1; }
+.logo-light { color: #fff; }
+.logo-img { height: 34px; width: auto; display: block; }
+.logo-wm { flex: none; }
+.logo-text { letter-spacing: .2px; }
+.logo-text b { font-weight: 800; }
+
+/* hero — header trang học sinh (nền gradient ấm) */
+.hero {
+  background: var(--hero); color: #fff;
+  border-radius: 16px; padding: 22px 24px; margin-bottom: 18px;
+  box-shadow: 0 12px 30px rgba(122, 43, 143, .25);
+}
+.hero-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.hero-links { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.hero-links .link { color: #fff; }
+.hero-links .link:hover { color: #ffe9d6; }
+.tagline { margin: 12px 0 0; color: rgba(255, 255, 255, .9); font-size: 15px; }
+
+/* auth — trang đăng nhập giáo viên (logo trên nền ấm) */
+.auth-page { min-height: 100vh; display: grid; place-items: center; background: var(--hero); padding: 24px; }
+.auth-box {
+  width: 100%; max-width: 400px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 16px; padding: 28px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .25);
+}
+.auth-logo { display: flex; justify-content: center; margin-bottom: 16px; }
