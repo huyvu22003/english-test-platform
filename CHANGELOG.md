@@ -7,6 +7,16 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Đổi — Thương hiệu & giao diện (logo + theme hoàn chỉnh)
+- Component `Logo` chuẩn props `{ height, withText, light }`: ưu tiên ảnh `/logo.png`, fallback **mark SVG 4 cánh hoa cam→đỏ** + wordmark (`IELTS` tím / `Ms. Trà My` gradient; `.on-dark` cho nền tối). Gắn ở `StudentHome` (48), `LoginPage` (54), `AdminLayout` (30). VÌ SAO: nhận diện nhất quán mọi nơi.
+- Theme: `--brand` = cam-đỏ `#ee5a24` (tách `--plum` tím riêng), `--hero`/`--grad`/`--bg` ấm; nút primary gradient + bóng (hover brightness); thẻ bóng mềm. VÌ SAO: phong cách trẻ trung, định vị thương hiệu cao.
+
+### Thêm — Tải MP3/ảnh cho bài nghe (Supabase Storage)
+- `src/lib/storage.ts` `uploadMedia()`: upload lên bucket `media` (public-read) → trả public URL. `TestEditorPage` (PassageRow): nút **Tải MP3/ảnh** + trạng thái "Đang tải lên…" + ErrorBox + preview `<audio>`/`<img>`; vẫn giữ ô "dán link" (R2 tùy chọn). `supabase/storage.sql`: bucket + policy. VÌ SAO: GV upload media ngay trong app thay vì tự host. ⚠️ Cần chạy `storage.sql` 1 lần.
+
+### Sửa — Hiện ĐỀ BÀI khi giáo viên chấm
+- `listSubmissions` join `tests(prompt, title)`; `SubmissionsPage` hiện khối "📝 Đề bài" nổi bật (viền cam, nền vàng) ngay trên bài viết (chú thích nếu đề đã xóa). VÌ SAO: GV chấm Writing cần thấy đề ngay, khỏi mở đề riêng.
+
 ### Đổi — Nền trang sống động hơn
 - Nền `body`: **4 quầng màu thương hiệu** (cam/tím/đỏ) lan toả + **lưới chấm mảnh** (`body::before`, mask mờ dần vùng giữa). VÌ SAO: nền cũ hơi đơn điệu/phẳng (phản hồi người dùng); làm sinh động + định vị thương hiệu mà vẫn giữ chữ dễ đọc (chấm rất nhạt, nội dung nằm trên thẻ trắng).
 

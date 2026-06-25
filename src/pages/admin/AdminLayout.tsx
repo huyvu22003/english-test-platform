@@ -15,7 +15,7 @@ export default function AdminLayout() {
   return (
     <div className="admin">
       <aside className="sidebar">
-        <div className="brand"><Logo light /></div>
+        <div className="brand"><Logo height={30} light /></div>
         <nav>
           <NavLink to="/admin/topics" className={({ isActive }) => (isActive ? "active" : "")}>
             Chủ đề &amp; Đề thi

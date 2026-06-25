@@ -136,6 +136,15 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
       {open && (
         <tr className="detail-row">
           <td colSpan={8}>
+            {/* Đề bài (join từ tests) — nổi bật để GV vừa đọc đề vừa chấm */}
+            <div className="prompt-quote">
+              <strong>📝 Đề bài{s.tests?.title ? ` — ${s.tests.title}` : ""}</strong>
+              {s.tests?.prompt ? (
+                <p>{s.tests.prompt}</p>
+              ) : (
+                <p className="muted small">(đề không còn nội dung — chủ đề: {s.topic_name ?? "—"})</p>
+              )}
+            </div>
             {s.essay && (
               <div className="essay-box">
                 <strong>Bài viết ({wc(s.essay)} từ):</strong>

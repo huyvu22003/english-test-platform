@@ -1,51 +1,59 @@
 import { useState } from "react";
 
 // Logo thương hiệu IELTS Ms. Trà My.
-// Ưu tiên ảnh chính thức /logo.png (đặt ở public/, nền trong suốt). Nếu thiếu file
-// (404) -> fallback "mark" SVG cam→đỏ (cụm 4 cánh hoa) + wordmark 2 dòng, khớp nhận diện.
-// Prop `light`: dùng trên nền tối (chữ trắng) — hero header / sidebar / trang đăng nhập trên nền ấm.
-export default function Logo({ light = false }: { light?: boolean }) {
+// Ưu tiên render ảnh chính thức /logo.png (gồm cả chữ); onError -> fallback mark SVG
+// (4 cánh hoa cam→đỏ) + wordmark. Prop `light`: dùng trên nền tối (chữ trắng).
+export default function Logo({
+  height = 42,
+  withText = true,
+  light = false,
+}: {
+  height?: number;
+  withText?: boolean;
+  light?: boolean;
+}) {
   const [imgOk, setImgOk] = useState(true);
 
   return (
-    <span className={`logo${light ? " logo-light" : ""}`}>
+    <span className="logo">
       {imgOk ? (
         <img
           className="logo-img"
           src="/logo.png"
           alt="IELTS Ms. Trà My"
+          style={{ height }}
           onError={() => setImgOk(false)}
         />
       ) : (
         <>
-          {/* Mark dự phòng: 4 cánh hoa toả từ tâm theo đường chéo, viền gradient cam→đỏ */}
-          <svg className="logo-wm" viewBox="0 0 48 48" width="38" height="38" aria-hidden="true">
+          <svg className="logo-mark" width={height} height={height} viewBox="0 0 120 120" aria-hidden="true">
             <defs>
-              <linearGradient id="etpLogoGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#f7941d" />
-                <stop offset="1" stopColor="#ec3a2b" />
+              <linearGradient id="etpPetal" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#f7a01d" />
+                <stop offset="1" stopColor="#ec2f2b" />
               </linearGradient>
             </defs>
             <g
-              transform="translate(24 24)"
               fill="none"
-              stroke="url(#etpLogoGrad)"
-              strokeWidth="2.3"
+              stroke="url(#etpPetal)"
+              strokeWidth="5"
               strokeLinejoin="round"
               strokeLinecap="round"
             >
-              {[45, 135, 225, 315].map((deg) => (
-                <g key={deg} transform={`rotate(${deg})`}>
-                  <path d="M0 0 C6 -9 6 -20 0 -27 C-6 -20 -6 -9 0 0 Z" />
-                  <path d="M0 -3 L0 -23" />
+              {[45, 135, 225, 315].map((r) => (
+                <g key={r} transform={`translate(60 60) rotate(${r})`}>
+                  <path d="M0 -4 C 15 -16, 17 -40, 0 -56 C -17 -40, -15 -16, 0 -4 Z" />
+                  <path d="M0 -12 L0 -48" />
                 </g>
               ))}
             </g>
           </svg>
-          <span className="logo-text">
-            <b className="lw-1">IELTS</b>
-            <span className="lw-2">Ms. Trà My</span>
-          </span>
+          {withText && (
+            <span className={`logo-wm${light ? " on-dark" : ""}`}>
+              <b>IELTS</b>
+              <i>Ms. Trà My</i>
+            </span>
+          )}
         </>
       )}
     </span>

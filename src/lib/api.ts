@@ -267,8 +267,9 @@ export async function deleteQuestion(id: string): Promise<void> {
 
 // ---------- Dashboard ----------
 export async function listSubmissions(): Promise<Submission[]> {
+  // Kèm đề bài (join tests) để GV thấy ĐỀ ngay khi chấm — khỏi mở đề riêng.
   return unwrap(
-    await db().from("submissions").select("*").order("submitted_at", { ascending: false })
+    await db().from("submissions").select("*, tests(prompt, title)").order("submitted_at", { ascending: false })
   );
 }
 
