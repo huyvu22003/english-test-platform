@@ -109,7 +109,16 @@ export default function PlacementExamPage() {
 
       {passages.map((p) => (
         <div className="card passage" key={p.id}>
-          {p.kind === "audio" && p.media_url && <audio controls src={p.media_url} style={{ width: "100%" }} />}
+          {p.kind === "audio" && p.media_url && (
+            <audio
+              controls
+              controlsList="nodownload"
+              preload="metadata"
+              src={p.media_url}
+              style={{ width: "100%" }}
+              onContextMenu={(e) => e.preventDefault()}
+            />
+          )}
           {p.kind === "reading" && p.body && <div className="passage-body">{p.body}</div>}
         </div>
       ))}
