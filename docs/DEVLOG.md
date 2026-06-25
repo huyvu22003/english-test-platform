@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-06-25 — Khung phát triển trung tâm nhiều chi nhánh
+- **Tác nhân:** Eagle AI · **Nhánh/PR:** `docs/center-growth-framework`
+- **Mục tiêu:** chuyển định hướng mới của chủ dự án thành khung phát triển có thể theo dõi trong repo: app dùng cho trung tâm tiếng Anh tư nhân 3 chi nhánh, có thể mở rộng thêm, phát triển theo lộ trình doanh nghiệp.
+- **Đã làm:** thêm roadmap G0–G5 trong `docs/CENTER_GROWTH_ROADMAP.md`; thêm hướng dẫn dùng phiếu trong `docs/REQUIREMENTS_QUESTIONNAIRE.md`; thêm phiếu HTML tại `public/forms/Phieu-khao-sat-nang-cap-English-Test-Platform.html` để chủ trung tâm điền nhu cầu và tải kết quả `.txt`/`.json`.
+- **Quyết định:** dùng phiếu khảo sát để chốt Must/Should/Could trước khi code các mảng lớn như multi-branch permission, dashboard owner, automation.
+- **Kết quả:** tài liệu hóa hướng phát triển mới; build cần pass trước khi PR.
+- **Bước tiếp:** sau khi có phiếu đã điền, chuyển thành backlog Phase G1/G2; nếu cần public form trên Pages thì push branch/PR.
+
 ## 2026-06-25 — UI thương hiệu + tải media + hiện đề khi chấm
 - **Tác nhân:** AI · **Nhánh/PR:** `feat/ui-media-grading`
 - **Mục tiêu:** gộp 3 nhóm (phát triển ở phiên khác): hoàn chỉnh logo/theme; tải MP3/ảnh qua Supabase Storage; hiện đề bài khi GV chấm.
