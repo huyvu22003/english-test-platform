@@ -7,6 +7,10 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Tài liệu — Khung phát triển cho trung tâm nhiều chi nhánh
+- Thêm `docs/CENTER_GROWTH_ROADMAP.md`: định vị app thành nền tảng đánh giá & theo dõi tiến bộ cho trung tâm tiếng Anh tư nhân 3 chi nhánh, có roadmap G0–G5 từ khảo sát/MVP đến dashboard, phân quyền, automation. VÌ SAO: app cần phát triển theo lộ trình doanh nghiệp, không chỉ thêm tính năng rời rạc.
+- Thêm `docs/REQUIREMENTS_QUESTIONNAIRE.md` và `public/forms/Phieu-khao-sat-nang-cap-English-Test-Platform.html`: phiếu khảo sát HTML để chủ trung tâm/manager điền nhu cầu, xuất `.txt`/`.json`. VÌ SAO: dùng câu trả lời thật để chốt backlog Must/Should/Could và kế hoạch nâng cấp.
+
 ### Đổi — Thương hiệu & giao diện (logo + theme hoàn chỉnh)
 - Component `Logo` chuẩn props `{ height, withText, light }`: ưu tiên ảnh `/logo.png`, fallback **mark SVG 4 cánh hoa cam→đỏ** + wordmark (`IELTS` tím / `Ms. Trà My` gradient; `.on-dark` cho nền tối). Gắn ở `StudentHome` (48), `LoginPage` (54), `AdminLayout` (30). VÌ SAO: nhận diện nhất quán mọi nơi.
 - Theme: `--brand` = cam-đỏ `#ee5a24` (tách `--plum` tím riêng), `--hero`/`--grad`/`--bg` ấm; nút primary gradient + bóng (hover brightness); thẻ bóng mềm. VÌ SAO: phong cách trẻ trung, định vị thương hiệu cao.

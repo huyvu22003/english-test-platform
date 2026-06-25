@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Phiếu khảo sát nâng cấp — English Test Platform</title>
+<style>
+ :root{ --accent:#7a2b8f; --accent2:#ec3a2b; --gold:#f7941d; --line:#e2e2e8; --muted:#666; --soft:#faf7fc; }
+ *{box-sizing:border-box;}
+ body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#f4f2f7;color:#1a1a1a;margin:0;padding:24px;line-height:1.5;}
+ .wrap{max-width:900px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:32px 36px;box-shadow:0 10px 30px rgba(0,0,0,.06);}
+ h1{font-size:24px;color:var(--accent);margin:0 0 4px;line-height:1.25;}
+ .sub{color:var(--muted);margin:0 0 18px;font-size:14px;}
+ .meta{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:8px;}
+ .meta label{font-size:13px;color:var(--muted);display:block;margin-bottom:3px;}
+ .meta input{width:100%;}
+ .meta .f{flex:1;min-width:190px;}
+ h2{font-size:17px;color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:6px;margin:26px 0 10px;}
+ .note{font-size:13px;color:var(--muted);font-style:italic;margin:0 0 10px;}
+ .intro{background:linear-gradient(135deg,#faf7fc,#fff7f3);border:1px solid #eee;border-radius:12px;padding:12px 14px;margin:12px 0 18px;}
+ .q{margin:14px 0;}
+ .q .label{font-weight:600;margin-bottom:6px;}
+ .opts{display:flex;flex-direction:column;gap:5px;}
+ .opts.inline{flex-direction:row;flex-wrap:wrap;gap:8px 22px;}
+ .opt{display:flex;align-items:flex-start;gap:8px;font-size:15px;cursor:pointer;}
+ .opt input{margin-top:3px;width:17px;height:17px;accent-color:var(--accent);cursor:pointer;}
+ input[type=text],input[type=email],input[type=number]{padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:15px;width:100%;outline:none;background:#fff;}
+ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(122,43,143,.08);}
+ textarea{width:100%;min-height:112px;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:15px;outline:none;font-family:inherit;resize:vertical;}
+ .confirm{background:var(--soft);border:1px solid #eee;border-radius:8px;padding:10px 12px;margin:8px 0;}
+ .toolbar{position:sticky;top:0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.05);}
+ button{cursor:pointer;border:none;border-radius:9px;font-size:14px;font-weight:600;padding:10px 16px;color:#fff;}
+ .btn-dl{background:linear-gradient(135deg,var(--gold),var(--accent2));}
+ .btn-json{background:#2364aa;}
+ .btn-print{background:var(--accent);}
+ .btn-clear{background:#888;}
+ .saved{font-size:13px;color:#2e7d32;margin-left:auto;}
+ .pill{display:inline-block;background:#f4e9f7;color:var(--accent);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;margin:2px 4px 2px 0;}
+ .tiny{font-size:12px;color:var(--muted);}
+ @media print{ .toolbar{display:none;} body{background:#fff;padding:0;} .wrap{box-shadow:none;border:none;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div class="toolbar">
+  <button class="btn-dl" onclick="downloadTxt()">⬇️ Tải kết quả (.txt)</button>
+  <button class="btn-json" onclick="downloadJson()">⬇️ Tải dữ liệu (.json)</button>
+  <button class="btn-print" onclick="window.print()">🖨️ In / Lưu PDF</button>
+  <button class="btn-clear" onclick="clearAll()">🗑️ Xóa hết</button>
+  <span class="saved" id="savedMsg"></span>
+ </div>
+
+ <h1>PHIẾU KHẢO SÁT & ĐỊNH HƯỚNG NÂNG CẤP — ENGLISH TEST PLATFORM</h1>
+ <p class="sub">Dành cho chủ trung tâm / quản lý vận hành trung tâm tiếng Anh tư nhân nhiều chi nhánh.</p>
+ <div class="intro">
+  <div><span class="pill">Mục tiêu</span><span class="pill">3 chi nhánh, mở rộng thêm</span><span class="pill">Placement · Progress · Mock/Exit</span><span class="pill">CEFR/IELTS</span></div>
+  <p class="note" style="margin-top:8px">Phiếu này giúp chốt nhu cầu trước khi nâng cấp app. Điền xong bấm “Tải kết quả (.txt)” rồi gửi lại file. Nội dung tự lưu nháp trên trình duyệt.</p>
+ </div>
+
+ <div class="meta">
+  <div class="f"><label>Người điền</label><input type="text" id="meta_name"></div>
+  <div class="f"><label>Vai trò</label><input type="text" id="meta_role" placeholder="Chủ trung tâm / Quản lý / Giáo viên..."></div>
+  <div class="f"><label>Trung tâm</label><input type="text" id="meta_center"></div>
+  <div class="f"><label>Ngày</label><input type="text" id="meta_date" placeholder="__/__/2026"></div>
+ </div>
+
+ <div id="form"></div>
+</div>
+
+<script>
+const FORM = [
+ { section:"1. Bối cảnh trung tâm & quy mô vận hành", note:"Giúp thiết kế app đúng với mô hình 3 chi nhánh và khả năng mở rộng sau này.", items:[
+  {type:"text", id:"q11", label:"1.1. Hiện trung tâm có bao nhiêu chi nhánh? Tên từng chi nhánh?"},
+  {type:"text", id:"q12", label:"1.2. Dự kiến 12–24 tháng tới mở thêm bao nhiêu chi nhánh?"},
+  {type:"text", id:"q13", label:"1.3. Tổng số học viên hiện tại / mỗi tháng khoảng bao nhiêu?"},
+  {type:"text", id:"q14", label:"1.4. Số lớp đang vận hành? Quy mô trung bình mỗi lớp?"},
+  {type:"checkbox", id:"q15", label:"1.5. Nhóm người dùng cần dùng app:", options:["Chủ trung tâm","Quản lý chi nhánh","Giáo viên","Trợ giảng","Admin nhập liệu","Học viên","Phụ huynh"]},
+  {type:"textarea", id:"q16", label:"1.6. Khó khăn lớn nhất hiện nay trong việc kiểm tra/đánh giá học viên là gì?"},
+ ]},
+ { section:"2. Mục tiêu kinh doanh khi nâng cấp app", note:"Chọn mục tiêu thật sự quan trọng để ưu tiên đúng.", items:[
+  {type:"checkbox", id:"q21", label:"2.1. Mục tiêu chính:", options:["Xếp lớp đầu vào chính xác hơn","Theo dõi tiến bộ học viên","Chuẩn hóa bài test giữa các chi nhánh","Giảm thời gian chấm/nhập điểm","Tạo báo cáo chuyên nghiệp cho phụ huynh/học viên","Đánh giá hiệu quả giáo viên/lớp","Tăng trải nghiệm thương hiệu của trung tâm","Chuẩn bị mở rộng hệ thống nhiều chi nhánh"]},
+  {type:"radio", id:"q22", label:"2.2. Trong 3 tháng tới, ưu tiên số 1 là gì?", options:["Vận hành thi/xếp lớp ổn định","Báo cáo quản trị cho chủ trung tâm","Nội dung đề Reading/Listening/Placement","Phân quyền nhiều chi nhánh","Tự động hóa gửi kết quả","Khác"]},
+  {type:"text", id:"q22b", label:"2.2b. Nếu chọn khác, ghi rõ:"},
+  {type:"radio", id:"q23", label:"2.3. App này sẽ dùng ở mức nào?", options:["Nội bộ giáo viên dùng thử","Dùng thật cho một chi nhánh","Dùng thật cho cả 3 chi nhánh","Muốn phát triển thành sản phẩm riêng sau này"]},
+ ]},
+ { section:"3. Luồng kiểm tra cần hỗ trợ", items:[
+  {type:"checkbox", id:"q31", label:"3.1. Các loại bài kiểm tra cần có:", options:["Placement test đầu vào","Progress test định kỳ","Exit test cuối khóa","Mock IELTS","Kiểm tra nhanh trong lớp","Bài tập về nhà có chấm điểm","Writing chấm tay","Reading tự chấm","Listening tự chấm","Use of English/Grammar/Vocabulary tự chấm","Speaking chấm tay/ghi âm"]},
+  {type:"checkbox", id:"q32", label:"3.2. Kỹ năng ưu tiên trong giai đoạn đầu:", options:["Writing","Reading","Listening","Speaking","Grammar","Vocabulary","Use of English"]},
+  {type:"text", id:"q33", label:"3.3. Tần suất kiểm tra học viên: đầu vào / giữa khóa / cuối khóa / hàng tuần?"},
+  {type:"radio", id:"q34", label:"3.4. Học viên làm bài bằng cách nào?", options:["Tại trung tâm trên máy tính/tablet","Ở nhà trên điện thoại/máy tính","Cả hai","Tùy loại bài"]},
+  {type:"radio", id:"q35", label:"3.5. Cần mã thi/buổi thi để kiểm soát ai được vào làm bài không?", options:["Rất cần","Cần nhưng làm sau","Không cần"]},
+ ]},
+ { section:"4. Xếp lớp, CEFR, IELTS band & lộ trình học", items:[
+  {type:"checkbox", id:"q41", label:"4.1. Kết quả cần quy đổi theo thang nào?", options:["CEFR A1–C2","IELTS band","Điểm phần trăm","Level nội bộ của trung tâm","Tên lớp cụ thể"]},
+  {type:"text", id:"q42", label:"4.2. Trung tâm đang chia level/lớp như thế nào? Ví dụ Pre-A1, A1, A2, IELTS Foundation..."},
+  {type:"radio", id:"q43", label:"4.3. Sau placement, app có cần đề xuất lớp phù hợp tự động không?", options:["Có, rất cần","Có nhưng giáo viên duyệt lại","Chưa cần"]},
+  {type:"checkbox", id:"q44", label:"4.4. Báo cáo năng lực nên chỉ ra điều gì?", options:["Level tổng","Điểm từng kỹ năng","Điểm yếu theo kỹ năng con/tag","Đề xuất lớp","Đề xuất lộ trình học","So sánh với lần kiểm tra trước","Cảnh báo học viên không tiến bộ"]},
+ ]},
+ { section:"5. Quản lý chi nhánh, lớp, giáo viên, học viên", note:"Phần này quyết định thiết kế phân quyền và dữ liệu nhiều chi nhánh.", items:[
+  {type:"radio", id:"q51", label:"5.1. Mỗi chi nhánh có quản lý riêng không?", options:["Có","Không","Chưa rõ"]},
+  {type:"checkbox", id:"q52", label:"5.2. Chủ trung tâm muốn xem dữ liệu theo:", options:["Toàn hệ thống","Theo chi nhánh","Theo lớp","Theo giáo viên","Theo khóa học","Theo học viên","Theo thời gian"]},
+  {type:"radio", id:"q53", label:"5.3. Giáo viên có được xem dữ liệu lớp/chi nhánh khác không?", options:["Không, chỉ lớp mình phụ trách","Có, trong cùng chi nhánh","Có toàn hệ thống","Tùy phân quyền"]},
+  {type:"checkbox", id:"q54", label:"5.4. Thông tin học viên cần lưu:", options:["Họ tên","Email","SĐT","Ngày sinh","Phụ huynh","Chi nhánh","Lớp/khóa","Mã học viên","Ngày vào học","Mục tiêu học","Ghi chú riêng"]},
+  {type:"textarea", id:"q55", label:"5.5. Quy trình hiện tại khi học viên mới đăng ký/xếp lớp như thế nào?"},
+ ]},
+ { section:"6. Ngân hàng câu hỏi & nội dung đề", items:[
+  {type:"checkbox", id:"q61", label:"6.1. Trung tâm đã có sẵn nội dung nào?", options:["Writing topics","Reading passages","Listening audio","Transcript/script","Grammar/Vocabulary questions","Excel/Google Sheet đề cũ","Chưa có, cần xây mới"]},
+  {type:"radio", id:"q62", label:"6.2. Muốn nhập đề bằng cách nào?", options:["Nhập trực tiếp trên app","Import CSV/Excel","AI hỗ trợ tạo đề rồi giáo viên duyệt","Kết hợp nhiều cách"]},
+  {type:"checkbox", id:"q63", label:"6.3. Câu hỏi cần gắn tag gì?", options:["Kỹ năng","CEFR level","IELTS band mục tiêu","Chủ đề","Dạng câu hỏi","Độ khó","Nguồn đề","Lỗi/kỹ năng con","Thời lượng"]},
+  {type:"radio", id:"q64", label:"6.4. Có cần tạo đề tự động từ ngân hàng câu hỏi không?", options:["Có, theo level/kỹ năng/số câu","Có nhưng làm sau","Chưa cần"]},
+  {type:"text", id:"q65", label:"6.5. Số lượng đề/câu hỏi muốn nhập giai đoạn đầu:"},
+ ]},
+ { section:"7. Reading / Listening / Use of English", items:[
+  {type:"checkbox", id:"q71", label:"7.1. Dạng câu hỏi cần hỗ trợ:", options:["Chọn 1 đáp án","Chọn nhiều đáp án","True/False/Not Given","Yes/No/Not Given","Điền từ/trả lời ngắn","Matching headings","Matching information","Sentence/table/summary completion","Ordering/sequence","Khác"]},
+  {type:"text", id:"q71b", label:"7.1b. Nếu có dạng khác, ghi rõ:"},
+  {type:"radio", id:"q72", label:"7.2. Listening audio nên chạy thế nào?", options:["Học viên tự tua/nghe lại","Giới hạn số lần nghe","Phát theo part","Giáo viên mở chung tại lớp","Tùy đề"]},
+  {type:"radio", id:"q73", label:"7.3. Cần upload audio/ảnh trực tiếp trong app không?", options:["Có, rất cần","Có nhưng sau","Tạm thời dán link thủ công là được"]},
+  {type:"checkbox", id:"q74", label:"7.4. Sau khi nộp, học viên được xem:", options:["Chỉ điểm","Điểm + level","Đúng/sai từng câu","Đáp án đúng","Giải thích đáp án","Không hiện ngay, giáo viên duyệt"]},
+ ]},
+ { section:"8. Writing / Speaking / chấm tay", items:[
+  {type:"checkbox", id:"q81", label:"8.1. Writing cần chấm theo:", options:["4 tiêu chí IELTS Task 1/2","CEFR rubric","Rubric nội bộ","Nhận xét tự do","Gợi ý sửa bài","File PDF report"]},
+  {type:"radio", id:"q82", label:"8.2. Ai chấm Writing?", options:["Giáo viên phụ trách lớp","Giáo viên bất kỳ trong chi nhánh","Đội chấm riêng","AI gợi ý + giáo viên duyệt"]},
+  {type:"radio", id:"q83", label:"8.3. Có muốn thêm Speaking sau này không?", options:["Có, ghi âm và giáo viên chấm","Có nhưng chưa ưu tiên","Không"]},
+  {type:"textarea", id:"q84", label:"8.4. Mong muốn về nhận xét/chấm bài cho học viên:"},
+ ]},
+ { section:"9. Chống gian lận & kiểm soát bài thi", items:[
+  {type:"checkbox", id:"q91", label:"9.1. Cần các cơ chế nào?", options:["Fullscreen","Log rời tab","Log copy/paste","Tự nộp khi vi phạm quá ngưỡng","Mã thi","Một lần nộp","Giới hạn thời gian","Xáo câu/đáp án","Nhiều phiên bản đề","Khóa xem kết quả sau thi"]},
+  {type:"radio", id:"q92", label:"9.2. Mức độ nghiêm của bài thi:", options:["Low-stakes: theo dõi tiến bộ","Medium: kiểm tra lớp/đầu ra","High-stakes: cần kiểm soát chặt"]},
+  {type:"radio", id:"q93", label:"9.3. Nếu học viên vi phạm nhiều lần, app nên:", options:["Chỉ ghi log","Cảnh báo","Tự nộp bài","Khóa bài và báo giáo viên"]},
+ ]},
+ { section:"10. Báo cáo, dashboard & xuất dữ liệu", items:[
+  {type:"checkbox", id:"q101", label:"10.1. Báo cáo cần có:", options:["Bảng điểm lớp","Bảng điểm buổi thi","Tiến bộ từng học viên","So sánh chi nhánh","So sánh giáo viên/lớp","Tỷ lệ đạt level","Danh sách học viên yếu/cần hỗ trợ","Xuất Excel","Xuất PDF","Gửi email/Zalo kết quả"]},
+  {type:"radio", id:"q102", label:"10.2. Chủ trung tâm muốn xem dashboard bao lâu một lần?", options:["Hàng ngày","Hàng tuần","Hàng tháng","Theo kỳ thi/khóa học"]},
+  {type:"checkbox", id:"q103", label:"10.3. Ai được nhận báo cáo?", options:["Chủ trung tâm","Quản lý chi nhánh","Giáo viên","Học viên","Phụ huynh"]},
+  {type:"textarea", id:"q104", label:"10.4. Mẫu báo cáo/bảng điểm mong muốn, nếu có:"},
+ ]},
+ { section:"11. Tự động hóa & tích hợp", items:[
+  {type:"checkbox", id:"q111", label:"11.1. Muốn tích hợp với kênh nào?", options:["Email","Zalo","Telegram","Google Sheet","CRM hiện có","Website landing page","Thanh toán/học phí","Chưa cần"]},
+  {type:"radio", id:"q112", label:"11.2. Có cần tự động gửi kết quả sau khi làm bài không?", options:["Có, gửi học viên/phụ huynh","Có, gửi giáo viên/quản lý","Có nhưng phải duyệt trước","Chưa cần"]},
+  {type:"textarea", id:"q113", label:"11.3. Các quy trình thủ công muốn tự động hóa nhất:"},
+ ]},
+ { section:"12. Ưu tiên tính năng & lựa chọn nâng cấp", note:"Chọn mức ưu tiên để đội kỹ thuật lập roadmap đúng.", items:[
+  {type:"checkbox", id:"q121", label:"12.1. MUST HAVE — cần làm ngay:", options:["Quản lý chi nhánh/lớp/học viên","Export bảng điểm buổi thi","Tạo buổi thi/mã thi","Nội dung Reading/Listening thật","Upload audio/ảnh R2","Import Excel/CSV","Dashboard chủ trung tâm","Phân quyền giáo viên/chi nhánh","Placement đề xuất lớp","Báo cáo tiến bộ học viên"]},
+  {type:"checkbox", id:"q122", label:"12.2. SHOULD HAVE — làm sau MVP:", options:["Ngân hàng câu hỏi tái sử dụng","Tạo đề tự động","Portal phụ huynh","Gửi email/Zalo","Speaking ghi âm","AI gợi ý chấm Writing","PDF report thương hiệu trung tâm","Audit log"]},
+  {type:"checkbox", id:"q123", label:"12.3. COULD HAVE — có thì tốt nhưng không gấp:", options:["CRM/marketing automation","Attendance","Học phí/thanh toán","Mobile app riêng","Gamification","Chứng chỉ hoàn thành"]},
+  {type:"text", id:"q124", label:"12.4. Deadline mong muốn cho bản nâng cấp đầu tiên:"},
+  {type:"radio", id:"q125", label:"12.5. Cách triển khai mong muốn:", options:["Làm nhanh MVP 2–4 tuần","Làm chắc từng phase 1–3 tháng","Vừa chạy thật vừa nâng cấp dần","Chưa rõ, cần tư vấn"]},
+ ]},
+ { section:"13. Ràng buộc, ngân sách, dữ liệu & bảo mật", items:[
+  {type:"radio", id:"q131", label:"13.1. Mức ngân sách vận hành hằng tháng chấp nhận được?", options:["Ưu tiên free/chi phí thấp","Dưới 500k/tháng","500k–2 triệu/tháng","Trên 2 triệu/tháng nếu cần","Chưa rõ"]},
+  {type:"checkbox", id:"q132", label:"13.2. Yêu cầu bảo mật/dữ liệu:", options:["Phân quyền chặt theo chi nhánh","Không lộ đáp án cho học viên","Backup dữ liệu định kỳ","Xuất toàn bộ dữ liệu khi cần","Audit log thao tác","Ẩn thông tin học viên giữa giáo viên"]},
+  {type:"textarea", id:"q133", label:"13.3. Rủi ro/lo ngại lớn nhất khi triển khai app:"},
+ ]},
+ { section:"14. Ghi chú tự do của chủ trung tâm", note:"Viết mọi mong muốn, ví dụ giao diện, thương hiệu, quy trình, báo cáo, trải nghiệm học viên/phụ huynh…", items:[
+  {type:"textarea", id:"notes", label:"Ghi chú thêm:"}
+ ]},
+];
+
+const KEY = "phieu_etp_upgrade_v1";
+const $ = (s)=>document.querySelector(s);
+function esc(s){ return String(s).replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;"}[c])); }
+function render(){
+ let html = "";
+ FORM.forEach(sec=>{
+  html += '<h2>'+esc(sec.section)+'</h2>';
+  if(sec.note) html += '<p class="note">'+esc(sec.note)+'</p>';
+  sec.items.forEach(it=>{
+   html += '<div class="q"><div class="label">'+esc(it.label)+'</div>';
+   if(it.type==="text") html += '<input type="text" id="'+it.id+'">';
+   else if(it.type==="textarea") html += '<textarea id="'+it.id+'"></textarea>';
+   else if(it.type==="radio"||it.type==="checkbox"){
+    const t = it.type==="radio"?"radio":"checkbox";
+    html += '<div class="opts">';
+    it.options.forEach(o=>{ html += '<label class="opt"><input type="'+t+'" name="'+it.id+'" value="'+esc(o)+'"> '+esc(o)+'</label>'; });
+    html += '</div>';
+   }
+   html += '</div>';
+  });
+ });
+ $("#form").innerHTML = html;
+}
+function collect(){
+ const d = { _meta:{ name:$("#meta_name").value, role:$("#meta_role").value, center:$("#meta_center").value, date:$("#meta_date").value }, _form:"English Test Platform Upgrade Survey", _version:"1.0" };
+ FORM.forEach(sec=>sec.items.forEach(it=>{
+  if(it.type==="checkbox") d[it.id] = [...document.querySelectorAll('input[name="'+it.id+'"]:checked')].map(c=>c.value);
+  else if(it.type==="radio"){ const c = document.querySelector('input[name="'+it.id+'"]:checked'); d[it.id] = c ? c.value : ""; }
+  else { const el = document.getElementById(it.id); d[it.id] = el ? el.value : ""; }
+ }));
+ return d;
+}
+function restore(){
+ let d; try{ d = JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+ if(!d) return;
+ if(d._meta){ $("#meta_name").value=d._meta.name||""; $("#meta_role").value=d._meta.role||""; $("#meta_center").value=d._meta.center||""; $("#meta_date").value=d._meta.date||""; }
+ FORM.forEach(sec=>sec.items.forEach(it=>{
+  if(it.type==="checkbox") (d[it.id]||[]).forEach(v=>{ const el=document.querySelector('input[name="'+it.id+'"][value="'+CSS.escape(v)+'"]'); if(el) el.checked=true; });
+  else if(it.type==="radio"){ if(d[it.id]){ const el=document.querySelector('input[name="'+it.id+'"][value="'+CSS.escape(d[it.id])+'"]'); if(el) el.checked=true; } }
+  else { const el=document.getElementById(it.id); if(el) el.value=d[it.id]||""; }
+ }));
+}
+let saveTimer=null;
+function save(){
+ localStorage.setItem(KEY, JSON.stringify(collect()));
+ const m=$("#savedMsg"); m.textContent="✓ Đã lưu nháp";
+ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ m.textContent=""; }, 1500);
+}
+function answerText(d,it){
+ if(it.type==="checkbox") return (d[it.id]&&d[it.id].length)? d[it.id].join("; ") : "(chưa chọn)";
+ return d[it.id] || "(trống)";
+}
+function toText(){
+ const d = collect();
+ let s = "PHIẾU KHẢO SÁT NÂNG CẤP — ENGLISH TEST PLATFORM\n";
+ s += "======================================================\n";
+ s += "Người điền: "+(d._meta.name||"(trống)")+" | Vai trò: "+(d._meta.role||"(trống)")+" | Trung tâm: "+(d._meta.center||"(trống)")+" | Ngày: "+(d._meta.date||"(trống)")+"\n";
+ FORM.forEach(sec=>{
+  s += "\n=== "+sec.section+" ===\n";
+  sec.items.forEach(it=>{ s += "• "+it.label+"\n → "+answerText(d,it)+"\n"; });
+ });
+ s += "\nGỢI Ý XỬ LÝ SAU KHI NHẬN PHIẾU\n";
+ s += "1) Tách yêu cầu thành Must / Should / Could / Later.\n";
+ s += "2) Chốt MVP 2–4 tuần đầu.\n";
+ s += "3) Lập roadmap theo phase: vận hành lõi → nội dung test → báo cáo → phân quyền chi nhánh → tự động hóa.\n";
+ return s;
+}
+function filenameBase(){ return ($("#meta_center").value || $("#meta_name").value || "phieu-nang-cap-etp").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w]+/g,"-").replace(/^-+|-+$/g,"") || "phieu-nang-cap-etp"; }
+function downloadTxt(){
+ const blob = new Blob([toText()], {type:"text/plain;charset=utf-8"});
+ const url = URL.createObjectURL(blob); const a = document.createElement("a");
+ a.href = url; a.download = "Ket-qua-"+filenameBase()+"-English-Test-Platform.txt";
+ document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+function downloadJson(){
+ const blob = new Blob([JSON.stringify(collect(), null, 2)], {type:"application/json;charset=utf-8"});
+ const url = URL.createObjectURL(blob); const a = document.createElement("a");
+ a.href = url; a.download = "Du-lieu-"+filenameBase()+"-English-Test-Platform.json";
+ document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+function clearAll(){ if(!confirm("Xóa toàn bộ nội dung đã điền?")) return; localStorage.removeItem(KEY); location.reload(); }
+render(); restore();
+document.addEventListener("input", save); document.addEventListener("change", save);
+</script>
+</body>
+</html>

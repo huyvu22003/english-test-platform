@@ -19,6 +19,9 @@ Nền tảng thi tiếng Anh có **database đầy đủ** cho trung tâm **IELT
 | [`docs/PROGRESS.md`](docs/PROGRESS.md) | **Đang ở đâu** — tiến độ, việc tiếp theo, nợ kỹ thuật |
 | [`docs/DEVLOG.md`](docs/DEVLOG.md) | **Đổi gì** — nhật ký phát triển theo thời gian |
 | [`docs/SETUP.md`](docs/SETUP.md) | Việc bạn tự làm: tạo Supabase, chạy schema, R2, `.env` |
+| [`docs/CENTER_GROWTH_ROADMAP.md`](docs/CENTER_GROWTH_ROADMAP.md) | Roadmap mở rộng cho trung tâm nhiều chi nhánh |
+| [`docs/REQUIREMENTS_QUESTIONNAIRE.md`](docs/REQUIREMENTS_QUESTIONNAIRE.md) | Cách dùng phiếu khảo sát nâng cấp |
+| [`public/forms/Phieu-khao-sat-nang-cap-English-Test-Platform.html`](public/forms/Phieu-khao-sat-nang-cap-English-Test-Platform.html) | Phiếu HTML gửi chủ trung tâm điền nhu cầu nâng cấp |
 | [`supabase/schema.sql`](supabase/schema.sql) | Lược đồ database (chạy trong Supabase) |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | **Quy trình** ghi log & đọc log + quy tắc commit |
 | [`CHANGELOG.md`](CHANGELOG.md) | Lịch sử thay đổi theo bản |
