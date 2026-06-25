@@ -1,6 +1,7 @@
 // Khung trang quản trị: thanh điều hướng + nội dung con (Outlet).
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
+import Logo from "../../components/Logo";
 
 export default function AdminLayout() {
   const { session, signOut } = useAuth();
@@ -14,7 +15,7 @@ export default function AdminLayout() {
   return (
     <div className="admin">
       <aside className="sidebar">
-        <div className="brand">ETP · Quản trị</div>
+        <div className="brand"><Logo light /></div>
         <nav>
           <NavLink to="/admin/topics" className={({ isActive }) => (isActive ? "active" : "")}>
             Chủ đề &amp; Đề thi

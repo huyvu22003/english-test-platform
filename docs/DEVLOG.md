@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-06-23 — Thương hiệu & giao diện (logo + theme)
+- **Tác nhân:** AI · **Nhánh/PR:** `feat/branding-ui`
+- **Mục tiêu:** đồng bộ + hoàn tất bộ giao diện thương hiệu (logo + theme) **và nâng cấp UI cao cấp/trẻ trung** (định vị thương hiệu) cho toàn app.
+- **Phát hiện:** đợt "upload thủ công file giao diện" được báo là đã có nhưng thực ra **CHƯA lên main** — `src/components/Logo.tsx` không tồn tại; `index.css` thiếu toàn bộ class branding (`.hero/.auth-page/.logo/--grad/--hero`); các trang chưa import `<Logo>`; không có commit branding; `public/logo.png` cũng chưa có.
+- **Đã làm:** tạo `Logo.tsx` (ưu tiên `/logo.png`, fallback **mark 4 cánh hoa cam→đỏ + wordmark 2 dòng** khớp nhận diện); gắn `<Logo>` vào `StudentHome`/`LoginPage`/`AdminLayout`. Redesign `index.css`: font **Plus Jakarta Sans**, token mới (bóng/bo góc/glow), làm mới thẻ·nút·ô nhập·hero·auth·sidebar.
+- **Quyết định:** KHÔNG tạo `public/logo.png` giả — dùng mark SVG dự phòng, để chủ dự án đặt ảnh chính thức (PNG nền trong suốt).
+- **Kết quả:** `npm run build` PASS; verify trên preview: `StudentHome` (hero+logo) và `LoginPage` (auth-page+logo) render đúng, không lỗi console.
+- **Bước tiếp:** chủ dự án thêm `public/logo.png`; cân nhắc đồng bộ tông màu các trang admin còn lại.
+
 ## 2026-06-23 — Phase F (Buổi thi + mã thi + một-lần-nộp)
 - **Tác nhân:** AI · **Nhánh/PR:** `feat/phase-f-sessions`
 - **Mục tiêu:** chế độ high-stakes (exit/mock) — thi theo buổi, vào bằng mã, kiểm soát nộp & gian lận.

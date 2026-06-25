@@ -6,6 +6,7 @@ import { listPlacements, listWritingTopics, studentByCode } from "../../lib/api"
 import { useAsync } from "../../lib/useAsync";
 import { isConfigured } from "../../lib/supabase";
 import { ErrorBox, SkillBadge, Spinner } from "../../components/common";
+import Logo from "../../components/Logo";
 import type { PlacementItem, WritingTopic } from "../../lib/types";
 
 export default function StudentHome() {
@@ -51,15 +52,17 @@ export default function StudentHome() {
 
   return (
     <div className="wrap">
-      <header className="topbar">
-        <h1>English Test Platform</h1>
-        <span className="row-form">
-          <Link className="link" to="/exam-room">Vào phòng thi</Link>
-          <Link className="link" to="/progress">Xem tiến bộ</Link>
-          <Link className="link" to="/admin/login">Giáo viên →</Link>
-        </span>
+      <header className="hero">
+        <div className="hero-top">
+          <Logo light />
+          <span className="hero-links">
+            <Link className="link" to="/exam-room">Vào phòng thi</Link>
+            <Link className="link" to="/progress">Xem tiến bộ</Link>
+            <Link className="link" to="/admin/login">Giáo viên →</Link>
+          </span>
+        </div>
+        <p className="tagline">Trung tâm IELTS Ms. Trà My — luyện viết IELTS Writing Task 2. Nhập thông tin rồi chọn chủ đề.</p>
       </header>
-      <p className="muted sub">Trung tâm IELTS Ms. Trà My — luyện viết IELTS Writing Task 2. Nhập thông tin rồi chọn chủ đề.</p>
 
       {!isConfigured && (
         <ErrorBox msg="Chưa cấu hình Supabase (.env). Xem docs/SETUP.md để kết nối database." />

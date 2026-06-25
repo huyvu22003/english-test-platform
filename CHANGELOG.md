@@ -7,6 +7,15 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Đổi — Thương hiệu & giao diện: logo + theme
+- Thêm `src/components/Logo.tsx`: ưu tiên ảnh chính thức `public/logo.png` (nền trong suốt), **fallback mark SVG cam→đỏ + chữ** khi thiếu file → app luôn có logo. Dùng `<Logo light/>` ở hero/sidebar (nền tối), `<Logo/>` ở trang đăng nhập.
+- Theme mới (`index.css`): biến `--grad` (cam→đỏ) + `--hero` (nền gradient ấm); class `.hero/.hero-top/.hero-links/.tagline` (header học sinh), `.auth-page/.auth-box/.auth-logo` (đăng nhập GV), `.logo/.logo-wm/.logo-img/.logo-text`. **Nút primary đổi sang gradient cam→đỏ** (`--grad`).
+- **Nâng cấp UI cao cấp/trẻ trung** (định vị thương hiệu): font **Plus Jakarta Sans**; hệ token mới (bo góc 16px, đổ bóng mềm `--shadow/--shadow-lg`, nền có vệt glow ấm); làm mới thẻ/nút/ô nhập (focus ring, hiệu ứng nhấn), hero có vệt sáng + bóng sâu, sidebar gradient tối, trang đăng nhập premium.
+- **Logo fallback khớp nhận diện**: mark **4 cánh hoa** toả từ tâm (gradient cam→đỏ, có gân) + wordmark **2 dòng** `IELTS` / `Ms. Trà My`.
+- Gắn logo: `StudentHome` (header → `.hero`), `LoginPage` (bọc `.auth-page`), `AdminLayout` (sidebar brand).
+- VÌ SAO: thống nhất nhận diện IELTS Ms. Trà My toàn app. Khi đồng bộ phát hiện đợt "upload giao diện" trước đó **chưa thực sự lên main** (thiếu `Logo.tsx` + toàn bộ class theme) nên bổ sung cho nhất quán.
+- ✅ Đã thêm **`public/logo.png`** (logo chính thức, PNG nền trong suốt 1000×319, chữ trắng) → app dùng logo thật; mark SVG chỉ còn là dự phòng khi thiếu file.
+
 ### Thêm — Phase F: Buổi thi (exit/mock) + Mã thi + một-lần-nộp
 - **Buổi thi**: tái dùng `exam_sessions` + cột mới (`test_id`, `one_submission`, `max_violations`, `show_result`). GV tạo buổi gắn 1 đề + **mã thi** + cửa sổ thời gian; trang `/admin/sessions`.
 - **Mã thi (anon)**: `rpc_session_by_code` (kiểm tra cửa sổ thời gian) → học sinh vào `/exam-room` → `/session/:id`.

@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
 import { isConfigured } from "../../lib/supabase";
 import { ErrorBox } from "../../components/common";
+import Logo from "../../components/Logo";
 
 export default function LoginPage() {
   const { session, signIn } = useAuth();
@@ -30,8 +31,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="wrap narrow">
-      <div className="card">
+    <div className="auth-page">
+      <div className="auth-logo"><Logo light /></div>
+      <div className="auth-box">
         <h1>Đăng nhập giáo viên</h1>
         {!isConfigured && <ErrorBox msg="Chưa cấu hình Supabase (.env). Xem docs/SETUP.md." />}
         <form onSubmit={onSubmit}>
