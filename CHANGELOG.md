@@ -7,6 +7,10 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Thêm — Lối vào Luyện Đọc & Nghe cho học sinh
+- Trang chủ học sinh gọi `listExams()` và hiển thị mục **Luyện Đọc & Nghe** cho các topic `reading`/`listening`; mỗi đề có nút **Làm bài** đi tới `/exam/:testId` kèm tên/email học sinh. VÌ SAO: backend/ExamPage đã tự chấm trắc nghiệm ở server nhưng trước đó học sinh chưa có lối vào đề Đọc/Nghe dạng luyện tập.
+- Thêm `.npmrc` với `include=dev` để Cloudflare Pages vẫn cài `typescript`/`vite` khi môi trường build đặt `NODE_ENV=production`. VÌ SAO: nếu npm omit devDependencies thì `npm run build` lỗi `tsc: not found`.
+
 ### Tài liệu — Khung phát triển cho trung tâm nhiều chi nhánh
 - Thêm `docs/CENTER_GROWTH_ROADMAP.md`: định vị app thành nền tảng đánh giá & theo dõi tiến bộ cho trung tâm tiếng Anh tư nhân 3 chi nhánh, có roadmap G0–G5 từ khảo sát/MVP đến dashboard, phân quyền, automation. VÌ SAO: app cần phát triển theo lộ trình doanh nghiệp, không chỉ thêm tính năng rời rạc.
 - Thêm `docs/REQUIREMENTS_QUESTIONNAIRE.md` và `public/forms/Phieu-khao-sat-nang-cap-English-Test-Platform.html`: phiếu khảo sát HTML để chủ trung tâm/manager điền nhu cầu, xuất `.txt`/`.json`. VÌ SAO: dùng câu trả lời thật để chốt backlog Must/Should/Could và kế hoạch nâng cấp.

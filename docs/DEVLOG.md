@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-06-25 — Lối vào Luyện Đọc & Nghe cho học sinh
+- **Tác nhân:** Eagle AI · **Nhánh/PR:** `feat/student-reading-listening-entry`
+- **Mục tiêu:** fix tồn đọng D.1 — học sinh chưa thấy/làm được đề Đọc/Nghe trắc nghiệm dù backend `rpc_list_exams`, `ExamPage`, `rpc_get_test`, `rpc_submit` đã sẵn sàng.
+- **Đã làm:** `StudentHome` gọi `listExams()`, lọc topic `reading`/`listening`, hiển thị section **Luyện Đọc & Nghe** với badge kỹ năng, thời gian và nút **Làm bài**; dùng chung điều kiện tên/email trước khi vào `/exam/:testId`. Thêm `.npmrc` `include=dev` để Cloudflare Pages cài đủ build tools nếu môi trường đặt `NODE_ENV=production`.
+- **Quyết định:** không đụng schema/RPC; giữ nguyên bất biến bảo mật: đề/chấm trắc nghiệm vẫn qua RPC server và không lộ đáp án.
+- **Kết quả:** `npm run build` PASS (101 modules); tái hiện `NODE_ENV=production npm ci && npm run build` cũng PASS sau khi thêm `.npmrc`.
+- **Bước tiếp:** smoke test production sau khi merge để xác nhận đề Reading/Listening hiện đúng.
+
 ## 2026-06-25 — Khung phát triển trung tâm nhiều chi nhánh
 - **Tác nhân:** Eagle AI · **Nhánh/PR:** `docs/center-growth-framework`
 - **Mục tiêu:** chuyển định hướng mới của chủ dự án thành khung phát triển có thể theo dõi trong repo: app dùng cho trung tâm tiếng Anh tư nhân 3 chi nhánh, có thể mở rộng thêm, phát triển theo lộ trình doanh nghiệp.
