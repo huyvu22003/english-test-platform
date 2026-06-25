@@ -1,8 +1,10 @@
 :root {
-  --bg: #f6f4fb;
+  --bg: #f4f1fa;
   --bg-glow:
-    radial-gradient(1100px 460px at 84% -12%, rgba(247, 148, 29, .13), transparent 60%),
-    radial-gradient(900px 460px at -12% 112%, rgba(122, 43, 143, .10), transparent 60%);
+    radial-gradient(820px 380px at 90% -6%, rgba(247, 148, 29, .22), transparent 58%),
+    radial-gradient(760px 420px at -8% 10%, rgba(122, 43, 143, .17), transparent 56%),
+    radial-gradient(720px 460px at 12% 96%, rgba(236, 58, 43, .12), transparent 60%),
+    radial-gradient(900px 520px at 100% 70%, rgba(247, 148, 29, .10), transparent 62%);
   --panel: #ffffff;
   --ink: #181226;
   --muted: #6c6880;
@@ -32,6 +34,15 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+/* Lớp texture: lưới chấm mảnh kiểu tech, phủ toàn trang, nằm sau nội dung.
+   Mask cho mờ dần ở vùng giữa để không rối chữ; chỉ thấy nhẹ ở rìa/khoảng trống. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image: radial-gradient(rgba(122, 43, 143, .06) 1px, transparent 1.5px);
+  background-size: 24px 24px;
+  -webkit-mask-image: radial-gradient(ellipse 72% 64% at 50% 42%, transparent 32%, #000 86%);
+  mask-image: radial-gradient(ellipse 72% 64% at 50% 42%, transparent 32%, #000 86%);
 }
 h1 { font-size: 26px; font-weight: 800; letter-spacing: -.02em; margin: 0 0 4px; }
 h2 { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
