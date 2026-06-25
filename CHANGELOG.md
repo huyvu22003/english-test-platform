@@ -7,6 +7,9 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Đổi — Nền trang sống động hơn
+- Nền `body`: **4 quầng màu thương hiệu** (cam/tím/đỏ) lan toả + **lưới chấm mảnh** (`body::before`, mask mờ dần vùng giữa). VÌ SAO: nền cũ hơi đơn điệu/phẳng (phản hồi người dùng); làm sinh động + định vị thương hiệu mà vẫn giữ chữ dễ đọc (chấm rất nhạt, nội dung nằm trên thẻ trắng).
+
 ### Đổi — Thương hiệu & giao diện: logo + theme
 - Thêm `src/components/Logo.tsx`: ưu tiên ảnh chính thức `public/logo.png` (nền trong suốt), **fallback mark SVG cam→đỏ + chữ** khi thiếu file → app luôn có logo. Dùng `<Logo light/>` ở hero/sidebar (nền tối), `<Logo/>` ở trang đăng nhập.
 - Theme mới (`index.css`): biến `--grad` (cam→đỏ) + `--hero` (nền gradient ấm); class `.hero/.hero-top/.hero-links/.tagline` (header học sinh), `.auth-page/.auth-box/.auth-logo` (đăng nhập GV), `.logo/.logo-wm/.logo-img/.logo-text`. **Nút primary đổi sang gradient cam→đỏ** (`--grad`).

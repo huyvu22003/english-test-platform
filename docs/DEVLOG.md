@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-06-25 — Nền trang sống động hơn
+- **Tác nhân:** AI · **Nhánh/PR:** `style/bg-theme`
+- **Mục tiêu:** nền hơi đơn điệu (phản hồi người dùng khi app đã chạy thật với Supabase) → làm sinh động, premium hơn mà vẫn dễ đọc.
+- **Đã làm:** `index.css` — `--bg-glow` 4 quầng màu (cam/tím/đỏ) lan toả khắp trang; thêm `body::before` lưới chấm mảnh (24px), mask radial cho mờ dần vùng giữa.
+- **Kết quả:** `npm run build` PASS; verify preview: body có 4 lớp gradient + lớp chấm masked.
+
 ## 2026-06-23 — Thương hiệu & giao diện (logo + theme)
 - **Tác nhân:** AI · **Nhánh/PR:** `feat/branding-ui`
 - **Mục tiêu:** đồng bộ + hoàn tất bộ giao diện thương hiệu (logo + theme) **và nâng cấp UI cao cấp/trẻ trung** (định vị thương hiệu) cho toàn app.
