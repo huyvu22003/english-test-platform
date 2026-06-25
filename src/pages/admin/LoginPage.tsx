@@ -32,8 +32,8 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
+      <div className="auth-logo"><Logo light /></div>
       <div className="auth-box">
-        <div className="auth-logo"><Logo /></div>
         <h1>Đăng nhập giáo viên</h1>
         {!isConfigured && <ErrorBox msg="Chưa cấu hình Supabase (.env). Xem docs/SETUP.md." />}
         <form onSubmit={onSubmit}>
