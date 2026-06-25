@@ -1,25 +1,26 @@
 :root {
-  --bg: #f4f1fa;
+  --bg: #fbf7f5;
   --bg-glow:
     radial-gradient(820px 380px at 90% -6%, rgba(247, 148, 29, .22), transparent 58%),
     radial-gradient(760px 420px at -8% 10%, rgba(122, 43, 143, .17), transparent 56%),
     radial-gradient(720px 460px at 12% 96%, rgba(236, 58, 43, .12), transparent 60%),
     radial-gradient(900px 520px at 100% 70%, rgba(247, 148, 29, .10), transparent 62%);
   --panel: #ffffff;
-  --ink: #181226;
+  --ink: #221b26;
   --muted: #6c6880;
-  --line: #ece8f3;
-  --brand: #7a2b8f;
+  --line: #ececf1;
+  --brand: #ee5a24;      /* cam-đỏ thương hiệu (nhấn chính) */
   --brand2: #ec3a2b;
   --accent: #f7941d;
+  --plum: #7a2b8f;       /* tím thương hiệu (logo chữ, nhấn phụ) */
   --ok: #16a34a;
   --danger: #dc2626;
   --radius: 16px;
   --radius-sm: 10px;
-  --shadow: 0 6px 22px rgba(24, 18, 38, .06);
-  --shadow-lg: 0 20px 54px rgba(24, 18, 38, .18);
-  --grad: linear-gradient(135deg, #f7941d 0%, #ec3a2b 100%);
-  --hero: linear-gradient(135deg, #4d1a63 0%, #7a2b8f 46%, #c0392b 122%);
+  --shadow: 0 6px 22px rgba(42, 15, 61, .06);
+  --shadow-lg: 0 20px 54px rgba(42, 15, 61, .18);
+  --grad: linear-gradient(135deg, var(--accent), var(--brand2));
+  --hero: linear-gradient(135deg, #2a0f3d 0%, #7a2b8f 46%, #ec3a2b 100%);
   --font: "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 * { box-sizing: border-box; }
@@ -107,8 +108,8 @@ textarea { resize: vertical; }
 }
 .btn:hover { background: #faf8fd; }
 .btn:active { transform: translateY(1px); }
-.btn.primary { background: var(--grad); color: #fff; border: none; box-shadow: 0 8px 20px rgba(236, 58, 43, .26); }
-.btn.primary:hover { opacity: .96; box-shadow: 0 10px 26px rgba(236, 58, 43, .32); }
+.btn.primary { background: var(--grad); color: #fff; border: none; box-shadow: 0 6px 16px rgba(236, 58, 43, .25); }
+.btn.primary:hover { filter: brightness(1.06); box-shadow: 0 8px 22px rgba(236, 58, 43, .3); }
 .btn.ghost { background: transparent; border-color: transparent; box-shadow: none; }
 .btn.ghost:hover { background: #f3f0f8; }
 .btn.small { padding: 6px 11px; font-size: 13px; }
@@ -239,13 +240,19 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
    ============================================================ */
 
 /* logo (component Logo.tsx) — mark + wordmark 2 dòng */
-.logo { display: inline-flex; align-items: center; gap: 11px; color: var(--ink); line-height: 1; }
-.logo-light { color: #fff; }
-.logo-img { height: 40px; width: auto; display: block; }
-.logo-wm { flex: none; filter: drop-shadow(0 2px 6px rgba(236, 58, 43, .25)); }
-.logo-text { display: inline-flex; flex-direction: column; gap: 2px; }
-.lw-1 { font-size: 20px; font-weight: 800; letter-spacing: .06em; }
-.lw-2 { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; opacity: .92; }
+.logo { display: inline-flex; align-items: center; gap: 10px; }
+.logo-img { display: block; width: auto; }            /* chiều cao set inline theo prop height */
+.logo-mark { flex: none; filter: drop-shadow(0 2px 6px rgba(236, 58, 43, .25)); }
+.logo-wm { display: inline-flex; flex-direction: column; line-height: 1.05; }
+.logo-wm b { font-weight: 800; font-size: 20px; color: var(--plum); }
+.logo-wm i {
+  font-style: normal; font-size: 11px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  background: var(--grad); -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+.logo-wm.on-dark b { color: #fff; }
+.logo-wm.on-dark i { background: none; -webkit-text-fill-color: #ffd7c0; color: #ffd7c0; }
 
 /* hero — header trang học sinh (nền gradient ấm + vệt sáng) */
 .hero {
@@ -268,10 +275,17 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 /* auth — trang đăng nhập giáo viên (logo trên nền ấm) */
 .auth-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: var(--hero); padding: 24px; }
 .auth-box {
-  width: 100%; max-width: 410px;
+  width: 100%; max-width: 420px;
   background: var(--panel); border: 1px solid rgba(255, 255, 255, .5);
   border-radius: 20px; padding: 32px;
   box-shadow: var(--shadow-lg);
 }
 .auth-logo { display: flex; justify-content: center; }
 .auth-box h1 { text-align: center; }
+
+/* Đề bài nổi bật khi GV chấm (SubmissionsPage) — viền trái cam, nền vàng nhạt */
+.prompt-quote {
+  border-left: 4px solid var(--accent); background: #fffbeb;
+  border-radius: 8px; padding: 10px 14px; margin-bottom: 12px;
+}
+.prompt-quote p { white-space: pre-wrap; margin: 6px 0 0; }

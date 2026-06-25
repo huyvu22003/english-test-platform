@@ -32,7 +32,7 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
-      <div className="auth-logo"><Logo light /></div>
+      <div className="auth-logo"><Logo height={54} light /></div>
       <div className="auth-box">
         <h1>Đăng nhập giáo viên</h1>
         {!isConfigured && <ErrorBox msg="Chưa cấu hình Supabase (.env). Xem docs/SETUP.md." />}

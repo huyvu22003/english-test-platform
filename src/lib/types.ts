@@ -115,6 +115,8 @@ export interface Submission {
   cefr: string | null;
   feedback: string | null;
   graded_at: string | null;
+  // Đề bài (join từ bảng tests) — hiện khi GV chấm. Có thể null nếu đề đã xóa.
+  tests?: { prompt: string | null; title: string | null } | null;
 }
 
 // Đáp án học sinh: { [question_id]: chuỗi | mảng chuỗi }

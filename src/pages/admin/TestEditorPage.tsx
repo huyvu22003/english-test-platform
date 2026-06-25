@@ -1,11 +1,12 @@
 // Trình soạn ĐỀ: sửa thông tin đề + quản lý ĐOẠN VĂN/AUDIO + CÂU HỎI (kèm đáp án).
 // Đáp án lưu theo GIÁ TRỊ lựa chọn (xem schema) để an toàn khi xáo trộn lúc thi.
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   deletePassage, deleteQuestion, getTestAdmin, getTopic, listPassages,
   listQuestions, savePassage, saveQuestion, saveTest,
 } from "../../lib/api";
+import { uploadMedia } from "../../lib/storage";
 import { useAsync } from "../../lib/useAsync";
 import { ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/common";
 import type { Passage, Question, QType, Skill, Test, Topic } from "../../lib/types";
@@ -153,6 +154,9 @@ function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => voi
 function PassageRow({ passage, onChanged }: { passage: Passage; onChanged: () => void }) {
   const [body, setBody] = useState(passage.body ?? "");
   const [media, setMedia] = useState(passage.media_url ?? "");
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const isAudio = passage.kind === "audio";
 
   async function save() {
     await savePassage({ ...passage, body: body || null, media_url: media || null });
@@ -163,16 +167,48 @@ function PassageRow({ passage, onChanged }: { passage: Passage; onChanged: () =>
     await deletePassage(passage.id);
     onChanged();
   }
+  // Tải MP3/ảnh lên Supabase Storage rồi lưu link luôn vào đoạn này (khỏi bấm Lưu lại).
+  async function onUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErr(null); setUploading(true);
+    try {
+      const url = await uploadMedia(file);
+      setMedia(url);
+      await savePassage({ ...passage, body: body || null, media_url: url });
+      onChanged();
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : String(ex));
+    } finally {
+      setUploading(false);
+      e.target.value = ""; // cho chọn lại cùng file nếu cần
+    }
+  }
 
   return (
     <div className="card sub">
-      <div className="muted small">{passage.kind === "audio" ? "🎧 Audio" : "📄 Đoạn đọc"}</div>
+      <div className="muted small">{isAudio ? "🎧 Audio" : "📄 Đoạn đọc"}</div>
       {passage.kind === "reading" ? (
         <textarea rows={5} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Nội dung đoạn đọc…" />
       ) : null}
-      <label className="field"><span>Link media (R2/URL{passage.kind === "reading" ? " ảnh — tùy chọn" : " audio"})</span>
+
+      <label className="field">
+        <span>{isAudio ? "Tải MP3 lên" : "Tải ảnh lên"} (Supabase Storage)</span>
+        <input type="file" accept={isAudio ? "audio/*" : "image/*"} disabled={uploading} onChange={onUpload} />
+      </label>
+      {uploading && <p className="muted small">Đang tải lên…</p>}
+      {err && <ErrorBox msg={err} />}
+
+      <label className="field"><span>Hoặc dán link media (R2/URL{passage.kind === "reading" ? " ảnh — tùy chọn" : " audio"})</span>
         <input value={media} onChange={(e) => setMedia(e.target.value)} placeholder="https://media.tenmien.com/..." />
       </label>
+
+      {media && (isAudio ? (
+        <audio controls src={media} style={{ width: "100%", marginTop: 6 }} />
+      ) : (
+        <img src={media} alt="tư liệu" style={{ maxWidth: "100%", marginTop: 6, borderRadius: 8 }} />
+      ))}
+
       <div className="actions">
         <button className="btn small" onClick={save}>Lưu</button>
         <button className="btn ghost small danger" onClick={remove}>Xóa</button>

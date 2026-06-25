@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-06-25 — UI thương hiệu + tải media + hiện đề khi chấm
+- **Tác nhân:** AI · **Nhánh/PR:** `feat/ui-media-grading`
+- **Mục tiêu:** gộp 3 nhóm (phát triển ở phiên khác): hoàn chỉnh logo/theme; tải MP3/ảnh qua Supabase Storage; hiện đề bài khi GV chấm.
+- **Đã làm:**
+  - A: `Logo.tsx` props `{height,withText,light}` (img `/logo.png` → fallback SVG 4 cánh + wordmark `.on-dark`); theme `--brand` cam-đỏ + tách `--plum`; gắn Logo 3 trang.
+  - B: `lib/storage.ts uploadMedia`; PassageRow nút Tải MP3/ảnh + preview; `supabase/storage.sql` (bucket `media` + policy); cập nhật `SETUP.md`.
+  - C: `listSubmissions` join `tests`; `SubmissionsPage` khối "📝 Đề bài"; `types.ts` thêm `Submission.tests`.
+- **Kết quả:** `npm run build` PASS (101 modules); preview: `--brand` = cam #ee5a24, logo ảnh thật cao 48.
+- **Bước tiếp:** chủ dự án chạy `supabase/storage.sql` (tạo bucket media) để upload chạy thật. `public/logo.png` đã có sẵn.
+
 ## 2026-06-25 — Nền trang sống động hơn
 - **Tác nhân:** AI · **Nhánh/PR:** `style/bg-theme`
 - **Mục tiêu:** nền hơi đơn điệu (phản hồi người dùng khi app đã chạy thật với Supabase) → làm sinh động, premium hơn mà vẫn dễ đọc.

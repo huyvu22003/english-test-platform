@@ -54,7 +54,7 @@ export default function StudentHome() {
     <div className="wrap">
       <header className="hero">
         <div className="hero-top">
-          <Logo light />
+          <Logo height={48} light />
           <span className="hero-links">
             <Link className="link" to="/exam-room">Vào phòng thi</Link>
             <Link className="link" to="/progress">Xem tiến bộ</Link>

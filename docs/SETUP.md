@@ -17,9 +17,11 @@
    select id, email, 'Tên GV', 'admin' from auth.users where email = 'email-gv@example.com';
    ```
 
-## 2. Tạo bucket R2 (chứa audio/ảnh)
-1. Cloudflare → **R2 → Create bucket** (vd `etp-media`).
-2. (Phase 2) Tạo **API token** R2 để app upload qua signed URL — sẽ hướng dẫn khi làm tới phần upload.
+## 2. Tạo kho media — Supabase Storage (chứa audio/ảnh)
+1. Vào **SQL Editor → New query** → dán `supabase/storage.sql` → **Run**. (Tạo bucket `media` public-read + policy cho giáo viên upload.)
+2. Sau đó tải MP3/ảnh **ngay trong app**: vào trang soạn đề → tư liệu Audio/Đoạn đọc → bấm **"Tải MP3"/"Tải ảnh"** → app upload lên Storage và tự điền link.
+
+> 💡 Vẫn có ô **"dán link media"** nếu bạn muốn dùng R2/CDN ngoài (tùy chọn). Supabase Storage free ~1GB; nếu vượt, cân nhắc R2.
 
 ## 3. Cấu hình môi trường
 Trong thư mục dự án, tạo file `.env` (copy từ `.env.example`) rồi điền:
