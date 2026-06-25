@@ -14,7 +14,7 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 - **Logo fallback khớp nhận diện**: mark **4 cánh hoa** toả từ tâm (gradient cam→đỏ, có gân) + wordmark **2 dòng** `IELTS` / `Ms. Trà My`.
 - Gắn logo: `StudentHome` (header → `.hero`), `LoginPage` (bọc `.auth-page`), `AdminLayout` (sidebar brand).
 - VÌ SAO: thống nhất nhận diện IELTS Ms. Trà My toàn app. Khi đồng bộ phát hiện đợt "upload giao diện" trước đó **chưa thực sự lên main** (thiếu `Logo.tsx` + toàn bộ class theme) nên bổ sung cho nhất quán.
-- ⚠️ `public/logo.png` CHƯA có → đang dùng mark SVG dự phòng; chủ dự án đặt `public/logo.png` (PNG nền trong suốt) để hiện logo chính thức.
+- ✅ Đã thêm **`public/logo.png`** (logo chính thức, PNG nền trong suốt 1000×319, chữ trắng) → app dùng logo thật; mark SVG chỉ còn là dự phòng khi thiếu file.
 
 ### Thêm — Phase F: Buổi thi (exit/mock) + Mã thi + một-lần-nộp
 - **Buổi thi**: tái dùng `exam_sessions` + cột mới (`test_id`, `one_submission`, `max_violations`, `show_result`). GV tạo buổi gắn 1 đề + **mã thi** + cửa sổ thời gian; trang `/admin/sessions`.
