@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-06-25 — Ẩn tải bài nghe ở màn học sinh
+- **Tác nhân:** Eagle AI · **Nhánh/PR:** `fix/disable-student-audio-download`
+- **Mục tiêu:** học sinh đang thấy menu tải audio trong lúc làm Listening; cần vô hiệu hóa nút tải ở màn làm bài, nhưng giữ quyền giáo viên upload/preview trong phần soạn đề.
+- **Đã làm:** thêm `controlsList="nodownload"`, `preload="metadata"` và `onContextMenu={(e) => e.preventDefault()}` cho audio player ở `ExamPage`, `SessionExamPage`, `PlacementExamPage`; không đổi `TestEditorPage` của giáo viên.
+- **Quyết định:** đây là lớp chặn UI của trình duyệt, phù hợp nhu cầu không hiện nút tải; chống tải tuyệt đối qua DevTools/link trực tiếp cần signed URL/streaming riêng nếu sau này cần.
+- **Kết quả:** `npm run build` PASS (101 modules).
+- **Bước tiếp:** sau merge, smoke test bài Listening public để xác nhận menu Download không còn hiện trên trình duyệt chính.
+
 ## 2026-06-25 — Lối vào Luyện Đọc & Nghe cho học sinh
 - **Tác nhân:** Eagle AI · **Nhánh/PR:** `feat/student-reading-listening-entry`
 - **Mục tiêu:** fix tồn đọng D.1 — học sinh chưa thấy/làm được đề Đọc/Nghe trắc nghiệm dù backend `rpc_list_exams`, `ExamPage`, `rpc_get_test`, `rpc_submit` đã sẵn sàng.

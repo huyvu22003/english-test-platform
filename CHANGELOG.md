@@ -7,6 +7,9 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Sửa — Ẩn tải bài nghe ở màn học sinh
+- Các audio player phía học sinh (`ExamPage`, `SessionExamPage`, `PlacementExamPage`) thêm `controlsList="nodownload"`, `preload="metadata"` và chặn menu chuột phải. VÌ SAO: học sinh chỉ được nghe trong lúc làm bài, không nên thấy nút tải bài nghe; giáo viên vẫn upload/preview media trong trang soạn đề.
+
 ### Thêm — Lối vào Luyện Đọc & Nghe cho học sinh
 - Trang chủ học sinh gọi `listExams()` và hiển thị mục **Luyện Đọc & Nghe** cho các topic `reading`/`listening`; mỗi đề có nút **Làm bài** đi tới `/exam/:testId` kèm tên/email học sinh. VÌ SAO: backend/ExamPage đã tự chấm trắc nghiệm ở server nhưng trước đó học sinh chưa có lối vào đề Đọc/Nghe dạng luyện tập.
 - Thêm `.npmrc` với `include=dev` để Cloudflare Pages vẫn cài `typescript`/`vite` khi môi trường build đặt `NODE_ENV=production`. VÌ SAO: nếu npm omit devDependencies thì `npm run build` lỗi `tsc: not found`.
