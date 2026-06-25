@@ -1,13 +1,13 @@
-// Màn đầu của học sinh: nhập tên + email, chọn CHỦ ĐỀ Writing đang mở → vào viết
-// (hệ bốc ngẫu nhiên 1 đề trong chủ đề). Có lối vào xem tiến bộ.
-import { useState } from "react";
+// Màn đầu của học sinh: nhập tên + email, chọn Placement / Đọc-Nghe / Writing.
+// Đọc-Nghe dùng lại rpc_list_exams + ExamPage để chấm trắc nghiệm ở server, không lộ đáp án.
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listPlacements, listWritingTopics, studentByCode } from "../../lib/api";
+import { listExams, listPlacements, listWritingTopics, studentByCode } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { isConfigured } from "../../lib/supabase";
-import { ErrorBox, SkillBadge, Spinner } from "../../components/common";
+import { ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/common";
 import Logo from "../../components/Logo";
-import type { PlacementItem, WritingTopic } from "../../lib/types";
+import type { ExamListItem, PlacementItem, WritingTopic } from "../../lib/types";
 
 export default function StudentHome() {
   const nav = useNavigate();
@@ -19,6 +19,12 @@ export default function StudentHome() {
   const [codeBusy, setCodeBusy] = useState(false);
   const topics = useAsync<WritingTopic[]>(listWritingTopics, []);
   const placements = useAsync<PlacementItem[]>(listPlacements, []);
+  const exams = useAsync<ExamListItem[]>(listExams, []);
+
+  const practiceExams = useMemo(
+    () => (exams.data ?? []).filter((e) => e.skill === "reading" || e.skill === "listening"),
+    [exams.data]
+  );
 
   const ready = name.trim().length > 1 && /\S+@\S+\.\S+/.test(email);
 
@@ -50,6 +56,12 @@ export default function StudentHome() {
     nav(`/writing/${topicId}`, { state: { name: name.trim(), email: email.trim() } });
   }
 
+  function startPractice(testId: string) {
+    setTouched(true);
+    if (!ready) return;
+    nav(`/exam/${testId}`, { state: { name: name.trim(), email: email.trim() } });
+  }
+
   return (
     <div className="wrap">
       <header className="hero">
@@ -61,7 +73,7 @@ export default function StudentHome() {
             <Link className="link" to="/admin/login">Giáo viên →</Link>
           </span>
         </div>
-        <p className="tagline">Trung tâm IELTS Ms. Trà My — luyện viết IELTS Writing Task 2. Nhập thông tin rồi chọn chủ đề.</p>
+        <p className="tagline">Trung tâm IELTS Ms. Trà My — xếp lớp, luyện Đọc/Nghe và Writing. Nhập thông tin rồi chọn bài làm.</p>
       </header>
 
       {!isConfigured && (
@@ -105,6 +117,35 @@ export default function StudentHome() {
                   <span className="muted"> · {p.num_q} câu · {p.time_limit_min}′</span>
                 </div>
                 <button className="btn primary" onClick={() => startPlacement(p.test_id)}>Làm bài</button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {exams.loading && <Spinner label="Đang tải đề Đọc/Nghe…" />}
+      {exams.error && <ErrorBox msg={exams.error} />}
+      {practiceExams.length > 0 && (
+        <>
+          <h2 className="section">Luyện Đọc &amp; Nghe</h2>
+          <div className="exam-list">
+            {practiceExams.map((topic) => (
+              <div className="card" key={topic.topic_id}>
+                <div style={{ marginBottom: 10 }}>
+                  <strong>{topic.topic_name}</strong> <SkillBadge skill={topic.skill} />
+                  <span className="muted"> · {skillLabel(topic.skill)}</span>
+                </div>
+                <div className="exam-list">
+                  {topic.tests.map((test) => (
+                    <div className="test-row" key={test.id}>
+                      <div>
+                        <strong>{test.title || `Đề ${test.version_label}`}</strong>
+                        <span className="muted"> · bản {test.version_label} · {test.time_limit_min}′</span>
+                      </div>
+                      <button className="btn primary" onClick={() => startPractice(test.id)}>Làm bài</button>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
