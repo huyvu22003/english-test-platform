@@ -52,8 +52,9 @@ export default function App() {
               </RequireAuth>
             }
           >
-            <Route index element={<Navigate to="topics" replace />} />
+            <Route index element={<Navigate to="topics/reading" replace />} />
             <Route path="topics" element={<TopicsPage />} />
+            <Route path="topics/:skill" element={<TopicsPage />} />
             <Route path="tests/:testId" element={<TestEditorPage />} />
             <Route path="submissions" element={<SubmissionsPage />} />
             <Route path="roster" element={<RosterPage />} />
