@@ -206,10 +206,10 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
             </section>
 
             <section className="detail-section">
-              <h3>Sửa câu</h3>
-              {corrections.length > 0 ? <StructuredCorrectionList corrections={corrections} onHover={setActiveCorrection} /> : <p className="muted small">Chưa có dữ liệu sửa câu có cấu trúc.</p>}
               <h3>Nhận xét tổng quan của giáo viên</h3>
               <div className="detail-box prewrap feedback-box">{item.feedback || "Chưa có nhận xét tổng quan."}</div>
+              <h3>Sửa câu chi tiết</h3>
+              {corrections.length > 0 ? <StructuredCorrectionList corrections={corrections} onHover={setActiveCorrection} /> : <p className="muted small">Chưa có dữ liệu sửa câu có cấu trúc.</p>}
             </section>
           </div>
         </div>
@@ -218,7 +218,7 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
   );
 }
 
-interface CorrectionPair { id: string; original: string; corrected: string; note?: string; index: number; }
+interface CorrectionPair { id: string; original: string; corrected: string; note?: string; start?: number; end?: number; index: number; }
 
 function HighlightedEssay({ essay, corrections, activeId }: { essay: string; corrections: CorrectionPair[]; activeId: string | null }) {
   const parts = highlightEssayParts(essay, corrections);
@@ -341,6 +341,12 @@ function highlightEssayParts(essay: string, corrections: CorrectionPair[]) {
   const ranges: { start: number; end: number; hit: CorrectionPair }[] = [];
   const used = new Set<number>();
   corrections.forEach((c) => {
+    const offsetRange = validOffsetRange(essay, c);
+    if (offsetRange && !rangeUsed(offsetRange.start, offsetRange.end - offsetRange.start, used)) {
+      for (let i = offsetRange.start; i < offsetRange.end; i++) used.add(i);
+      ranges.push({ ...offsetRange, hit: c });
+      return;
+    }
     const original = c.original.trim();
     if (!isHighlightableOriginal(original)) return;
     const start = findExactInsensitive(essay, original, used);
@@ -362,6 +368,13 @@ function highlightEssayParts(essay: string, corrections: CorrectionPair[]) {
   return parts.length ? parts : [{ text: essay }];
 }
 
+function validOffsetRange(essay: string, c: CorrectionPair) {
+  if (typeof c.start !== "number" || typeof c.end !== "number") return null;
+  const start = Math.max(0, Math.min(c.start, essay.length));
+  const end = Math.max(start, Math.min(c.end, essay.length));
+  if (end <= start) return null;
+  return { start, end };
+}
 function isHighlightableOriginal(original: string) {
   if (original.length < 12) return false;
   if (/\.\.\.|…/.test(original)) return false;
@@ -404,7 +417,7 @@ function buildPdfHtml(item: ProgressItem, corrections: CorrectionPair[]) {
     <div class="meta"><div><b>Học viên</b><br>${esc(item.student_name ?? "—")}</div><div><b>Mã HV</b><br>${esc(item.student_code ?? "—")}</div><div><b>Lớp</b><br>${esc(item.class_name ?? "—")}</div><div><b>Trạng thái</b><br>${item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</div></div>
     <div class="section"><h2>Điểm</h2><div class="scores"><div class="score"><b>${bandOf(item) ?? "—"}</b><span>Band</span></div>${scores}</div><p class="muted">CEFR: <b>${esc(item.cefr ?? "—")}</b></p></div>
     <div class="section"><h2>Đề bài</h2><div class="box">${esc(item.prompt || item.test_title || item.topic_name || "Chưa có đề bài lưu trong hệ thống.")}</div></div>
-    <div class="grid"><div class="section"><h2>Bài làm của học viên</h2><p class="muted">${highlightedCount ? `${highlightedCount} đoạn được highlight theo dữ liệu sửa câu.` : "Không có đoạn nào được highlight tự động."}</p><div class="box essay">${essayHtml}</div></div><div class="section"><h2>Sửa câu</h2>${correctionHtml}<h2>Nhận xét tổng quan</h2><div class="box feedback">${esc(item.feedback || "Chưa có nhận xét tổng quan.")}</div></div></div>
+    <div class="grid"><div class="section"><h2>Bài làm của học viên</h2><p class="muted">${highlightedCount ? `${highlightedCount} đoạn được highlight theo dữ liệu sửa câu.` : "Không có đoạn nào được highlight tự động."}</p><div class="box essay">${essayHtml}</div></div><div class="section"><h2>Nhận xét tổng quan</h2><div class="box feedback">${esc(item.feedback || "Chưa có nhận xét tổng quan.")}</div><h2>Sửa câu chi tiết</h2>${correctionHtml}</div></div>
     <div class="footer">IELTS Ms. Trà My · Phiếu kết quả được tạo tự động từ English Test Platform</div>
   </body></html>`;
 }

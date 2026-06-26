@@ -1,6 +1,6 @@
 // Hàng đợi chấm: danh sách bài nộp, lọc (tên/chủ đề/trạng thái), xem bài viết +
 // nhật ký vi phạm, CHẤM TAY 4 tiêu chí IELTS (tự tính overall + CEFR), xuất CSV, xóa.
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { deleteSubmission, gradeWriting, listSubmissions, bandToCefr } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { ErrorBox, Spinner } from "../../components/common";
@@ -104,6 +104,9 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
   const [fixedText, setFixedText] = useState("");
   const [fixNote, setFixNote] = useState("");
   const [composeOpen, setComposeOpen] = useState(false);
+  const [selectedStart, setSelectedStart] = useState<number | null>(null);
+  const [selectedEnd, setSelectedEnd] = useState<number | null>(null);
+  const essayRef = useRef<HTMLParagraphElement>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -121,9 +124,23 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
     }
   }
   function captureSelection() {
-    const text = window.getSelection()?.toString().trim() ?? "";
-    if (!text) { setErr("Hãy bôi chọn câu/đoạn sai trong bài viết trước."); return; }
-    setSelectedText(text);
+    const sel = window.getSelection();
+    const text = sel?.toString().trim() ?? "";
+    if (!sel || !text) { setErr("Hãy bôi chọn câu/đoạn sai trong bài viết trước."); return; }
+    const essayNode = essayRef.current;
+    const range = sel.rangeCount ? sel.getRangeAt(0) : null;
+    if (!essayNode || !range || !essayNode.contains(range.commonAncestorContainer)) {
+      setErr("Hãy bôi chọn trực tiếp trong phần bài viết của học viên.");
+      return;
+    }
+    const pre = range.cloneRange();
+    pre.selectNodeContents(essayNode);
+    pre.setEnd(range.startContainer, range.startOffset);
+    const start = pre.toString().length;
+    const exactText = range.toString();
+    setSelectedText(exactText.trim());
+    setSelectedStart(start + exactText.search(/\S/));
+    setSelectedEnd(start + exactText.replace(/\s+$/, "").length);
     setFixedText("");
     setFixNote("");
     setComposeOpen(true);
@@ -136,11 +153,13 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
       original: selectedText.trim(),
       corrected: fixedText.trim(),
       note: fixNote.trim() || undefined,
+      start: selectedStart ?? undefined,
+      end: selectedEnd ?? undefined,
     }]);
     clearCompose(); setErr(null);
   }
   function clearCompose() {
-    setSelectedText(""); setFixedText(""); setFixNote(""); setComposeOpen(false);
+    setSelectedText(""); setFixedText(""); setFixNote(""); setSelectedStart(null); setSelectedEnd(null); setComposeOpen(false);
   }
   function resetCompose() {
     setFixedText(""); setFixNote(""); setErr(null);
@@ -185,7 +204,7 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
                   <strong>Bài viết ({wc(s.essay)} từ):</strong>
                   <button className="btn small" type="button" onClick={captureSelection}>+ Sửa câu đã chọn</button>
                 </div>
-                <p>{s.essay}</p>
+                <p ref={essayRef}>{s.essay}</p>
               </div>
             )}
             <div className="structured-corrections card sub">

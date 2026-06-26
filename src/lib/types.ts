@@ -94,6 +94,8 @@ export interface WritingCorrection {
   original: string;
   corrected: string;
   note?: string;
+  start?: number;
+  end?: number;
 }
 
 export interface Submission {
