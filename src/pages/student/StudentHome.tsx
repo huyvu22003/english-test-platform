@@ -25,6 +25,9 @@ export default function StudentHome() {
     () => (exams.data ?? []).filter((e) => e.skill === "reading" || e.skill === "listening"),
     [exams.data]
   );
+  const totalPracticeTests = practiceExams.reduce((sum, topic) => sum + topic.tests.length, 0);
+  const totalWritingPrompts = (topics.data ?? []).reduce((sum, topic) => sum + topic.num_prompts, 0);
+  const firstPlacement = placements.data?.[0];
 
   const ready = name.trim().length > 1 && /\S+@\S+\.\S+/.test(email);
 
@@ -63,109 +66,169 @@ export default function StudentHome() {
   }
 
   return (
-    <div className="wrap">
-      <header className="hero">
+    <div className="wrap student-shell">
+      <header className="hero student-hero">
         <div className="hero-top">
-          <Logo height={48} light />
+          <Logo height={52} light />
           <span className="hero-links">
             <Link className="link" to="/exam-room">Vào phòng thi</Link>
             <Link className="link" to="/progress">Xem tiến bộ</Link>
             <Link className="link" to="/admin/login">Giáo viên →</Link>
           </span>
         </div>
-        <p className="tagline">Trung tâm IELTS Ms. Trà My — xếp lớp, luyện Đọc/Nghe và Writing. Nhập thông tin rồi chọn bài làm.</p>
+        <div className="hero-grid">
+          <div className="hero-copy">
+            <span className="eyebrow">Assessment Platform · CEFR / IELTS</span>
+            <h1>Đánh giá năng lực tiếng Anh rõ ràng, hiện đại và theo dõi được tiến bộ.</h1>
+            <p className="tagline">
+              Làm bài xếp lớp, luyện Đọc/Nghe, viết IELTS và xem hành trình tiến bộ — tất cả trong một nền tảng dành cho học viên IELTS Ms. Trà My.
+            </p>
+            <div className="hero-cta">
+              {firstPlacement && (
+                <button className="btn primary hero-btn" onClick={() => startPlacement(firstPlacement.test_id)}>
+                  🎯 Làm bài xếp lớp
+                </button>
+              )}
+              <Link className="btn hero-btn ghost-light" to="/exam-room">🔐 Vào phòng thi</Link>
+            </div>
+          </div>
+          <div className="hero-stats" aria-label="Tổng quan nền tảng">
+            <div className="mini-stat"><strong>{placements.data?.length ?? 0}</strong><span>bài xếp lớp</span></div>
+            <div className="mini-stat"><strong>{totalPracticeTests}</strong><span>đề Đọc/Nghe</span></div>
+            <div className="mini-stat"><strong>{totalWritingPrompts}</strong><span>đề Writing</span></div>
+          </div>
+        </div>
       </header>
 
       {!isConfigured && (
         <ErrorBox msg="Chưa cấu hình Supabase (.env). Xem docs/SETUP.md để kết nối database." />
       )}
 
-      <div className="card">
-        <div className="row-form code-login">
-          <input placeholder="Có mã học viên? Nhập tại đây…" value={code}
-            onChange={(e) => setCode(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && loginByCode()} />
-          <button className="btn small" disabled={codeBusy} onClick={loginByCode}>
-            {codeBusy ? "…" : "Nhận diện"}
-          </button>
-          {codeMsg && <span className="muted small">{codeMsg}</span>}
+      <section className="identity-card">
+        <div className="identity-copy">
+          <span className="eyebrow dark">Bước 1</span>
+          <h2>Nhận diện học viên</h2>
+          <p className="muted">Nhập mã học viên hoặc điền tên/email để hệ thống lưu kết quả và vẽ tiến bộ theo thời gian.</p>
         </div>
-        <div className="or-line"><span>hoặc nhập thủ công</span></div>
-        <div className="grid2">
-          <label className="field">
-            <span>Họ và tên</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nguyễn Văn A" />
-          </label>
-          <label className="field">
-            <span>Email</span>
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
-          </label>
+        <div className="identity-form">
+          <div className="row-form code-login premium-code">
+            <input placeholder="Có mã học viên? Nhập tại đây…" value={code}
+              onChange={(e) => setCode(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && loginByCode()} />
+            <button className="btn small" disabled={codeBusy} onClick={loginByCode}>
+              {codeBusy ? "…" : "Nhận diện"}
+            </button>
+          </div>
+          {codeMsg && <p className="muted small code-msg">{codeMsg}</p>}
+          <div className="or-line"><span>hoặc nhập thủ công</span></div>
+          <div className="grid2">
+            <label className="field">
+              <span>Họ và tên</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nguyễn Văn A" />
+            </label>
+            <label className="field">
+              <span>Email</span>
+              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
+            </label>
+          </div>
+          {touched && !ready && (
+            <p className="warn-text">Vui lòng nhập đúng họ tên và email (email dùng để theo dõi tiến bộ).</p>
+          )}
         </div>
-        {touched && !ready && (
-          <p className="warn-text">Vui lòng nhập đúng họ tên và email (email dùng để theo dõi tiến bộ).</p>
-        )}
+      </section>
+
+      <div className="section-head">
+        <div>
+          <span className="eyebrow dark">Bước 2</span>
+          <h2>Chọn hành trình học tập</h2>
+        </div>
+        <span className="muted small">Xếp lớp · luyện tập · theo dõi tiến bộ</span>
       </div>
 
       {placements.data && placements.data.length > 0 && (
-        <>
-          <h2 className="section">Kiểm tra xếp lớp (tự chấm → CEFR)</h2>
-          <div className="exam-list">
+        <section className="learning-block placement-block">
+          <div className="skill-card skill-card-placement">
+            <div className="skill-icon">🎯</div>
+            <div>
+              <span className="eyebrow">Placement</span>
+              <h3>Kiểm tra xếp lớp</h3>
+              <p>Tự chấm ra CEFR, giúp giáo viên định hướng lớp phù hợp.</p>
+            </div>
+          </div>
+          <div className="learning-list">
             {placements.data.map((p) => (
-              <div className="card test-row" key={p.test_id}>
+              <div className="premium-test-row" key={p.test_id}>
                 <div>
                   <strong>{p.title}</strong> <SkillBadge skill={p.skill} />
-                  <span className="muted"> · {p.num_q} câu · {p.time_limit_min}′</span>
+                  <span className="meta-line">{p.num_q} câu · {p.time_limit_min} phút</span>
                 </div>
                 <button className="btn primary" onClick={() => startPlacement(p.test_id)}>Làm bài</button>
               </div>
             ))}
           </div>
-        </>
+        </section>
       )}
 
       {exams.loading && <Spinner label="Đang tải đề Đọc/Nghe…" />}
       {exams.error && <ErrorBox msg={exams.error} />}
       {practiceExams.length > 0 && (
-        <>
-          <h2 className="section">Luyện Đọc &amp; Nghe</h2>
-          <div className="exam-list">
+        <section className="learning-block">
+          <div className="skill-card skill-card-listening">
+            <div className="skill-icon">🎧</div>
+            <div>
+              <span className="eyebrow">Practice</span>
+              <h3>Luyện Đọc &amp; Nghe</h3>
+              <p>Làm đề trắc nghiệm, hệ thống chấm điểm ở server và trả band tham khảo.</p>
+            </div>
+          </div>
+          <div className="learning-list">
             {practiceExams.map((topic) => (
-              <div className="card" key={topic.topic_id}>
-                <div style={{ marginBottom: 10 }}>
-                  <strong>{topic.topic_name}</strong> <SkillBadge skill={topic.skill} />
-                  <span className="muted"> · {skillLabel(topic.skill)}</span>
+              <div className="practice-topic" key={topic.topic_id}>
+                <div className="practice-topic-head">
+                  <strong>{topic.topic_name}</strong>
+                  <span><SkillBadge skill={topic.skill} /> <span className="muted small">{skillLabel(topic.skill)}</span></span>
                 </div>
-                <div className="exam-list">
-                  {topic.tests.map((test) => (
-                    <div className="test-row" key={test.id}>
-                      <div>
-                        <strong>{test.title || `Đề ${test.version_label}`}</strong>
-                        <span className="muted"> · bản {test.version_label} · {test.time_limit_min}′</span>
-                      </div>
-                      <button className="btn primary" onClick={() => startPractice(test.id)}>Làm bài</button>
+                {topic.tests.map((test) => (
+                  <div className="premium-test-row compact" key={test.id}>
+                    <div>
+                      <strong>{test.title || `Đề ${test.version_label}`}</strong>
+                      <span className="meta-line">Bản {test.version_label} · {test.time_limit_min} phút</span>
                     </div>
-                  ))}
-                </div>
+                    <button className="btn primary" onClick={() => startPractice(test.id)}>Làm bài</button>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
-        </>
+        </section>
       )}
 
-      <h2 className="section">Chủ đề luyện viết</h2>
-      {topics.loading && <Spinner />}
-      {topics.error && <ErrorBox msg={topics.error} />}
-      {topics.data && topics.data.length === 0 && (
-        <p className="muted">Hiện chưa có chủ đề nào được mở.</p>
-      )}
-      <div className="topic-grid">
-        {topics.data?.map((t) => (
-          <button className="card topic-pick" key={t.topic_id} onClick={() => start(t.topic_id)}>
-            <strong>{t.topic_name}</strong>
-            <span className="muted small">{t.num_prompts} đề · bốc ngẫu nhiên</span>
-          </button>
-        ))}
-      </div>
+      <section className="learning-block writing-block">
+        <div className="skill-card skill-card-writing">
+          <div className="skill-icon">✍️</div>
+          <div>
+            <span className="eyebrow">Writing</span>
+            <h3>Chủ đề luyện viết</h3>
+            <p>Bốc đề ngẫu nhiên theo chủ đề, giáo viên chấm tay theo 4 tiêu chí IELTS.</p>
+          </div>
+        </div>
+        <div className="learning-list">
+          {topics.loading && <Spinner />}
+          {topics.error && <ErrorBox msg={topics.error} />}
+          {topics.data && topics.data.length === 0 && (
+            <div className="empty-state">Hiện chưa có chủ đề Writing nào được mở.</div>
+          )}
+          <div className="topic-grid premium-topic-grid">
+            {topics.data?.map((t) => (
+              <button className="topic-pick premium-topic-card" key={t.topic_id} onClick={() => start(t.topic_id)}>
+                <span className="topic-spark">✦</span>
+                <strong>{t.topic_name}</strong>
+                <span className="muted small">{t.num_prompts} đề · bốc ngẫu nhiên</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
