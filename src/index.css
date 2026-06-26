@@ -259,12 +259,21 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .prompt-box { max-height: 180px; overflow: auto; }
 .essay-detail-box, .feedback-box { max-height: 52vh; overflow: auto; line-height: 1.72; }
 .teacher-column { position: sticky; top: 76px; }
-.essay-error-mark { background: #ffe4e6; color: #9f1239; border-bottom: 2px solid #fb7185; border-radius: 4px; padding: 0 2px; transition: background .15s, box-shadow .15s; }
+.essay-mark-wrap { position: relative; display: inline; }
+.essay-error-mark { font: inherit; display: inline; border: 0; background: #ffe4e6; color: #9f1239; border-bottom: 2px solid #fb7185; border-radius: 4px; padding: 0 2px; transition: background .15s, box-shadow .15s; cursor: pointer; }
 .essay-error-mark.active { background: #fecdd3; box-shadow: 0 0 0 3px rgba(236,58,43,.18); }
+.correction-sticknote { position: absolute; left: 0; top: calc(100% + 8px); z-index: 5; width: min(320px, 78vw); white-space: normal; background: #fffdf3; border: 1px solid #fde68a; border-left: 4px solid var(--accent); border-radius: 14px; padding: 12px; box-shadow: 0 14px 34px rgba(42,15,61,.16); color: var(--ink); line-height: 1.45; }
+.correction-sticknote::before { content: ""; position: absolute; left: 18px; top: -7px; width: 12px; height: 12px; transform: rotate(45deg); background: #fffdf3; border-left: 1px solid #fde68a; border-top: 1px solid #fde68a; }
+.sticknote-close { position: absolute; right: 8px; top: 6px; border: 0; background: transparent; cursor: pointer; color: var(--muted); font-size: 18px; }
+.sticknote-note, .sticknote-label, .sticknote-fixed { display: block; margin-top: 6px; }
+.sticknote-note { color: var(--muted); font-size: 13px; }
+.sticknote-label { font-size: 12px; font-weight: 800; color: #b45309; text-transform: uppercase; }
+.sticknote-fixed { background: #ecfdf5; color: #166534; border-radius: 8px; padding: 8px; }
 .correction-list, .correction-admin-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 .correction-card, .correction-admin-item { border: 1px solid #fecdd3; border-left: 4px solid var(--brand2); border-radius: 12px; padding: 10px; background: #fff7f7; }
 .correction-card { cursor: pointer; }
-.correction-card:hover { background: #fff1f2; }
+.correction-card.as-button { width: 100%; text-align: left; font: inherit; color: inherit; }
+.correction-card:hover, .correction-card.active { background: #fff1f2; box-shadow: 0 0 0 2px rgba(236,58,43,.08); }
 .correction-label { font-size: 12px; font-weight: 800; color: var(--brand2); margin-bottom: 5px; }
 .correction-original { background: #fff1f2; border-radius: 8px; padding: 8px; }
 .correction-arrow { color: var(--muted); font-size: 12px; font-weight: 700; margin: 6px 0; }
