@@ -7,6 +7,10 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Đổi — Trang chủ học sinh premium hơn
+- Redesign `StudentHome`: hero có headline lớn, CTA xếp lớp/phòng thi, stat cards, khối nhận diện học viên dạng glass panel, section “Chọn hành trình học tập”, skill cards cho Placement / Đọc-Nghe / Writing và card đề trực quan hơn. VÌ SAO: UI cũ sạch nhưng đơn điệu, chưa thể hiện cảm giác chuyên nghiệp, trẻ trung, năng động của nền tảng trung tâm.
+- Thêm CSS visual system nhỏ cho trang học sinh: `.student-shell`, `.student-hero`, `.identity-card`, `.section-head`, `.learning-block`, `.skill-card`, `.premium-test-row`, `.premium-topic-card`. Không đổi backend/schema.
+
 ### Sửa — Ẩn tải bài nghe ở màn học sinh
 - Các audio player phía học sinh (`ExamPage`, `SessionExamPage`, `PlacementExamPage`) thêm `controlsList="nodownload"`, `preload="metadata"` và chặn menu chuột phải. VÌ SAO: học sinh chỉ được nghe trong lúc làm bài, không nên thấy nút tải bài nghe; giáo viên vẫn upload/preview media trong trang soạn đề.
 
