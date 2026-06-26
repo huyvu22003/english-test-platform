@@ -237,26 +237,39 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .progress-chart-card { min-height: 230px; }
 .chart-title, .detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .empty-chart { min-height: 140px; display: grid; place-items: center; border: 1px dashed var(--line); border-radius: 12px; margin-top: 12px; }
-.progress-layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: 14px; align-items: start; margin-top: 14px; }
-.progress-history { max-height: 620px; overflow: auto; }
+.progress-layout { margin-top: 14px; }
+.progress-layout.single { display: block; }
+.progress-history { max-height: 360px; overflow: auto; }
 .clickable-row { cursor: pointer; }
 .clickable-row:hover td { background: #fff8f3; }
 .selected-row td { background: #fff2e8; }
-.progress-detail { position: sticky; top: 14px; }
-.detail-head h2 { margin: 8px 0 0; }
+.progress-modal-backdrop { position: fixed; inset: 0; z-index: 50; background: rgba(17, 12, 24, .54); display: grid; place-items: center; padding: 22px; }
+.progress-modal { width: min(1120px, 100%); max-height: min(86vh, 900px); overflow: auto; margin: 0; padding: 18px; box-shadow: var(--shadow-lg); }
+.modal-head { position: sticky; top: -18px; z-index: 1; background: rgba(255,255,255,.96); border-bottom: 1px solid var(--line); padding-bottom: 12px; backdrop-filter: blur(8px); }
+.modal-head h2 { margin: 8px 0 0; }
+.modal-head-actions { display: flex; align-items: flex-start; gap: 10px; }
 .detail-score { min-width: 78px; text-align: center; padding: 10px; border-radius: 14px; background: #fff7ed; border: 1px solid #fed7aa; }
 .detail-score div { font-size: 28px; line-height: 1; font-weight: 800; color: var(--brand); }
 .detail-score span { font-size: 12px; color: var(--muted); font-weight: 700; }
-.detail-section { margin-top: 16px; }
+.progress-detail-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 14px; align-items: start; margin-top: 16px; }
+.detail-column { display: flex; flex-direction: column; gap: 14px; }
+.detail-section { margin-top: 0; }
+.detail-section.first { margin-top: 0; }
 .detail-box { border: 1px solid var(--line); border-radius: 12px; background: #fafafe; padding: 12px; }
+.prompt-box { max-height: 180px; overflow: auto; }
+.essay-detail-box, .feedback-box { max-height: 52vh; overflow: auto; line-height: 1.72; }
+.teacher-column { position: sticky; top: 76px; }
 .prewrap { white-space: pre-wrap; }
 .crit-cards.compact { grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .crit-cards.compact .crit-card { padding: 10px 6px; }
 .crit-cards.compact .crit-val { font-size: 20px; }
 @media (max-width: 860px) {
   .progress-lookup-grid { grid-template-columns: 1fr; }
-  .progress-layout { grid-template-columns: 1fr; }
-  .progress-detail { position: static; }
+  .progress-modal-backdrop { padding: 10px; align-items: stretch; }
+  .progress-modal { max-height: calc(100vh - 20px); }
+  .progress-detail-grid { grid-template-columns: 1fr; }
+  .teacher-column { position: static; }
+  .modal-head, .modal-head-actions { flex-direction: column; }
 }
 
 /* Phase C — roster + chẩn đoán */

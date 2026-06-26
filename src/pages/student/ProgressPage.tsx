@@ -32,7 +32,7 @@ export default function ProgressPage() {
     try {
       const next = await getProgress({ email: cleanEmail, name: cleanName, code: cleanCode });
       setItems(next);
-      setSelected(next.length ? next[next.length - 1] : null);
+      setSelected(null);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -91,10 +91,11 @@ export default function ProgressPage() {
             ))}
           </div>
 
-          <div className="progress-layout">
+          <div className="progress-layout single">
             <HistoryTable items={ordered} selected={selected} onSelect={setSelected} />
-            <SubmissionDetail item={selected} />
           </div>
+
+          {selected && <SubmissionDetail item={selected} onClose={() => setSelected(null)} />}
         </>
       )}
 
@@ -155,46 +156,59 @@ function HistoryTable({ items, selected, onSelect }: {
   );
 }
 
-function SubmissionDetail({ item }: { item: ProgressItem | null }) {
-  if (!item) {
-    return <div className="card progress-detail muted">Chọn một bài trong lịch sử để xem chi tiết.</div>;
-  }
-
+function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () => void }) {
   return (
-    <div className="card progress-detail">
-      <div className="detail-head">
-        <div>
-          <span className={`pill skill-${item.skill}`}>{skillLabel(item.skill)}</span>
-          <h2>{item.topic_name ?? item.test_title ?? "Chi tiết bài làm"}</h2>
-          <p className="muted small">{dateVi(item.submitted_at)} · {item.student_name ?? "Học viên"}{item.student_code ? ` · Mã ${item.student_code}` : ""} · {item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</p>
+    <div className="progress-modal-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="card progress-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="detail-head modal-head">
+          <div>
+            <span className={`pill skill-${item.skill}`}>{skillLabel(item.skill)}</span>
+            <h2>{item.topic_name ?? item.test_title ?? "Chi tiết bài làm"}</h2>
+            <p className="muted small">{dateVi(item.submitted_at)} · {item.student_name ?? "Học viên"}{item.student_code ? ` · Mã ${item.student_code}` : ""} · {item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</p>
+          </div>
+          <div className="modal-head-actions">
+            <div className="detail-score">
+              <div>{bandOf(item) ?? "—"}</div>
+              <span>Band</span>
+            </div>
+            <button className="btn ghost small" onClick={onClose}>Đóng ✕</button>
+          </div>
         </div>
-        <div className="detail-score">
-          <div>{bandOf(item) ?? "—"}</div>
-          <span>Band</span>
+
+        <div className="progress-detail-grid">
+          <div className="detail-column">
+            <section className="detail-section first">
+              <h3>Đề bài</h3>
+              <div className="detail-box prewrap prompt-box">{item.prompt || item.test_title || item.topic_name || "Chưa có đề bài lưu trong hệ thống."}</div>
+            </section>
+
+            <section className="detail-section">
+              <h3>Bài làm của học viên</h3>
+              {item.essay ? (
+                <div className="detail-box prewrap essay-detail-box">{item.essay}</div>
+              ) : item.score != null && item.max_score != null ? (
+                <div className="detail-box">Điểm tự chấm: <b>{item.score}/{item.max_score}</b></div>
+              ) : (
+                <div className="detail-box muted">Chưa có nội dung bài làm hiển thị.</div>
+              )}
+            </section>
+          </div>
+
+          <div className="detail-column teacher-column">
+            <section className="detail-section first">
+              <h3>Điểm</h3>
+              <WritingScoreGrid item={item} />
+              {item.score != null && item.max_score != null && <div className="detail-box">Điểm tự chấm: <b>{item.score}/{item.max_score}</b></div>}
+              {item.cefr && <div className="detail-box small">CEFR: <b>{item.cefr}</b></div>}
+            </section>
+
+            <section className="detail-section">
+              <h3>Sửa / nhận xét của giáo viên</h3>
+              <div className="detail-box prewrap feedback-box">{item.feedback || "Chưa có nhận xét của giáo viên."}</div>
+            </section>
+          </div>
         </div>
       </div>
-
-      <section className="detail-section">
-        <h3>Đề bài</h3>
-        <div className="detail-box">{item.prompt || item.test_title || item.topic_name || "Chưa có đề bài lưu trong hệ thống."}</div>
-      </section>
-
-      <section className="detail-section">
-        <h3>Bài làm của học viên</h3>
-        {item.essay ? (
-          <div className="detail-box prewrap">{item.essay}</div>
-        ) : item.score != null && item.max_score != null ? (
-          <div className="detail-box">Điểm tự chấm: <b>{item.score}/{item.max_score}</b></div>
-        ) : (
-          <div className="detail-box muted">Chưa có nội dung bài làm hiển thị.</div>
-        )}
-      </section>
-
-      <section className="detail-section">
-        <h3>Sửa / nhận xét của giáo viên</h3>
-        <WritingScoreGrid item={item} />
-        <div className="detail-box prewrap">{item.feedback || "Chưa có nhận xét của giáo viên."}</div>
-      </section>
     </div>
   );
 }
