@@ -78,8 +78,12 @@ export async function submitWriting(args: {
   return unwrap(res) as { submission_id: string };
 }
 
-export async function getProgress(email: string): Promise<ProgressItem[]> {
-  const res = await db().rpc("rpc_get_progress", { p_email: email });
+export async function getProgress(args: { email?: string; name?: string; code?: string }): Promise<ProgressItem[]> {
+  const res = await db().rpc("rpc_get_progress", {
+    p_email: args.email?.trim() || null,
+    p_name: args.name?.trim() || null,
+    p_code: args.code?.trim() || null,
+  });
   return (unwrap(res) ?? []) as ProgressItem[];
 }
 

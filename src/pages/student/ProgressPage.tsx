@@ -15,16 +15,22 @@ const SKILL_LABEL: Record<string, string> = {
 
 export default function ProgressPage() {
   const [email, setEmail] = useState("");
+  const [studentName, setStudentName] = useState("");
+  const [studentCode, setStudentCode] = useState("");
   const [items, setItems] = useState<ProgressItem[] | null>(null);
   const [selected, setSelected] = useState<ProgressItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   async function lookup() {
-    if (!/\S+@\S+\.\S+/.test(email)) { setErr("Nhập email hợp lệ."); return; }
+    const cleanEmail = email.trim();
+    const cleanName = studentName.trim();
+    const cleanCode = studentCode.trim();
+    if (!cleanEmail && !cleanName && !cleanCode) { setErr("Nhập ít nhất email, họ tên hoặc mã học sinh."); return; }
+    if (cleanEmail && !/\S+@\S+\.\S+/.test(cleanEmail)) { setErr("Email chưa hợp lệ."); return; }
     setErr(null); setLoading(true); setItems(null); setSelected(null);
     try {
-      const next = await getProgress(email.trim());
+      const next = await getProgress({ email: cleanEmail, name: cleanName, code: cleanCode });
       setItems(next);
       setSelected(next.length ? next[next.length - 1] : null);
     } catch (e) {
@@ -42,19 +48,34 @@ export default function ProgressPage() {
       <header className="topbar">
         <div>
           <h1>Tiến bộ của bạn</h1>
-          <p className="muted small sub">Nhập email để xem biểu đồ Nghe · Đọc · Viết và lịch sử bài đã làm.</p>
+          <p className="muted small sub">Nhập email, họ tên hoặc mã học sinh để xem biểu đồ Nghe · Đọc · Viết và lịch sử bài đã làm.</p>
         </div>
         <Link className="link" to="/">← Trang chủ</Link>
       </header>
 
-      <div className="card row-form progress-lookup">
-        <input
-          placeholder="Email đã dùng khi thi…"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && lookup()}
-        />
-        <button className="btn primary" onClick={lookup}>Xem</button>
+      <div className="card progress-lookup">
+        <div className="progress-lookup-grid">
+          <input
+            placeholder="Email đã dùng khi thi…"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && lookup()}
+          />
+          <input
+            placeholder="Họ tên học sinh…"
+            value={studentName}
+            onChange={(e) => setStudentName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && lookup()}
+          />
+          <input
+            placeholder="Mã học sinh…"
+            value={studentCode}
+            onChange={(e) => setStudentCode(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && lookup()}
+          />
+          <button className="btn primary" onClick={lookup}>Xem</button>
+        </div>
+        <div className="muted small progress-lookup-hint">Có thể nhập 1 ô. Nếu nhập nhiều ô, hệ thống sẽ lọc chặt hơn để tránh nhầm học viên.</div>
       </div>
 
       {loading && <Spinner />}
@@ -145,7 +166,7 @@ function SubmissionDetail({ item }: { item: ProgressItem | null }) {
         <div>
           <span className={`pill skill-${item.skill}`}>{skillLabel(item.skill)}</span>
           <h2>{item.topic_name ?? item.test_title ?? "Chi tiết bài làm"}</h2>
-          <p className="muted small">{dateVi(item.submitted_at)} · {item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</p>
+          <p className="muted small">{dateVi(item.submitted_at)} · {item.student_name ?? "Học viên"}{item.student_code ? ` · Mã ${item.student_code}` : ""} · {item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</p>
         </div>
         <div className="detail-score">
           <div>{bandOf(item) ?? "—"}</div>
