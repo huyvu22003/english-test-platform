@@ -17,24 +17,18 @@ export default function AdminLayout() {
       <aside className="sidebar">
         <div className="brand"><Logo height={30} light /></div>
         <nav>
-          <NavLink to="/admin/topics" className={({ isActive }) => (isActive ? "active" : "")}>
-            Chủ đề &amp; Đề thi
-          </NavLink>
-          <NavLink to="/admin/submissions" className={({ isActive }) => (isActive ? "active" : "")}>
-            Hàng đợi chấm
-          </NavLink>
-          <NavLink to="/admin/roster" className={({ isActive }) => (isActive ? "active" : "")}>
-            Lớp &amp; Học viên
-          </NavLink>
-          <NavLink to="/admin/diagnostics" className={({ isActive }) => (isActive ? "active" : "")}>
-            Chẩn đoán
-          </NavLink>
-          <NavLink to="/admin/import" className={({ isActive }) => (isActive ? "active" : "")}>
-            Nhập từ Excel
-          </NavLink>
-          <NavLink to="/admin/sessions" className={({ isActive }) => (isActive ? "active" : "")}>
-            Buổi thi &amp; Mã thi
-          </NavLink>
+          <div className="nav-group-label">Soạn đề</div>
+          <NavLink to="/admin/topics/writing" className={({ isActive }) => (isActive ? "active" : "")}>Đề Viết</NavLink>
+          <NavLink to="/admin/topics/reading" className={({ isActive }) => (isActive ? "active" : "")}>Đề Đọc</NavLink>
+          <NavLink to="/admin/topics/listening" className={({ isActive }) => (isActive ? "active" : "")}>Đề Nghe</NavLink>
+          <NavLink to="/admin/topics" end className={({ isActive }) => (isActive ? "active" : "")}>Ngân hàng đề</NavLink>
+
+          <div className="nav-group-label">Vận hành</div>
+          <NavLink to="/admin/submissions" className={({ isActive }) => (isActive ? "active" : "")}>Hàng đợi chấm</NavLink>
+          <NavLink to="/admin/roster" className={({ isActive }) => (isActive ? "active" : "")}>Lớp &amp; Học viên</NavLink>
+          <NavLink to="/admin/diagnostics" className={({ isActive }) => (isActive ? "active" : "")}>Chẩn đoán</NavLink>
+          <NavLink to="/admin/import" className={({ isActive }) => (isActive ? "active" : "")}>Nhập từ Excel</NavLink>
+          <NavLink to="/admin/sessions" className={({ isActive }) => (isActive ? "active" : "")}>Buổi thi &amp; Mã thi</NavLink>
         </nav>
         <div className="sidebar-foot">
           <div className="muted small">{session?.user.email}</div>

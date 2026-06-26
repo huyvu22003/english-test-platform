@@ -27,9 +27,12 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
   const questions = useAsync<Question[]>(() => listQuestions(test.id), [test.id]);
   const skill: Skill | undefined = topic.data?.skill;
 
+  const backTo = skill && ["writing", "reading", "listening"].includes(skill) ? `/admin/topics/${skill}` : "/admin/topics";
+  const backLabel = skill === "writing" ? "Đề Viết" : skill === "reading" ? "Đề Đọc" : skill === "listening" ? "Đề Nghe" : "Ngân hàng đề";
+
   return (
     <div>
-      <Link className="link" to="/admin/topics">← Chủ đề &amp; Đề thi</Link>
+      <Link className="link" to={backTo}>← {backLabel}</Link>
       <div className="title-row">
         <h1>Soạn đề {test.version_label}</h1>
         {skill && <SkillBadge skill={skill} />}

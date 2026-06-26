@@ -1,7 +1,6 @@
-// Quản lý CHỦ ĐỀ và ĐỀ THI: tạo/sửa/xóa chủ đề; trong mỗi chủ đề tạo/xóa đề,
-// mở trình soạn đề (TestEditor) để nhập đoạn văn/audio + câu hỏi.
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// Quản lý CHỦ ĐỀ và ĐỀ THI: có thể xem theo từng kỹ năng để giáo viên không bị rối khi soạn đề.
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   deleteTopic, listTopics, saveTopic, listTests, saveTest, deleteTest,
 } from "../../lib/api";
@@ -9,19 +8,59 @@ import { useAsync } from "../../lib/useAsync";
 import { ErrorBox, SkillBadge, Spinner } from "../../components/common";
 import type { Skill, Test, Topic } from "../../lib/types";
 
-const SKILLS: Skill[] = ["writing", "reading", "listening"];
+const AUTHORING_SKILLS: Skill[] = ["writing", "reading", "listening"];
+const SKILL_META: Record<Skill, { label: string; title: string; desc: string; cta: string }> = {
+  writing: {
+    label: "Viết",
+    title: "Đề Viết",
+    desc: "Quản lý chủ đề Writing, prompt bài luận, thời gian và số từ tối thiểu.",
+    cta: "+ Thêm chủ đề Viết",
+  },
+  reading: {
+    label: "Đọc",
+    title: "Đề Đọc",
+    desc: "Quản lý passage, câu hỏi Reading và đáp án.",
+    cta: "+ Thêm chủ đề Đọc",
+  },
+  listening: {
+    label: "Nghe",
+    title: "Đề Nghe",
+    desc: "Quản lý audio/link nghe, câu hỏi Listening và đáp án.",
+    cta: "+ Thêm chủ đề Nghe",
+  },
+  use_of_english: {
+    label: "Use of English",
+    title: "Use of English",
+    desc: "Quản lý câu hỏi ngữ pháp/từ vựng.",
+    cta: "+ Thêm chủ đề",
+  },
+};
 
 export default function TopicsPage() {
+  const { skill: skillParam } = useParams();
+  const fixedSkill = AUTHORING_SKILLS.includes(skillParam as Skill) ? (skillParam as Skill) : null;
+  const isBank = !fixedSkill;
   const topics = useAsync<Topic[]>(listTopics, []);
   const [name, setName] = useState("");
-  const [skill, setSkill] = useState<Skill>("reading");
+  const [skill, setSkill] = useState<Skill>(fixedSkill ?? "reading");
   const [err, setErr] = useState<string | null>(null);
+
+  const visibleTopics = useMemo(() => {
+    const rows = topics.data ?? [];
+    return fixedSkill ? rows.filter((t) => t.skill === fixedSkill) : rows;
+  }, [topics.data, fixedSkill]);
+
+  const page = fixedSkill ? SKILL_META[fixedSkill] : {
+    title: "Ngân hàng đề",
+    desc: "Xem tổng quan tất cả chủ đề/đề thi. Nên vào Đề Viết, Đề Đọc hoặc Đề Nghe để soạn cho đúng loại.",
+    cta: "+ Thêm chủ đề",
+  };
 
   async function addTopic() {
     setErr(null);
     if (name.trim().length < 2) return;
     try {
-      await saveTopic({ name: name.trim(), skill, active: true });
+      await saveTopic({ name: name.trim(), skill: fixedSkill ?? skill, active: true });
       setName("");
       topics.reload();
     } catch (e) {
@@ -31,30 +70,50 @@ export default function TopicsPage() {
 
   return (
     <div>
-      <h1>Chủ đề &amp; Đề thi</h1>
+      <div className="title-row">
+        <div>
+          <h1>{page.title}</h1>
+          <p className="muted small sub">{page.desc}</p>
+        </div>
+        {isBank && <Link className="link" to="/admin/topics/reading">Vào khu soạn đề →</Link>}
+      </div>
+
+      {!isBank && (
+        <div className="authoring-tabs card sub">
+          <Link to="/admin/topics/writing" className={fixedSkill === "writing" ? "active" : ""}>Đề Viết</Link>
+          <Link to="/admin/topics/reading" className={fixedSkill === "reading" ? "active" : ""}>Đề Đọc</Link>
+          <Link to="/admin/topics/listening" className={fixedSkill === "listening" ? "active" : ""}>Đề Nghe</Link>
+          <Link to="/admin/topics">Ngân hàng đề</Link>
+        </div>
+      )}
+
       <div className="card row-form">
         <input placeholder="Tên chủ đề mới…" value={name} onChange={(e) => setName(e.target.value)} />
-        <select value={skill} onChange={(e) => setSkill(e.target.value as Skill)}>
-          <option value="reading">Đọc</option>
-          <option value="listening">Nghe</option>
-          <option value="use_of_english">Use of English</option>
-          <option value="writing">Viết</option>
-        </select>
-        <button className="btn primary" onClick={addTopic}>+ Thêm chủ đề</button>
+        {isBank ? (
+          <select value={skill} onChange={(e) => setSkill(e.target.value as Skill)}>
+            <option value="reading">Đọc</option>
+            <option value="listening">Nghe</option>
+            <option value="use_of_english">Use of English</option>
+            <option value="writing">Viết</option>
+          </select>
+        ) : (
+          <span className={`pill skill-${fixedSkill}`}>{SKILL_META[fixedSkill].label}</span>
+        )}
+        <button className="btn primary" onClick={addTopic}>{page.cta}</button>
       </div>
       {err && <ErrorBox msg={err} />}
 
       {topics.loading && <Spinner />}
       {topics.error && <ErrorBox msg={topics.error} />}
-      {topics.data?.map((t) => (
-        <TopicCard key={t.id} topic={t} skills={SKILLS} onChanged={topics.reload} />
+      {visibleTopics.map((t) => (
+        <TopicCard key={t.id} topic={t} onChanged={topics.reload} />
       ))}
-      {topics.data && topics.data.length === 0 && <p className="muted">Chưa có chủ đề nào.</p>}
+      {topics.data && visibleTopics.length === 0 && <p className="muted">Chưa có chủ đề nào trong mục này.</p>}
     </div>
   );
 }
 
-function TopicCard({ topic, onChanged }: { topic: Topic; skills: Skill[]; onChanged: () => void }) {
+function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }) {
   const nav = useNavigate();
   const tests = useAsync<Test[]>(() => listTests(topic.id), [topic.id]);
   const [editing, setEditing] = useState(false);
