@@ -295,7 +295,7 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
    VÌ SAO: trang học sinh là điểm chạm đầu tiên với học viên/chủ trung tâm,
    cần cảm giác sản phẩm giáo dục hiện đại thay vì danh sách form phẳng.
    ============================================================ */
-.student-shell { max-width: 1060px; }
+.student-shell { max-width: 1180px; }
 .student-hero { padding: 28px; border-radius: 28px; }
 .student-hero::before {
   content: ""; position: absolute; right: 36px; bottom: -70px;
@@ -388,7 +388,7 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 .empty-state { border: 1px dashed var(--line); border-radius: 16px; padding: 18px; color: var(--muted); background: rgba(255,255,255,.7); }
 
 @media (max-width: 860px) {
-  .hero-grid, .identity-card, .learning-block { grid-template-columns: 1fr; }
+  .hero-grid, .identity-card, .learning-block, .quick-guide-grid { grid-template-columns: 1fr; }
   .hero-stats { grid-template-columns: repeat(3, 1fr); }
   .skill-card { position: relative; top: auto; min-height: auto; }
 }
@@ -401,3 +401,20 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   .premium-test-row { align-items: stretch; flex-direction: column; }
   .premium-test-row .btn { width: 100%; }
 }
+
+/* Quick guide — lấp khoảng trống desktop bằng hướng dẫn thao tác ngắn, không làm rối luồng chính. */
+.quick-guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: -8px 0 28px; }
+.guide-card {
+  position: relative; overflow: hidden; display: grid; grid-template-columns: 54px 1fr; gap: 14px;
+  padding: 18px; border-radius: 22px; background: rgba(255,255,255,.82);
+  border: 1px solid rgba(236,236,241,.95); box-shadow: var(--shadow); backdrop-filter: blur(12px);
+}
+.guide-card::after {
+  content: ""; position: absolute; inset: auto -36px -54px auto; width: 150px; height: 150px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(247,148,29,.16), transparent 64%);
+}
+.guide-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 16px; font-size: 26px; background: linear-gradient(135deg, #fff7ed, #f5f3ff); border: 1px solid rgba(236,236,241,.9); }
+.guide-card h3 { margin: 5px 0 7px; font-size: 18px; letter-spacing: -.02em; }
+.guide-card ol { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; font-weight: 650; line-height: 1.65; }
+.guide-student { background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(255,247,237,.74)); }
+.guide-teacher { background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(245,243,255,.76)); }

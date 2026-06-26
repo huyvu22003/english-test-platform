@@ -137,6 +137,33 @@ export default function StudentHome() {
         </div>
       </section>
 
+      <section className="quick-guide-grid" aria-label="Hướng dẫn sử dụng nhanh">
+        <article className="guide-card guide-student">
+          <div className="guide-icon">🎓</div>
+          <div>
+            <span className="eyebrow dark">Dành cho học sinh</span>
+            <h3>Làm đúng bài cần làm</h3>
+            <ol>
+              <li>Nhập mã học viên hoặc tên/email.</li>
+              <li>Chọn xếp lớp, Đọc/Nghe hoặc Writing.</li>
+              <li>Nộp bài và xem kết quả/tiến bộ khi được mở.</li>
+            </ol>
+          </div>
+        </article>
+        <article className="guide-card guide-teacher">
+          <div className="guide-icon">👩‍🏫</div>
+          <div>
+            <span className="eyebrow dark">Dành cho giáo viên</span>
+            <h3>Quản lý từ khu vực riêng</h3>
+            <ol>
+              <li>Đăng nhập để tạo chủ đề, đề thi và media.</li>
+              <li>Dùng mã thi cho buổi kiểm tra chính thức.</li>
+              <li>Chấm Writing và theo dõi điểm yếu của lớp.</li>
+            </ol>
+          </div>
+        </article>
+      </section>
+
       <div className="section-head">
         <div>
           <span className="eyebrow dark">Bước 2</span>
