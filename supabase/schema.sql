@@ -431,14 +431,32 @@ begin
 end;
 $$;
 
--- Tiến bộ của 1 học viên (theo email): các bài ĐÃ CHẤM theo thời gian.
+-- Tiến bộ của 1 học viên (theo email): lịch sử bài + dữ liệu vẽ biểu đồ + chi tiết bài.
 create or replace function rpc_get_progress(p_email text)
 returns jsonb language sql security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object(
-           'submitted_at', s.submitted_at, 'topic_name', s.topic_name,
-           'overall_band', s.overall_band, 'cefr', s.cefr, 'status', s.status
+           'submission_id', s.id,
+           'submitted_at', s.submitted_at,
+           'skill', coalesce(tp.skill, 'writing'),
+           'topic_name', coalesce(s.topic_name, tp.name),
+           'test_title', t.title,
+           'prompt', t.prompt,
+           'essay', s.essay,
+           'feedback', s.feedback,
+           'score', s.score,
+           'max_score', s.max_score,
+           'band', s.band,
+           'overall_band', coalesce(s.overall_band, s.band),
+           'cefr', coalesce(s.cefr, etp_band_to_cefr(coalesce(s.overall_band, s.band))),
+           'status', s.status,
+           'score_tr', s.score_tr,
+           'score_cc', s.score_cc,
+           'score_lr', s.score_lr,
+           'score_gra', s.score_gra
          ) order by s.submitted_at), '[]')
   from submissions s
+  left join tests t on t.id = s.test_id
+  left join topics tp on tp.id = t.topic_id
   where lower(s.student_email) = lower(btrim(p_email));
 $$;
 

@@ -206,6 +206,36 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .viol-box summary { cursor: pointer; color: var(--muted); font-size: 13px; }
 .chart { display: block; margin-top: 8px; }
 
+/* Progress dashboard */
+.progress-wrap { max-width: 1100px; }
+.progress-lookup input { max-width: 360px; }
+.progress-summary-grid, .progress-chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.progress-skill-card { margin-bottom: 0; }
+.progress-big { font-size: 38px; font-weight: 800; color: var(--brand); margin: 8px 0 2px; }
+.progress-chart-card { min-height: 230px; }
+.chart-title, .detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.empty-chart { min-height: 140px; display: grid; place-items: center; border: 1px dashed var(--line); border-radius: 12px; margin-top: 12px; }
+.progress-layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(300px, .95fr); gap: 14px; align-items: start; margin-top: 14px; }
+.progress-history { max-height: 620px; overflow: auto; }
+.clickable-row { cursor: pointer; }
+.clickable-row:hover td { background: #fff8f3; }
+.selected-row td { background: #fff2e8; }
+.progress-detail { position: sticky; top: 14px; }
+.detail-head h2 { margin: 8px 0 0; }
+.detail-score { min-width: 78px; text-align: center; padding: 10px; border-radius: 14px; background: #fff7ed; border: 1px solid #fed7aa; }
+.detail-score div { font-size: 28px; line-height: 1; font-weight: 800; color: var(--brand); }
+.detail-score span { font-size: 12px; color: var(--muted); font-weight: 700; }
+.detail-section { margin-top: 16px; }
+.detail-box { border: 1px solid var(--line); border-radius: 12px; background: #fafafe; padding: 12px; }
+.prewrap { white-space: pre-wrap; }
+.crit-cards.compact { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.crit-cards.compact .crit-card { padding: 10px 6px; }
+.crit-cards.compact .crit-val { font-size: 20px; }
+@media (max-width: 860px) {
+  .progress-layout { grid-template-columns: 1fr; }
+  .progress-detail { position: static; }
+}
+
 /* Phase C — roster + chẩn đoán */
 .code-login { gap: 8px; }
 .code-login input { max-width: 280px; }
