@@ -103,6 +103,7 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
   const [selectedText, setSelectedText] = useState("");
   const [fixedText, setFixedText] = useState("");
   const [fixNote, setFixNote] = useState("");
+  const [composeOpen, setComposeOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -125,6 +126,7 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
     setSelectedText(text);
     setFixedText("");
     setFixNote("");
+    setComposeOpen(true);
     setErr(null);
   }
   function addCorrection() {
@@ -135,7 +137,13 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
       corrected: fixedText.trim(),
       note: fixNote.trim() || undefined,
     }]);
-    setSelectedText(""); setFixedText(""); setFixNote(""); setErr(null);
+    clearCompose(); setErr(null);
+  }
+  function clearCompose() {
+    setSelectedText(""); setFixedText(""); setFixNote(""); setComposeOpen(false);
+  }
+  function resetCompose() {
+    setFixedText(""); setFixNote(""); setErr(null);
   }
   function removeCorrection(id: string) {
     setCorrections((prev) => prev.filter((c) => c.id !== id));
@@ -183,14 +191,6 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
             <div className="structured-corrections card sub">
               <h3>Sửa câu có cấu trúc</h3>
               <p className="muted small">Bôi chọn câu sai trong bài viết → bấm “+ Sửa câu đã chọn” → nhập câu sửa. Dữ liệu này dùng để highlight chính xác ở trang học sinh.</p>
-              {selectedText && (
-                <div className="correction-compose">
-                  <label className="field"><span>Câu gốc đã chọn</span><textarea rows={2} value={selectedText} onChange={(e) => setSelectedText(e.target.value)} /></label>
-                  <label className="field"><span>Câu sửa đúng</span><textarea rows={2} value={fixedText} onChange={(e) => setFixedText(e.target.value)} placeholder="Nhập câu sửa…" /></label>
-                  <label className="field"><span>Ghi chú lỗi (tuỳ chọn)</span><input value={fixNote} onChange={(e) => setFixNote(e.target.value)} placeholder="VD: thiếu opinion, collocation chưa tự nhiên…" /></label>
-                  <button className="btn small primary" type="button" onClick={addCorrection}>Thêm vào danh sách sửa</button>
-                </div>
-              )}
               <div className="correction-admin-list">
                 {corrections.map((c, idx) => (
                   <div className="correction-admin-item" key={c.id}>
@@ -204,6 +204,27 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
                 {corrections.length === 0 && <div className="muted small">Chưa có câu sửa có cấu trúc.</div>}
               </div>
             </div>
+            {composeOpen && (
+              <div className="correction-compose-backdrop" role="dialog" aria-modal="true" onClick={clearCompose}>
+                <div className="card correction-compose-modal" onClick={(e) => e.stopPropagation()}>
+                  <div className="modal-mini-head">
+                    <div>
+                      <h3>Sửa câu đã chọn</h3>
+                      <p className="muted small">Nhập câu sửa ngay tại đây. Có thể xóa nhập lại hoặc hủy nếu chọn nhầm.</p>
+                    </div>
+                    <button className="btn ghost small" type="button" onClick={clearCompose}>Hủy ✕</button>
+                  </div>
+                  <label className="field"><span>Câu gốc đã chọn</span><textarea rows={3} value={selectedText} onChange={(e) => setSelectedText(e.target.value)} /></label>
+                  <label className="field"><span>Câu sửa đúng</span><textarea rows={3} autoFocus value={fixedText} onChange={(e) => setFixedText(e.target.value)} placeholder="Nhập câu sửa…" /></label>
+                  <label className="field"><span>Ghi chú lỗi (tuỳ chọn)</span><input value={fixNote} onChange={(e) => setFixNote(e.target.value)} placeholder="VD: thiếu opinion, collocation chưa tự nhiên…" /></label>
+                  <div className="actions correction-compose-actions">
+                    <button className="btn small primary" type="button" onClick={addCorrection}>Thêm vào danh sách sửa</button>
+                    <button className="btn small" type="button" onClick={resetCompose}>Xóa nhập lại</button>
+                    <button className="btn ghost small" type="button" onClick={clearCompose}>Hủy không sửa</button>
+                  </div>
+                </div>
+              </div>
+            )}
             {s.violation_log && (
               <details className="viol-box">
                 <summary>Nhật ký vi phạm ({s.violations})</summary>
