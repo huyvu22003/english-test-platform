@@ -13,6 +13,7 @@ returns jsonb language sql security definer set search_path = public as $$
            'skill', coalesce(tp.skill, 'writing'),
            'student_name', coalesce(st.full_name, s.student_name),
            'student_code', st.code,
+           'class_name', c.name,
            'topic_name', coalesce(s.topic_name, tp.name),
            'test_title', t.title,
            'prompt', t.prompt,
@@ -38,6 +39,7 @@ returns jsonb language sql security definer set search_path = public as $$
     order by case when st.id = s.student_id then 0 else 1 end
     limit 1
   ) st on true
+  left join classes c on c.id = st.class_id
   where (coalesce(btrim(p_email), '') <> '' or coalesce(btrim(p_name), '') <> '' or coalesce(btrim(p_code), '') <> '')
     and (coalesce(btrim(p_email), '') = '' or lower(s.student_email) = lower(btrim(p_email)))
     and (coalesce(btrim(p_name), '') = '' or lower(coalesce(st.full_name, s.student_name)) = lower(btrim(p_name)))
