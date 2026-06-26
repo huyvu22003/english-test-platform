@@ -158,6 +158,7 @@ function HistoryTable({ items, selected, onSelect }: {
 
 function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () => void }) {
   const [activeCorrection, setActiveCorrection] = useState<string | null>(null);
+  const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const corrections = normalizedCorrections(item);
   return (
     <div className="progress-modal-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
@@ -188,7 +189,7 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
             <section className="detail-section">
               <h3>Bài làm của học viên</h3>
               {item.essay ? (
-                <div className="detail-box prewrap essay-detail-box"><HighlightedEssay essay={item.essay} corrections={corrections} activeId={activeCorrection} /></div>
+                <div className="detail-box prewrap essay-detail-box"><HighlightedEssay essay={item.essay} corrections={corrections} activeId={activeCorrection} openNoteId={openNoteId} onToggleNote={setOpenNoteId} /></div>
               ) : item.score != null && item.max_score != null ? (
                 <div className="detail-box">Điểm tự chấm: <b>{item.score}/{item.max_score}</b></div>
               ) : (
@@ -209,7 +210,7 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
               <h3>Nhận xét tổng quan của giáo viên</h3>
               <div className="detail-box prewrap feedback-box">{item.feedback || "Chưa có nhận xét tổng quan."}</div>
               <h3>Sửa câu chi tiết</h3>
-              {corrections.length > 0 ? <StructuredCorrectionList corrections={corrections} onHover={setActiveCorrection} /> : <p className="muted small">Chưa có dữ liệu sửa câu có cấu trúc.</p>}
+              {corrections.length > 0 ? <StructuredCorrectionList corrections={corrections} activeId={activeCorrection} onFocus={setActiveCorrection} onOpenNote={setOpenNoteId} /> : <p className="muted small">Chưa có dữ liệu sửa câu có cấu trúc.</p>}
             </section>
           </div>
         </div>
@@ -220,26 +221,67 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
 
 interface CorrectionPair { id: string; original: string; corrected: string; note?: string; start?: number; end?: number; index: number; }
 
-function HighlightedEssay({ essay, corrections, activeId }: { essay: string; corrections: CorrectionPair[]; activeId: string | null }) {
+function HighlightedEssay({ essay, corrections, activeId, openNoteId, onToggleNote }: {
+  essay: string;
+  corrections: CorrectionPair[];
+  activeId: string | null;
+  openNoteId: string | null;
+  onToggleNote: (id: string | null) => void;
+}) {
   const parts = highlightEssayParts(essay, corrections);
-  return <>{parts.map((p, idx) => p.hit ? <mark id={`essay-hit-${p.hit.id}`} className={`essay-error-mark${activeId === p.hit.id ? " active" : ""}`} key={idx} title={p.hit.corrected}>{p.text}</mark> : <span key={idx}>{p.text}</span>)}</>;
+  return <>{parts.map((p, idx) => {
+    if (!p.hit) return <span key={idx}>{p.text}</span>;
+    const open = openNoteId === p.hit.id;
+    return (
+      <span className="essay-mark-wrap" key={idx}>
+        <button
+          id={`essay-hit-${p.hit.id}`}
+          type="button"
+          className={`essay-error-mark${activeId === p.hit.id || open ? " active" : ""}`}
+          onClick={() => onToggleNote(open ? null : p.hit!.id)}
+          title="Bấm để xem câu sửa của giáo viên"
+        >{p.text}</button>
+        {open && <CorrectionStickNote correction={p.hit} onClose={() => onToggleNote(null)} />}
+      </span>
+    );
+  })}</>;
 }
 
-function StructuredCorrectionList({ corrections, onHover }: { corrections: CorrectionPair[]; onHover: (id: string | null) => void }) {
-  function enter(id: string) {
-    onHover(id);
-    setTimeout(() => document.getElementById(`essay-hit-${id}`)?.scrollIntoView({ block: "center", behavior: "smooth" }), 30);
-  }
+function CorrectionStickNote({ correction, onClose }: { correction: CorrectionPair; onClose: () => void }) {
+  return (
+    <span className="correction-sticknote">
+      <button className="sticknote-close" type="button" onClick={onClose}>×</button>
+      <b>Lỗi #{correction.index}</b>
+      {correction.note && <span className="sticknote-note">{correction.note}</span>}
+      <span className="sticknote-label">Sửa thành</span>
+      <span className="sticknote-fixed">{correction.corrected}</span>
+    </span>
+  );
+}
+
+function StructuredCorrectionList({ corrections, activeId, onFocus, onOpenNote }: {
+  corrections: CorrectionPair[];
+  activeId: string | null;
+  onFocus: (id: string | null) => void;
+  onOpenNote: (id: string | null) => void;
+}) {
   return (
     <div className="correction-list">
       {corrections.map((c) => (
-        <div className="correction-card" key={c.id} onMouseEnter={() => enter(c.id)} onMouseLeave={() => onHover(null)}>
+        <button
+          className={`correction-card as-button${activeId === c.id ? " active" : ""}`}
+          key={c.id}
+          type="button"
+          onMouseEnter={() => onFocus(c.id)}
+          onMouseLeave={() => onFocus(null)}
+          onClick={() => onOpenNote(c.id)}
+        >
           <div className="correction-label">Lỗi #{c.index}</div>
           <div className="correction-original">{c.original}</div>
           {c.note && <div className="muted small">Lỗi: {c.note}</div>}
           <div className="correction-arrow">↓ sửa thành</div>
           <div className="correction-fixed">{c.corrected}</div>
-        </div>
+        </button>
       ))}
     </div>
   );
