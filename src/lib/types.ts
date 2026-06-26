@@ -144,6 +144,7 @@ export interface ProgressItem {
   skill: Skill;
   student_name?: string | null;
   student_code?: string | null;
+  class_name?: string | null;
   topic_name: string | null;
   test_title?: string | null;
   prompt?: string | null;

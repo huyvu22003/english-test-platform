@@ -259,6 +259,13 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .prompt-box { max-height: 180px; overflow: auto; }
 .essay-detail-box, .feedback-box { max-height: 52vh; overflow: auto; line-height: 1.72; }
 .teacher-column { position: sticky; top: 76px; }
+.essay-error-mark { background: #ffe4e6; color: #9f1239; border-bottom: 2px solid #fb7185; border-radius: 4px; padding: 0 2px; }
+.correction-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.correction-card { border: 1px solid #fecdd3; border-left: 4px solid var(--brand2); border-radius: 12px; padding: 10px; background: #fff7f7; }
+.correction-label { font-size: 12px; font-weight: 800; color: var(--brand2); margin-bottom: 5px; }
+.correction-original { background: #fff1f2; border-radius: 8px; padding: 8px; }
+.correction-arrow { color: var(--muted); font-size: 12px; font-weight: 700; margin: 6px 0; }
+.correction-fixed { background: #ecfdf5; color: #166534; border-radius: 8px; padding: 8px; }
 .prewrap { white-space: pre-wrap; }
 .crit-cards.compact { grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .crit-cards.compact .crit-card { padding: 10px 6px; }

@@ -157,6 +157,7 @@ function HistoryTable({ items, selected, onSelect }: {
 }
 
 function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () => void }) {
+  const corrections = parseCorrections(item.feedback ?? "");
   return (
     <div className="progress-modal-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="card progress-modal" onClick={(e) => e.stopPropagation()}>
@@ -164,13 +165,14 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
           <div>
             <span className={`pill skill-${item.skill}`}>{skillLabel(item.skill)}</span>
             <h2>{item.topic_name ?? item.test_title ?? "Chi tiết bài làm"}</h2>
-            <p className="muted small">{dateVi(item.submitted_at)} · {item.student_name ?? "Học viên"}{item.student_code ? ` · Mã ${item.student_code}` : ""} · {item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</p>
+            <p className="muted small">{dateVi(item.submitted_at)} · {item.student_name ?? "Học viên"}{item.student_code ? ` · Mã ${item.student_code}` : ""}{item.class_name ? ` · Lớp ${item.class_name}` : ""} · {item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</p>
           </div>
           <div className="modal-head-actions">
             <div className="detail-score">
               <div>{bandOf(item) ?? "—"}</div>
               <span>Band</span>
             </div>
+            <button className="btn small" onClick={() => printProgressPdf(item, corrections)}>Tải PDF</button>
             <button className="btn ghost small" onClick={onClose}>Đóng ✕</button>
           </div>
         </div>
@@ -185,7 +187,7 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
             <section className="detail-section">
               <h3>Bài làm của học viên</h3>
               {item.essay ? (
-                <div className="detail-box prewrap essay-detail-box">{item.essay}</div>
+                <div className="detail-box prewrap essay-detail-box"><HighlightedEssay essay={item.essay} corrections={corrections} /></div>
               ) : item.score != null && item.max_score != null ? (
                 <div className="detail-box">Điểm tự chấm: <b>{item.score}/{item.max_score}</b></div>
               ) : (
@@ -204,11 +206,34 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
 
             <section className="detail-section">
               <h3>Sửa / nhận xét của giáo viên</h3>
+              {corrections.length > 0 && <CorrectionList corrections={corrections} />}
               <div className="detail-box prewrap feedback-box">{item.feedback || "Chưa có nhận xét của giáo viên."}</div>
             </section>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+interface CorrectionPair { original: string; corrected: string; index: number; }
+
+function HighlightedEssay({ essay, corrections }: { essay: string; corrections: CorrectionPair[] }) {
+  const parts = highlightEssayParts(essay, corrections);
+  return <>{parts.map((p, idx) => p.hit ? <mark className="essay-error-mark" key={idx} title={p.hit.corrected}>{p.text}</mark> : <span key={idx}>{p.text}</span>)}</>;
+}
+
+function CorrectionList({ corrections }: { corrections: CorrectionPair[] }) {
+  return (
+    <div className="correction-list">
+      {corrections.map((c) => (
+        <div className="correction-card" key={`${c.index}-${c.original}`}>
+          <div className="correction-label">Lỗi #{c.index}</div>
+          <div className="correction-original">{c.original}</div>
+          <div className="correction-arrow">↓ sửa thành</div>
+          <div className="correction-fixed">{c.corrected}</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -267,6 +292,104 @@ function groupBySkill(items: ProgressItem[]) {
   for (const item of items) (out[item.skill ?? "writing"] ??= []).push(item);
   return Object.fromEntries(Object.entries(out).filter(([, rows]) => rows.length > 0));
 }
+
+function parseCorrections(feedback: string): CorrectionPair[] {
+  const lines = feedback.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const out: CorrectionPair[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!/câu gốc|original/i.test(stripMarks(lines[i]))) continue;
+    const original = collectValue(lines, i);
+    const fixIndex = lines.findIndex((line, idx) => idx > i && /sửa|correct|correction/i.test(stripMarks(line)));
+    if (fixIndex === -1) continue;
+    const corrected = collectValue(lines, fixIndex);
+    if (original && corrected) out.push({ original, corrected, index: out.length + 1 });
+  }
+  return out.slice(0, 20);
+}
+
+function collectValue(lines: string[], start: number) {
+  const first = stripLabel(lines[start]);
+  if (first) return first;
+  for (let i = start + 1; i < Math.min(lines.length, start + 4); i++) {
+    const line = stripMarks(lines[i]);
+    if (/^(câu gốc|original|sửa|correct|correction|tương tự|###|---)/i.test(line)) break;
+    if (line.length > 2) return line;
+  }
+  return "";
+}
+
+function stripLabel(line: string) {
+  return stripMarks(line).replace(/^(câu gốc|original|sửa|correct(?:ion)?)[\s.:：-]*/i, "").trim();
+}
+function stripMarks(line: string) { return line.replace(/^[✅❌✔✘\-–—*#\s]+/, "").trim(); }
+
+function highlightEssayParts(essay: string, corrections: CorrectionPair[]) {
+  const ranges: { start: number; end: number; hit: CorrectionPair }[] = [];
+  const used = new Set<number>();
+  corrections.forEach((c) => {
+    const original = c.original.trim();
+    if (original.length < 4) return;
+    const start = findApprox(essay, original, used);
+    if (start >= 0) {
+      for (let i = start; i < start + original.length; i++) used.add(i);
+      ranges.push({ start, end: start + original.length, hit: c });
+    }
+  });
+  ranges.sort((a, b) => a.start - b.start);
+  const parts: { text: string; hit?: CorrectionPair }[] = [];
+  let pos = 0;
+  for (const r of ranges) {
+    if (r.start < pos) continue;
+    if (r.start > pos) parts.push({ text: essay.slice(pos, r.start) });
+    parts.push({ text: essay.slice(r.start, r.end), hit: r.hit });
+    pos = r.end;
+  }
+  if (pos < essay.length) parts.push({ text: essay.slice(pos) });
+  return parts.length ? parts : [{ text: essay }];
+}
+
+function findApprox(text: string, needle: string, used: Set<number>) {
+  const direct = text.toLowerCase().indexOf(needle.toLowerCase());
+  if (direct >= 0 && !rangeUsed(direct, needle.length, used)) return direct;
+  const compactNeedle = normalizeForMatch(needle);
+  if (compactNeedle.length < 4) return -1;
+  for (let start = 0; start < text.length; start++) {
+    if (used.has(start)) continue;
+    const chunk = text.slice(start, Math.min(text.length, start + needle.length + 24));
+    if (normalizeForMatch(chunk).includes(compactNeedle) && !rangeUsed(start, needle.length, used)) return start;
+  }
+  return -1;
+}
+function normalizeForMatch(s: string) { return s.toLowerCase().replace(/\s+/g, " ").replace(/[“”"'.,;:!?()]/g, "").trim(); }
+function rangeUsed(start: number, len: number, used: Set<number>) { for (let i = start; i < start + len; i++) if (used.has(i)) return true; return false; }
+
+function printProgressPdf(item: ProgressItem, corrections: CorrectionPair[]) {
+  const w = window.open("", "_blank", "noopener,noreferrer,width=980,height=900");
+  if (!w) return;
+  const html = buildPdfHtml(item, corrections);
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 350);
+}
+
+function buildPdfHtml(item: ProgressItem, corrections: CorrectionPair[]) {
+  const essayHtml = item.essay ? highlightEssayParts(item.essay, corrections).map((p) => p.hit ? `<mark>${esc(p.text)}</mark>` : esc(p.text)).join("") : "Chưa có nội dung bài làm.";
+  const correctionHtml = corrections.length ? corrections.map((c) => `<div class="fix"><b>Lỗi #${c.index}</b><p class="bad">${esc(c.original)}</p><p class="good">${esc(c.corrected)}</p></div>`).join("") : "<p>Chưa nhận diện được cặp câu gốc/sửa từ nhận xét.</p>";
+  const scores = [["TR", item.score_tr], ["CC", item.score_cc], ["LR", item.score_lr], ["GRA", item.score_gra]].map(([k, v]) => `<div class="score"><b>${v ?? "—"}</b><span>${k}</span></div>`).join("");
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(item.topic_name ?? "Bài kiểm tra")}</title><style>
+    @page{size:A4;margin:14mm} body{font-family:Arial,sans-serif;color:#221b26;margin:0;line-height:1.55}.brand{display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #ec3a2b;padding-bottom:14px;margin-bottom:18px}.brand img{height:54px}.brand-title{text-align:right}.brand-title h1{margin:0;font-size:24px}.muted{color:#6c6880}.pill{display:inline-block;background:#e7f0ff;color:#1d4ed8;border-radius:99px;padding:3px 10px;font-weight:700;font-size:12px}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.meta div,.box{border:1px solid #ececf1;border-radius:12px;padding:10px;background:#fafafe}.scores{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.score{text-align:center;border:1px solid #fed7aa;background:#fff7ed;border-radius:12px;padding:10px}.score b{display:block;color:#ee5a24;font-size:24px}.score span{font-size:12px;color:#6c6880}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:start}.section{margin-top:16px}.section h2{font-size:17px;margin:0 0 8px}.essay{white-space:pre-wrap}.feedback{white-space:pre-wrap}.fix{border-left:4px solid #ec3a2b;background:#fff7f7;padding:8px 10px;margin:8px 0;border-radius:8px}.bad{background:#fff1f2;margin:6px 0;padding:7px;border-radius:6px}.good{background:#ecfdf5;margin:6px 0;padding:7px;border-radius:6px}mark{background:#ffe4e6;color:#9f1239;border-bottom:2px solid #fb7185;padding:0 2px;border-radius:3px}.footer{margin-top:20px;border-top:1px solid #ececf1;padding-top:8px;font-size:12px;color:#6c6880}@media print{button{display:none}.box,.score,.fix{break-inside:avoid}}
+  </style></head><body>
+    <div class="brand"><img src="/logo.png"/><div class="brand-title"><span class="pill">${esc(skillLabel(item.skill))}</span><h1>${esc(item.topic_name ?? item.test_title ?? "Bài kiểm tra")}</h1><div class="muted">${dateVi(item.submitted_at)}</div></div></div>
+    <div class="meta"><div><b>Học viên</b><br>${esc(item.student_name ?? "—")}</div><div><b>Mã HV</b><br>${esc(item.student_code ?? "—")}</div><div><b>Lớp</b><br>${esc(item.class_name ?? "—")}</div><div><b>Trạng thái</b><br>${item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</div></div>
+    <div class="section"><h2>Điểm</h2><div class="scores"><div class="score"><b>${bandOf(item) ?? "—"}</b><span>Band</span></div>${scores}</div><p class="muted">CEFR: <b>${esc(item.cefr ?? "—")}</b></p></div>
+    <div class="section"><h2>Đề bài</h2><div class="box">${esc(item.prompt || item.test_title || item.topic_name || "Chưa có đề bài lưu trong hệ thống.")}</div></div>
+    <div class="grid"><div class="section"><h2>Bài làm của học viên</h2><div class="box essay">${essayHtml}</div></div><div class="section"><h2>Câu sai & câu sửa</h2>${correctionHtml}<h2>Nhận xét giáo viên</h2><div class="box feedback">${esc(item.feedback || "Chưa có nhận xét của giáo viên.")}</div></div></div>
+    <div class="footer">IELTS Ms. Trà My · Phiếu kết quả được tạo tự động từ English Test Platform</div>
+  </body></html>`;
+}
+function esc(v: unknown) { return String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string)); }
 
 function bandOf(item: ProgressItem) { return item.overall_band ?? item.band ?? null; }
 function hasBand(item: ProgressItem) { return item.status === "graded" && bandOf(item) != null; }
