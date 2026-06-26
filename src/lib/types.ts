@@ -139,11 +139,24 @@ export interface PickedPrompt {
 }
 
 export interface ProgressItem {
+  submission_id?: string;
   submitted_at: string;
+  skill: Skill;
   topic_name: string | null;
+  test_title?: string | null;
+  prompt?: string | null;
+  essay?: string | null;
+  feedback?: string | null;
+  score?: number | null;
+  max_score?: number | null;
+  band?: number | null;
   overall_band: number | null;
   cefr: string | null;
   status: "submitted" | "graded";
+  score_tr?: number | null;
+  score_cc?: number | null;
+  score_lr?: number | null;
+  score_gra?: number | null;
 }
 
 // 4 tiêu chí IELTS Writing
