@@ -259,11 +259,9 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .prompt-box { max-height: 180px; overflow: auto; }
 .essay-detail-box, .feedback-box { max-height: 52vh; overflow: auto; line-height: 1.72; }
 .teacher-column { position: sticky; top: 76px; }
-.essay-mark-wrap { position: relative; display: inline; }
 .essay-error-mark { font: inherit; display: inline; border: 0; background: #ffe4e6; color: #9f1239; border-bottom: 2px solid #fb7185; border-radius: 4px; padding: 0 2px; transition: background .15s, box-shadow .15s; cursor: pointer; }
 .essay-error-mark.active { background: #fecdd3; box-shadow: 0 0 0 3px rgba(236,58,43,.18); }
-.correction-sticknote { position: absolute; left: 0; top: calc(100% + 8px); z-index: 5; width: min(320px, 78vw); white-space: normal; background: #fffdf3; border: 1px solid #fde68a; border-left: 4px solid var(--accent); border-radius: 14px; padding: 12px; box-shadow: 0 14px 34px rgba(42,15,61,.16); color: var(--ink); line-height: 1.45; }
-.correction-sticknote::before { content: ""; position: absolute; left: 18px; top: -7px; width: 12px; height: 12px; transform: rotate(45deg); background: #fffdf3; border-left: 1px solid #fde68a; border-top: 1px solid #fde68a; }
+.correction-inline-note { position: relative; margin-top: 10px; white-space: normal; background: #fffdf3; border: 1px solid #fde68a; border-left: 4px solid var(--accent); border-radius: 14px; padding: 12px; box-shadow: 0 10px 24px rgba(42,15,61,.10); color: var(--ink); line-height: 1.45; }
 .sticknote-close { position: absolute; right: 8px; top: 6px; border: 0; background: transparent; cursor: pointer; color: var(--muted); font-size: 18px; }
 .sticknote-note, .sticknote-label, .sticknote-fixed { display: block; margin-top: 6px; }
 .sticknote-note { color: var(--muted); font-size: 13px; }

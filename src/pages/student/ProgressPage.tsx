@@ -160,6 +160,7 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
   const [activeCorrection, setActiveCorrection] = useState<string | null>(null);
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const corrections = normalizedCorrections(item);
+  const openCorrection = corrections.find((c) => c.id === openNoteId) ?? null;
   return (
     <div className="progress-modal-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="card progress-modal" onClick={(e) => e.stopPropagation()}>
@@ -189,7 +190,10 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
             <section className="detail-section">
               <h3>Bài làm của học viên</h3>
               {item.essay ? (
-                <div className="detail-box prewrap essay-detail-box"><HighlightedEssay essay={item.essay} corrections={corrections} activeId={activeCorrection} openNoteId={openNoteId} onToggleNote={setOpenNoteId} /></div>
+                <>
+                  <div className="detail-box prewrap essay-detail-box"><HighlightedEssay essay={item.essay} corrections={corrections} activeId={activeCorrection} openNoteId={openNoteId} onToggleNote={setOpenNoteId} /></div>
+                  {openCorrection && <CorrectionInlineNote correction={openCorrection} onClose={() => setOpenNoteId(null)} />}
+                </>
               ) : item.score != null && item.max_score != null ? (
                 <div className="detail-box">Điểm tự chấm: <b>{item.score}/{item.max_score}</b></div>
               ) : (
@@ -233,29 +237,28 @@ function HighlightedEssay({ essay, corrections, activeId, openNoteId, onToggleNo
     if (!p.hit) return <span key={idx}>{p.text}</span>;
     const open = openNoteId === p.hit.id;
     return (
-      <span className="essay-mark-wrap" key={idx}>
-        <button
-          id={`essay-hit-${p.hit.id}`}
-          type="button"
-          className={`essay-error-mark${activeId === p.hit.id || open ? " active" : ""}`}
-          onClick={() => onToggleNote(open ? null : p.hit!.id)}
-          title="Bấm để xem câu sửa của giáo viên"
-        >{p.text}</button>
-        {open && <CorrectionStickNote correction={p.hit} onClose={() => onToggleNote(null)} />}
-      </span>
+      <button
+        id={`essay-hit-${p.hit.id}`}
+        type="button"
+        className={`essay-error-mark${activeId === p.hit.id || open ? " active" : ""}`}
+        key={idx}
+        onClick={() => onToggleNote(open ? null : p.hit!.id)}
+        title="Bấm để xem câu sửa của giáo viên"
+      >{p.text}</button>
     );
   })}</>;
 }
 
-function CorrectionStickNote({ correction, onClose }: { correction: CorrectionPair; onClose: () => void }) {
+function CorrectionInlineNote({ correction, onClose }: { correction: CorrectionPair; onClose: () => void }) {
   return (
-    <span className="correction-sticknote">
+    <div className="correction-inline-note">
       <button className="sticknote-close" type="button" onClick={onClose}>×</button>
-      <b>Lỗi #{correction.index}</b>
-      {correction.note && <span className="sticknote-note">{correction.note}</span>}
-      <span className="sticknote-label">Sửa thành</span>
-      <span className="sticknote-fixed">{correction.corrected}</span>
-    </span>
+      <div className="correction-label">Lỗi #{correction.index}</div>
+      <div className="correction-original">{correction.original}</div>
+      {correction.note && <div className="sticknote-note">Lỗi: {correction.note}</div>}
+      <div className="sticknote-label">Sửa thành</div>
+      <div className="sticknote-fixed">{correction.corrected}</div>
+    </div>
   );
 }
 
