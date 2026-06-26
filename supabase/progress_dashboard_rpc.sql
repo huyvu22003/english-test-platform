@@ -2,6 +2,8 @@
 -- trả dữ liệu biểu đồ theo kỹ năng + lịch sử + chi tiết bài.
 -- Chạy file này trong Supabase SQL Editor nếu database production đã có schema cũ.
 
+alter table submissions add column if not exists writing_corrections jsonb not null default '[]'::jsonb;
+
 -- Bỏ bản cũ chỉ nhận email để PostgREST không bị lẫn signature.
 drop function if exists rpc_get_progress(text);
 
@@ -19,6 +21,7 @@ returns jsonb language sql security definer set search_path = public as $$
            'prompt', t.prompt,
            'essay', s.essay,
            'feedback', s.feedback,
+           'writing_corrections', coalesce(s.writing_corrections, '[]'::jsonb),
            'score', s.score,
            'max_score', s.max_score,
            'band', s.band,

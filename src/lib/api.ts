@@ -5,7 +5,7 @@ import type {
   AnswerMap, ClassRow, ExamListItem, ExamSession, Level, Passage, PickedPrompt,
   PlacementItem, PlacementResult, ProgressItem, PublicTest, Question, SessionByCode,
   SessionSubmitResult, Skill, Student, StudentByCode, Submission, SubmitResult, Test,
-  TestWithTopic, Topic, WritingScores, WritingTopic,
+  TestWithTopic, Topic, WritingCorrection, WritingScores, WritingTopic,
 } from "./types";
 
 // Trả client hoặc báo lỗi rõ ràng khi chưa cấu hình .env (tránh crash khó hiểu).
@@ -102,11 +102,12 @@ export function bandToCefr(band: number): string {
 }
 
 // Chấm tay bài Viết: 4 tiêu chí -> overall (trung bình, làm tròn 0.5) + CEFR.
-export async function gradeWriting(id: string, s: WritingScores, feedback: string): Promise<void> {
+export async function gradeWriting(id: string, s: WritingScores, feedback: string, corrections: WritingCorrection[] = []): Promise<void> {
   const overall = Math.round(((s.tr + s.cc + s.lr + s.gra) / 4) * 2) / 2;
   const { error } = await db().from("submissions").update({
     score_tr: s.tr, score_cc: s.cc, score_lr: s.lr, score_gra: s.gra,
     overall_band: overall, cefr: bandToCefr(overall), feedback,
+    writing_corrections: corrections,
     status: "graded", graded_at: new Date().toISOString(),
   }).eq("id", id);
   if (error) throw new Error(error.message);
