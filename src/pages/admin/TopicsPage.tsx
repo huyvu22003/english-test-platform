@@ -87,7 +87,7 @@ export default function TopicsPage() {
         </div>
       )}
 
-      <div className="card row-form">
+      <div className="card topic-create-bar">
         <input placeholder="Tên chủ đề mới…" value={name} onChange={(e) => setName(e.target.value)} />
         {isBank ? (
           <select value={skill} onChange={(e) => setSkill(e.target.value as Skill)}>
@@ -149,45 +149,53 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
     tests.reload();
   }
 
+  const testCount = tests.data?.length ?? 0;
+
   return (
-    <div className="card topic-admin">
-      <div className="topic-head">
-        {editing ? (
-          <span className="row-form">
-            <input value={name} onChange={(e) => setName(e.target.value)} />
-            <button className="btn small" onClick={rename}>Lưu</button>
-            <button className="btn ghost small" onClick={() => setEditing(false)}>Hủy</button>
+    <div className="card topic-admin compact-topic">
+      <div className="topic-head compact-topic-head">
+        <div className="topic-title-block">
+          {editing ? (
+            <span className="row-form topic-rename-form">
+              <input value={name} onChange={(e) => setName(e.target.value)} />
+              <button className="btn small" onClick={rename}>Lưu</button>
+              <button className="btn ghost small" onClick={() => setEditing(false)}>Hủy</button>
+            </span>
+          ) : (
+            <strong>{topic.name}</strong>
+          )}
+          <span className="topic-meta-line">
+            <SkillBadge skill={topic.skill} />
+            <span className="muted small">{testCount} đề</span>
+            {!topic.active && <span className="pill off small">Đang khóa</span>}
           </span>
-        ) : (
-          <strong>{topic.name}</strong>
-        )}
-        <SkillBadge skill={topic.skill} />
-        {!topic.active && <span className="pill off">Đang khóa</span>}
-        <span className="spacer" />
-        {!editing && <button className="btn ghost small" onClick={() => setEditing(true)}>Đổi tên</button>}
-        <button className="btn ghost small" onClick={toggleActive}>{topic.active ? "Khóa" : "Mở"}</button>
-        <button className="btn ghost small danger" onClick={removeTopic}>Xóa</button>
+        </div>
+        <div className="topic-actions">
+          <button className="btn small primary" onClick={addTest}>+ Thêm đề</button>
+          {!editing && <button className="btn ghost small" onClick={() => setEditing(true)}>Đổi tên</button>}
+          <button className="btn ghost small" onClick={toggleActive}>{topic.active ? "Khóa" : "Mở"}</button>
+          <button className="btn ghost small danger" onClick={removeTopic}>Xóa</button>
+        </div>
       </div>
 
-      <div className="test-rows">
+      <div className="test-rows compact-test-rows">
         {tests.loading && <span className="muted small">Đang tải đề…</span>}
         {tests.data?.map((te) => (
-          <div className="test-row" key={te.id}>
-            <div>
+          <div className="test-row compact-test-row" key={te.id}>
+            <div className="test-title-line">
               <span className="ver">Đề {te.version_label}</span>
-              {te.title && <span className="muted"> · {te.title}</span>}
-              <span className="muted"> · {te.time_limit_min}′</span>
-              {!te.active && <span className="pill off small"> khóa</span>}
+              {te.title && <span className="test-name">{te.title}</span>}
+              <span className="muted small">{te.time_limit_min}′</span>
+              {!te.active && <span className="pill off small">khóa</span>}
             </div>
-            <span>
+            <div className="test-actions">
               <button className="btn small" onClick={() => nav(`/admin/tests/${te.id}`)}>Soạn</button>
               <button className="btn ghost small danger" onClick={() => removeTest(te.id)}>Xóa</button>
-            </span>
+            </div>
           </div>
         ))}
-        {tests.data && tests.data.length === 0 && <span className="muted small">Chưa có đề.</span>}
+        {tests.data && tests.data.length === 0 && <span className="muted small empty-tests">Chưa có đề. Bấm “+ Thêm đề” để tạo đề đầu tiên.</span>}
       </div>
-      <button className="btn small" onClick={addTest}>+ Thêm đề</button>
     </div>
   );
 }
