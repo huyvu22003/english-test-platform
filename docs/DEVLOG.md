@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-06-26 — Trang chủ học sinh premium hơn
+- **Tác nhân:** Eagle AI · **Nhánh/PR:** `style/student-home-premium-ui`
+- **Mục tiêu:** Huy đánh giá UI hiện tại hơi đơn điệu, chưa thể hiện đủ sự chuyên nghiệp, trẻ trung và năng động; cần nâng cấp điểm chạm đầu tiên của học sinh mà không đụng backend/schema.
+- **Đã làm:** redesign `StudentHome` với hero lớn, headline rõ, CTA xếp lớp/phòng thi, stat cards, panel nhận diện học viên dạng glass, section “Chọn hành trình học tập”, skill cards cho Placement / Đọc-Nghe / Writing, card đề và topic Writing trực quan hơn. Bổ sung CSS visual system riêng cho student home. Sau phản hồi của Huy, thêm 2 thẻ hướng dẫn nhanh cho học sinh/giáo viên và nới layout desktop để giảm khoảng trống hai bên.
+- **Quyết định:** làm UI-1 chỉ trong `StudentHome.tsx` + `index.css`, giữ logic API/RPC hiện tại để giảm rủi ro; guide text ngắn để hỗ trợ thao tác chính xác nhưng không biến trang chủ thành tài liệu dài; admin dashboard để phase riêng sau.
+- **Kết quả:** `npm run build` PASS (101 modules).
+- **Bước tiếp:** sau merge, kiểm tra live trên desktop/mobile; nếu đạt hướng nhìn, tiếp tục UI-2 cho admin SaaS dashboard.
+
 ## 2026-06-25 — Ẩn tải bài nghe ở màn học sinh
 - **Tác nhân:** Eagle AI · **Nhánh/PR:** `fix/disable-student-audio-download`
 - **Mục tiêu:** học sinh đang thấy menu tải audio trong lúc làm Listening; cần vô hiệu hóa nút tải ở màn làm bài, nhưng giữ quyền giáo viên upload/preview trong phần soạn đề.
