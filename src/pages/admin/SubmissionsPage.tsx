@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { deleteSubmission, gradeWriting, listSubmissions, bandToCefr } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { ErrorBox, Spinner } from "../../components/common";
-import type { Submission, WritingScores } from "../../lib/types";
+import type { Submission, WritingCorrection, WritingScores } from "../../lib/types";
 
 type StatusFilter = "all" | "submitted" | "graded";
 
@@ -99,6 +99,10 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
     tr: s.score_tr ?? 6, cc: s.score_cc ?? 6, lr: s.score_lr ?? 6, gra: s.score_gra ?? 6,
   });
   const [feedback, setFeedback] = useState(s.feedback ?? "");
+  const [corrections, setCorrections] = useState<WritingCorrection[]>(s.writing_corrections ?? []);
+  const [selectedText, setSelectedText] = useState("");
+  const [fixedText, setFixedText] = useState("");
+  const [fixNote, setFixNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -107,7 +111,7 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
   async function save() {
     setBusy(true); setErr(null);
     try {
-      await gradeWriting(s.id, sc, feedback.trim());
+      await gradeWriting(s.id, sc, feedback.trim(), corrections);
       onChanged();
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -115,6 +119,28 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
       setBusy(false);
     }
   }
+  function captureSelection() {
+    const text = window.getSelection()?.toString().trim() ?? "";
+    if (!text) { setErr("Hãy bôi chọn câu/đoạn sai trong bài viết trước."); return; }
+    setSelectedText(text);
+    setFixedText("");
+    setFixNote("");
+    setErr(null);
+  }
+  function addCorrection() {
+    if (!selectedText.trim() || !fixedText.trim()) { setErr("Cần có câu gốc và câu sửa."); return; }
+    setCorrections((prev) => [...prev, {
+      id: `${Date.now()}-${prev.length + 1}`,
+      original: selectedText.trim(),
+      corrected: fixedText.trim(),
+      note: fixNote.trim() || undefined,
+    }]);
+    setSelectedText(""); setFixedText(""); setFixNote(""); setErr(null);
+  }
+  function removeCorrection(id: string) {
+    setCorrections((prev) => prev.filter((c) => c.id !== id));
+  }
+
   async function remove() {
     if (!confirm("Xóa bài nộp này?")) return;
     await deleteSubmission(s.id);
@@ -146,11 +172,38 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
               )}
             </div>
             {s.essay && (
-              <div className="essay-box">
-                <strong>Bài viết ({wc(s.essay)} từ):</strong>
+              <div className="essay-box grading-essay-box">
+                <div className="grading-essay-head">
+                  <strong>Bài viết ({wc(s.essay)} từ):</strong>
+                  <button className="btn small" type="button" onClick={captureSelection}>+ Sửa câu đã chọn</button>
+                </div>
                 <p>{s.essay}</p>
               </div>
             )}
+            <div className="structured-corrections card sub">
+              <h3>Sửa câu có cấu trúc</h3>
+              <p className="muted small">Bôi chọn câu sai trong bài viết → bấm “+ Sửa câu đã chọn” → nhập câu sửa. Dữ liệu này dùng để highlight chính xác ở trang học sinh.</p>
+              {selectedText && (
+                <div className="correction-compose">
+                  <label className="field"><span>Câu gốc đã chọn</span><textarea rows={2} value={selectedText} onChange={(e) => setSelectedText(e.target.value)} /></label>
+                  <label className="field"><span>Câu sửa đúng</span><textarea rows={2} value={fixedText} onChange={(e) => setFixedText(e.target.value)} placeholder="Nhập câu sửa…" /></label>
+                  <label className="field"><span>Ghi chú lỗi (tuỳ chọn)</span><input value={fixNote} onChange={(e) => setFixNote(e.target.value)} placeholder="VD: thiếu opinion, collocation chưa tự nhiên…" /></label>
+                  <button className="btn small primary" type="button" onClick={addCorrection}>Thêm vào danh sách sửa</button>
+                </div>
+              )}
+              <div className="correction-admin-list">
+                {corrections.map((c, idx) => (
+                  <div className="correction-admin-item" key={c.id}>
+                    <div className="correction-label">Lỗi #{idx + 1}</div>
+                    <div className="correction-original">{c.original}</div>
+                    {c.note && <div className="muted small">Lỗi: {c.note}</div>}
+                    <div className="correction-fixed">{c.corrected}</div>
+                    <button className="btn ghost small danger" type="button" onClick={() => removeCorrection(c.id)}>Xóa sửa câu</button>
+                  </div>
+                ))}
+                {corrections.length === 0 && <div className="muted small">Chưa có câu sửa có cấu trúc.</div>}
+              </div>
+            </div>
             {s.violation_log && (
               <details className="viol-box">
                 <summary>Nhật ký vi phạm ({s.violations})</summary>

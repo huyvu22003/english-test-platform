@@ -157,7 +157,8 @@ function HistoryTable({ items, selected, onSelect }: {
 }
 
 function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () => void }) {
-  const corrections = parseCorrections(item.feedback ?? "");
+  const [activeCorrection, setActiveCorrection] = useState<string | null>(null);
+  const corrections = normalizedCorrections(item);
   return (
     <div className="progress-modal-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="card progress-modal" onClick={(e) => e.stopPropagation()}>
@@ -187,7 +188,7 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
             <section className="detail-section">
               <h3>Bài làm của học viên</h3>
               {item.essay ? (
-                <div className="detail-box prewrap essay-detail-box"><HighlightedEssay essay={item.essay} corrections={corrections} /></div>
+                <div className="detail-box prewrap essay-detail-box"><HighlightedEssay essay={item.essay} corrections={corrections} activeId={activeCorrection} /></div>
               ) : item.score != null && item.max_score != null ? (
                 <div className="detail-box">Điểm tự chấm: <b>{item.score}/{item.max_score}</b></div>
               ) : (
@@ -205,9 +206,10 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
             </section>
 
             <section className="detail-section">
-              <h3>Sửa / nhận xét của giáo viên</h3>
-              <p className="muted small">Giữ nguyên nội dung giáo viên đã chấm. Các đoạn khớp rõ với “Câu gốc” sẽ được highlight trong bài làm bên trái.</p>
-              <div className="detail-box prewrap feedback-box">{item.feedback || "Chưa có nhận xét của giáo viên."}</div>
+              <h3>Sửa câu</h3>
+              {corrections.length > 0 ? <StructuredCorrectionList corrections={corrections} onHover={setActiveCorrection} /> : <p className="muted small">Chưa có dữ liệu sửa câu có cấu trúc.</p>}
+              <h3>Nhận xét tổng quan của giáo viên</h3>
+              <div className="detail-box prewrap feedback-box">{item.feedback || "Chưa có nhận xét tổng quan."}</div>
             </section>
           </div>
         </div>
@@ -216,11 +218,31 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
   );
 }
 
-interface CorrectionPair { original: string; corrected: string; index: number; }
+interface CorrectionPair { id: string; original: string; corrected: string; note?: string; index: number; }
 
-function HighlightedEssay({ essay, corrections }: { essay: string; corrections: CorrectionPair[] }) {
+function HighlightedEssay({ essay, corrections, activeId }: { essay: string; corrections: CorrectionPair[]; activeId: string | null }) {
   const parts = highlightEssayParts(essay, corrections);
-  return <>{parts.map((p, idx) => p.hit ? <mark className="essay-error-mark" key={idx} title={p.hit.corrected}>{p.text}</mark> : <span key={idx}>{p.text}</span>)}</>;
+  return <>{parts.map((p, idx) => p.hit ? <mark id={`essay-hit-${p.hit.id}`} className={`essay-error-mark${activeId === p.hit.id ? " active" : ""}`} key={idx} title={p.hit.corrected}>{p.text}</mark> : <span key={idx}>{p.text}</span>)}</>;
+}
+
+function StructuredCorrectionList({ corrections, onHover }: { corrections: CorrectionPair[]; onHover: (id: string | null) => void }) {
+  function enter(id: string) {
+    onHover(id);
+    setTimeout(() => document.getElementById(`essay-hit-${id}`)?.scrollIntoView({ block: "center", behavior: "smooth" }), 30);
+  }
+  return (
+    <div className="correction-list">
+      {corrections.map((c) => (
+        <div className="correction-card" key={c.id} onMouseEnter={() => enter(c.id)} onMouseLeave={() => onHover(null)}>
+          <div className="correction-label">Lỗi #{c.index}</div>
+          <div className="correction-original">{c.original}</div>
+          {c.note && <div className="muted small">Lỗi: {c.note}</div>}
+          <div className="correction-arrow">↓ sửa thành</div>
+          <div className="correction-fixed">{c.corrected}</div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function WritingScoreGrid({ item }: { item: ProgressItem }) {
@@ -278,6 +300,13 @@ function groupBySkill(items: ProgressItem[]) {
   return Object.fromEntries(Object.entries(out).filter(([, rows]) => rows.length > 0));
 }
 
+function normalizedCorrections(item: ProgressItem): CorrectionPair[] {
+  if (item.writing_corrections?.length) {
+    return item.writing_corrections.map((c, idx) => ({ ...c, id: c.id || `c-${idx}`, index: idx + 1 }));
+  }
+  return parseCorrections(item.feedback ?? "");
+}
+
 function parseCorrections(feedback: string): CorrectionPair[] {
   const lines = feedback.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   const out: CorrectionPair[] = [];
@@ -287,7 +316,7 @@ function parseCorrections(feedback: string): CorrectionPair[] {
     const fixIndex = lines.findIndex((line, idx) => idx > i && /sửa|correct|correction/i.test(stripMarks(line)));
     if (fixIndex === -1) continue;
     const corrected = collectValue(lines, fixIndex);
-    if (original && corrected) out.push({ original, corrected, index: out.length + 1 });
+    if (original && corrected) out.push({ id: `parsed-${out.length + 1}`, original, corrected, index: out.length + 1 });
   }
   return out.slice(0, 20);
 }
@@ -366,15 +395,16 @@ function printProgressPdf(item: ProgressItem, corrections: CorrectionPair[]) {
 function buildPdfHtml(item: ProgressItem, corrections: CorrectionPair[]) {
   const essayHtml = item.essay ? highlightEssayParts(item.essay, corrections).map((p) => p.hit ? `<mark>${esc(p.text)}</mark>` : esc(p.text)).join("") : "Chưa có nội dung bài làm.";
   const highlightedCount = item.essay ? highlightEssayParts(item.essay, corrections).filter((p) => p.hit).length : 0;
+  const correctionHtml = corrections.length ? corrections.map((c) => `<div class="fix"><b>Lỗi #${c.index}</b><p class="bad">${esc(c.original)}</p>${c.note ? `<p class="muted">${esc(c.note)}</p>` : ""}<p class="good">${esc(c.corrected)}</p></div>`).join("") : "<p class=\"muted\">Chưa có dữ liệu sửa câu có cấu trúc.</p>";
   const scores = [["TR", item.score_tr], ["CC", item.score_cc], ["LR", item.score_lr], ["GRA", item.score_gra]].map(([k, v]) => `<div class="score"><b>${v ?? "—"}</b><span>${k}</span></div>`).join("");
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(item.topic_name ?? "Bài kiểm tra")}</title><style>
-    @page{size:A4;margin:14mm} body{font-family:Arial,sans-serif;color:#221b26;margin:0;line-height:1.55}.brand{display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #ec3a2b;padding-bottom:14px;margin-bottom:18px}.brand img{height:54px}.brand-title{text-align:right}.brand-title h1{margin:0;font-size:24px}.muted{color:#6c6880}.pill{display:inline-block;background:#e7f0ff;color:#1d4ed8;border-radius:99px;padding:3px 10px;font-weight:700;font-size:12px}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.meta div,.box{border:1px solid #ececf1;border-radius:12px;padding:10px;background:#fafafe}.scores{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.score{text-align:center;border:1px solid #fed7aa;background:#fff7ed;border-radius:12px;padding:10px}.score b{display:block;color:#ee5a24;font-size:24px}.score span{font-size:12px;color:#6c6880}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:start}.section{margin-top:16px}.section h2{font-size:17px;margin:0 0 8px}.essay{white-space:pre-wrap}.feedback{white-space:pre-wrap}mark{background:#ffe4e6;color:#9f1239;border-bottom:2px solid #fb7185;padding:0 2px;border-radius:3px}.footer{margin-top:20px;border-top:1px solid #ececf1;padding-top:8px;font-size:12px;color:#6c6880}@media print{button{display:none}.box,.score{break-inside:avoid}}
+    @page{size:A4;margin:14mm} body{font-family:Arial,sans-serif;color:#221b26;margin:0;line-height:1.55}.brand{display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #ec3a2b;padding-bottom:14px;margin-bottom:18px}.brand img{height:54px}.brand-title{text-align:right}.brand-title h1{margin:0;font-size:24px}.muted{color:#6c6880}.pill{display:inline-block;background:#e7f0ff;color:#1d4ed8;border-radius:99px;padding:3px 10px;font-weight:700;font-size:12px}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.meta div,.box{border:1px solid #ececf1;border-radius:12px;padding:10px;background:#fafafe}.scores{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.score{text-align:center;border:1px solid #fed7aa;background:#fff7ed;border-radius:12px;padding:10px}.score b{display:block;color:#ee5a24;font-size:24px}.score span{font-size:12px;color:#6c6880}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:start}.section{margin-top:16px}.section h2{font-size:17px;margin:0 0 8px}.essay{white-space:pre-wrap}.feedback{white-space:pre-wrap}.fix{border-left:4px solid #ec3a2b;background:#fff7f7;padding:8px 10px;margin:8px 0;border-radius:8px}.bad{background:#fff1f2;margin:6px 0;padding:7px;border-radius:6px}.good{background:#ecfdf5;margin:6px 0;padding:7px;border-radius:6px}mark{background:#ffe4e6;color:#9f1239;border-bottom:2px solid #fb7185;padding:0 2px;border-radius:3px}.footer{margin-top:20px;border-top:1px solid #ececf1;padding-top:8px;font-size:12px;color:#6c6880}@media print{button{display:none}.box,.score,.fix{break-inside:avoid}}
   </style></head><body>
     <div class="brand"><img src="/logo.png"/><div class="brand-title"><span class="pill">${esc(skillLabel(item.skill))}</span><h1>${esc(item.topic_name ?? item.test_title ?? "Bài kiểm tra")}</h1><div class="muted">${dateVi(item.submitted_at)}</div></div></div>
     <div class="meta"><div><b>Học viên</b><br>${esc(item.student_name ?? "—")}</div><div><b>Mã HV</b><br>${esc(item.student_code ?? "—")}</div><div><b>Lớp</b><br>${esc(item.class_name ?? "—")}</div><div><b>Trạng thái</b><br>${item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</div></div>
     <div class="section"><h2>Điểm</h2><div class="scores"><div class="score"><b>${bandOf(item) ?? "—"}</b><span>Band</span></div>${scores}</div><p class="muted">CEFR: <b>${esc(item.cefr ?? "—")}</b></p></div>
     <div class="section"><h2>Đề bài</h2><div class="box">${esc(item.prompt || item.test_title || item.topic_name || "Chưa có đề bài lưu trong hệ thống.")}</div></div>
-    <div class="grid"><div class="section"><h2>Bài làm của học viên</h2><p class="muted">${highlightedCount ? `${highlightedCount} đoạn được highlight theo “Câu gốc” trong nhận xét.` : "Không có đoạn nào được highlight tự động."}</p><div class="box essay">${essayHtml}</div></div><div class="section"><h2>Sửa / nhận xét của giáo viên</h2><div class="box feedback">${esc(item.feedback || "Chưa có nhận xét của giáo viên.")}</div></div></div>
+    <div class="grid"><div class="section"><h2>Bài làm của học viên</h2><p class="muted">${highlightedCount ? `${highlightedCount} đoạn được highlight theo dữ liệu sửa câu.` : "Không có đoạn nào được highlight tự động."}</p><div class="box essay">${essayHtml}</div></div><div class="section"><h2>Sửa câu</h2>${correctionHtml}<h2>Nhận xét tổng quan</h2><div class="box feedback">${esc(item.feedback || "Chưa có nhận xét tổng quan.")}</div></div></div>
     <div class="footer">IELTS Ms. Trà My · Phiếu kết quả được tạo tự động từ English Test Platform</div>
   </body></html>`;
 }

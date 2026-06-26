@@ -345,7 +345,8 @@ alter table submissions add column if not exists score_lr     numeric;  -- Lexic
 alter table submissions add column if not exists score_gra    numeric;  -- Grammatical Range & Accuracy
 alter table submissions add column if not exists overall_band numeric;  -- band tổng (trung bình 4 tiêu chí)
 alter table submissions add column if not exists cefr         text;     -- quy đổi từ band
-alter table submissions add column if not exists feedback     text;     -- nhận xét của GV
+alter table submissions add column if not exists feedback     text;     -- nhận xét tổng quan của GV
+alter table submissions add column if not exists writing_corrections jsonb not null default '[]'::jsonb; -- các câu sửa có cấu trúc
 alter table submissions add column if not exists graded_by    uuid references profiles(id);
 alter table submissions add column if not exists graded_at    timestamptz;
 
@@ -447,6 +448,7 @@ returns jsonb language sql security definer set search_path = public as $$
            'prompt', t.prompt,
            'essay', s.essay,
            'feedback', s.feedback,
+           'writing_corrections', coalesce(s.writing_corrections, '[]'::jsonb),
            'score', s.score,
            'max_score', s.max_score,
            'band', s.band,

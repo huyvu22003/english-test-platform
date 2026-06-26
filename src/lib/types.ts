@@ -89,6 +89,13 @@ export interface SubmitResult {
   band: number | null;
 }
 
+export interface WritingCorrection {
+  id: string;
+  original: string;
+  corrected: string;
+  note?: string;
+}
+
 export interface Submission {
   id: string;
   test_id: string | null;
@@ -114,6 +121,7 @@ export interface Submission {
   overall_band: number | null;
   cefr: string | null;
   feedback: string | null;
+  writing_corrections?: WritingCorrection[] | null;
   graded_at: string | null;
   // Đề bài (join từ bảng tests) — hiện khi GV chấm. Có thể null nếu đề đã xóa.
   tests?: { prompt: string | null; title: string | null } | null;
@@ -150,6 +158,7 @@ export interface ProgressItem {
   prompt?: string | null;
   essay?: string | null;
   feedback?: string | null;
+  writing_corrections?: WritingCorrection[] | null;
   score?: number | null;
   max_score?: number | null;
   band?: number | null;
