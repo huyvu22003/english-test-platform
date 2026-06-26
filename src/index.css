@@ -270,7 +270,11 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .correction-arrow { color: var(--muted); font-size: 12px; font-weight: 700; margin: 6px 0; }
 .correction-fixed { background: #ecfdf5; color: #166534; border-radius: 8px; padding: 8px; }
 .grading-essay-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.correction-compose { display: grid; gap: 8px; }
+.correction-compose-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(17,12,24,.45); display: grid; place-items: center; padding: 18px; }
+.correction-compose-modal { width: min(720px, 100%); margin: 0; box-shadow: var(--shadow-lg); }
+.modal-mini-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.modal-mini-head h3 { margin: 0 0 4px; }
+.correction-compose-actions { justify-content: flex-end; flex-wrap: wrap; }
 .structured-corrections { margin-top: 12px; }
 .prewrap { white-space: pre-wrap; }
 .crit-cards.compact { grid-template-columns: repeat(4, 1fr); gap: 8px; }
