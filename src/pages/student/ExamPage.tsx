@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getTest, submitExam } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
-import { useAntiCheat } from "../../lib/antiCheat";
+import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
 import { ErrorBox, Spinner } from "../../components/common";
 import type { AnswerMap, PublicQuestion, PublicTest } from "../../lib/types";
 
@@ -44,7 +44,7 @@ export default function ExamPage() {
   }, [meta.name, meta.email, nav]);
 
   const doSubmit = useCallback(
-    async (reason: "manual" | "timeout") => {
+    async (reason: "manual" | "timeout" | "violations") => {
       if (submitting) return;
       setSubmitting(true);
       setSubmitErr(null);
@@ -66,7 +66,8 @@ export default function ExamPage() {
             name: meta.name,
             topic: data.data?.topic.name,
             skill: data.data?.topic.skill,
-            auto: reason === "timeout",
+            auto: reason !== "manual",
+            stoppedForViolations: reason === "violations",
           },
           replace: true,
         });
@@ -89,6 +90,10 @@ export default function ExamPage() {
     return () => window.clearTimeout(id);
   }, [started, secondsLeft, doSubmit]);
 
+  useEffect(() => {
+    if (started && ac.violations > MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
+  }, [started, ac.violations, doSubmit]);
+
   const wordCount = useMemo(
     () => essay.trim().split(/\s+/).filter(Boolean).length,
     [essay]
@@ -110,6 +115,7 @@ export default function ExamPage() {
           <ul className="steps">
             <li>Thời gian: <strong>{test.time_limit_min} phút</strong>{isWriting && test.min_words ? ` · tối thiểu ${test.min_words} từ` : ""}</li>
             <li>Bài thi chạy ở chế độ <strong>toàn màn hình</strong>. Rời tab, thoát fullscreen, sao chép/dán… đều bị <strong>ghi nhận vi phạm</strong>.</li>
+            <li>Nếu vi phạm <strong>trên {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.</li>
             <li>Hết giờ hệ thống <strong>tự nộp</strong>.</li>
           </ul>
           <button
@@ -136,7 +142,7 @@ export default function ExamPage() {
           <span className="muted"> — {meta.name}</span>
         </div>
         <div className="exam-bar-right">
-          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}</span>}
+          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}</span>}
           <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
             ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
           </span>

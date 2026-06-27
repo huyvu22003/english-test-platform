@@ -1,5 +1,6 @@
 // Màn sau khi nộp. Writing: chấm tay → "chờ chấm". Placement: tự chấm → CEFR + chi tiết.
 import { Link, Navigate, useLocation } from "react-router-dom";
+import { VIOLATION_STOP_MESSAGE } from "../../lib/antiCheat";
 import type { PlacementResult, SessionSubmitResult, SubmitResult } from "../../lib/types";
 
 interface ResultState {
@@ -10,6 +11,7 @@ interface ResultState {
   name?: string;
   topic?: string;
   auto?: boolean;
+  stoppedForViolations?: boolean;
 }
 
 export default function ResultPage() {
@@ -20,11 +22,13 @@ export default function ResultPage() {
   return (
     <div className="wrap">
       <div className="card result">
-        <h1>{st.placement ? "Kết quả xếp lớp 🎯" : "Đã nộp bài ✅"}</h1>
-        {st.auto && <p className="warn-text">Bài được tự nộp (hết giờ hoặc vượt ngưỡng vi phạm).</p>}
+        <h1>{st.stoppedForViolations ? "Bài làm đã bị dừng" : st.placement ? "Kết quả xếp lớp 🎯" : "Đã nộp bài ✅"}</h1>
+        {st.stoppedForViolations ? <p className="warn-text">{VIOLATION_STOP_MESSAGE}</p> : st.auto && <p className="warn-text">Bài được tự nộp do hết giờ.</p>}
         <p className="muted">{st.name}{st.topic ? ` · ${st.topic}` : ""}</p>
 
-        {st.session ? (
+        {st.stoppedForViolations ? (
+          <p className="big-note">Hệ thống đã ghi nhận nhật ký vi phạm. Vui lòng làm bài nghiêm túc hơn trong lần tới.</p>
+        ) : st.session ? (
           <SessionView res={st.session} />
         ) : st.placement ? (
           <PlacementView res={st.placement} />

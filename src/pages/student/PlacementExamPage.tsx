@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getTest, submitPlacement } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
-import { useAntiCheat } from "../../lib/antiCheat";
+import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
 import { ErrorBox, Spinner } from "../../components/common";
 import { QuestionView } from "./ExamPage";
 import type { AnswerMap, PublicTest } from "../../lib/types";
@@ -34,7 +34,7 @@ export default function PlacementExamPage() {
   }, [meta.name, meta.email, nav]);
 
   const doSubmit = useCallback(
-    async (reason: "manual" | "timeout") => {
+    async (reason: "manual" | "timeout" | "violations") => {
       if (submitting) return;
       setSubmitting(true);
       setSubmitErr(null);
@@ -45,7 +45,7 @@ export default function PlacementExamPage() {
         });
         if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
         nav("/result", {
-          state: { placement: res, name: meta.name, topic: data.data?.topic.name, auto: reason === "timeout" },
+          state: { placement: res, name: meta.name, topic: data.data?.topic.name, auto: reason !== "manual", stoppedForViolations: reason === "violations" },
           replace: true,
         });
       } catch (e) {
@@ -63,6 +63,10 @@ export default function PlacementExamPage() {
     return () => window.clearTimeout(id);
   }, [started, secondsLeft, doSubmit]);
 
+  useEffect(() => {
+    if (started && ac.violations > MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
+  }, [started, ac.violations, doSubmit]);
+
   if (data.loading) return <div className="wrap"><Spinner /></div>;
   if (data.error) return <div className="wrap"><ErrorBox msg={data.error} /></div>;
   if (!data.data) return null;
@@ -77,7 +81,7 @@ export default function PlacementExamPage() {
           <ul className="steps">
             <li>{questions.length} câu trắc nghiệm · {test.time_limit_min} phút.</li>
             <li>Hệ thống <strong>tự chấm</strong> và xếp <strong>trình độ CEFR</strong> ngay sau khi nộp.</li>
-            <li>Chế độ toàn màn hình; rời tab/sao chép bị ghi nhận.</li>
+            <li>Chế độ toàn màn hình; rời tab/sao chép bị ghi nhận. Vi phạm <strong>trên {MAX_ALLOWED_VIOLATIONS} lần</strong> sẽ bị dừng bài.</li>
           </ul>
           <button
             className="btn primary"
@@ -98,7 +102,7 @@ export default function PlacementExamPage() {
       <div className="exam-bar">
         <div><strong>Xếp lớp</strong> <span className="muted">— {meta.name}</span></div>
         <div className="exam-bar-right">
-          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}</span>}
+          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}</span>}
           <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
             ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
           </span>
