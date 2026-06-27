@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { pickPrompt, submitWriting } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
-import { useAntiCheat } from "../../lib/antiCheat";
+import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
 import { ErrorBox, Spinner } from "../../components/common";
 import type { PickedPrompt } from "../../lib/types";
 
@@ -35,7 +35,7 @@ export default function WritingExamPage() {
   const wordCount = useMemo(() => essay.trim().split(/\s+/).filter(Boolean).length, [essay]);
 
   const doSubmit = useCallback(
-    async (reason: "manual" | "timeout") => {
+    async (reason: "manual" | "timeout" | "violations") => {
       if (submitting || !data.data) return;
       setSubmitting(true);
       setSubmitErr(null);
@@ -51,7 +51,7 @@ export default function WritingExamPage() {
         });
         if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
         nav("/result", {
-          state: { writing: true, name: meta.name, topic: data.data.topic_name, auto: reason === "timeout" },
+          state: { writing: true, name: meta.name, topic: data.data.topic_name, auto: reason !== "manual", stoppedForViolations: reason === "violations" },
           replace: true,
         });
       } catch (e) {
@@ -69,6 +69,10 @@ export default function WritingExamPage() {
     return () => window.clearTimeout(id);
   }, [started, secondsLeft, doSubmit]);
 
+  useEffect(() => {
+    if (started && ac.violations > MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
+  }, [started, ac.violations, doSubmit]);
+
   if (data.loading) return <div className="wrap"><Spinner label="Đang bốc đề…" /></div>;
   if (data.error) return <div className="wrap"><ErrorBox msg={data.error} /></div>;
   if (!data.data) return null;
@@ -82,6 +86,7 @@ export default function WritingExamPage() {
           <ul className="steps">
             <li>Thời gian: <strong>{p.time_limit_min} phút</strong> · tối thiểu <strong>{p.min_words} từ</strong></li>
             <li>Bài chạy ở chế độ <strong>toàn màn hình</strong>; rời tab/sao chép/dán đều bị <strong>ghi nhận</strong>.</li>
+            <li>Nếu vi phạm <strong>trên {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.</li>
             <li>Hết giờ hệ thống <strong>tự nộp</strong>. Bài sẽ do <strong>giáo viên chấm tay</strong>.</li>
           </ul>
           <button
@@ -105,7 +110,7 @@ export default function WritingExamPage() {
       <div className="exam-bar">
         <div><strong>{p.topic_name}</strong> <span className="muted">— {meta.name}</span></div>
         <div className="exam-bar-right">
-          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}</span>}
+          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}</span>}
           <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
             ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
           </span>

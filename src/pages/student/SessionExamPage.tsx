@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getTest, submitSession } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
-import { useAntiCheat } from "../../lib/antiCheat";
+import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
 import { ErrorBox, Spinner } from "../../components/common";
 import { QuestionView } from "./ExamPage";
 import type { AnswerMap, PublicTest, Skill } from "../../lib/types";
@@ -35,6 +35,7 @@ export default function SessionExamPage() {
   const ac = useAntiCheat(started);
   const isWriting = meta.skill === "writing";
   const maxViol = meta.maxViolations ?? 0;
+  const stopAtViolations = maxViol > 0 ? Math.min(maxViol, MAX_ALLOWED_VIOLATIONS + 1) : MAX_ALLOWED_VIOLATIONS + 1;
 
   useEffect(() => {
     if (!meta.name || !meta.email || !meta.testId) nav("/exam-room", { replace: true });
@@ -54,7 +55,7 @@ export default function SessionExamPage() {
           violations: ac.violations, log: ac.log, startedAt: startedAtRef.current,
         });
         if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
-        nav("/result", { state: { session: res, name: meta.name, topic: meta.sessionName, auto: reason !== "manual" }, replace: true });
+        nav("/result", { state: { session: res, name: meta.name, topic: meta.sessionName, auto: reason !== "manual", stoppedForViolations: reason === "violations" }, replace: true });
       } catch (e) {
         setSubmitErr(e instanceof Error ? e.message : String(e));
         setSubmitting(false);
@@ -71,10 +72,10 @@ export default function SessionExamPage() {
     return () => window.clearTimeout(id);
   }, [started, secondsLeft, doSubmit]);
 
-  // chống gian lận siết: tự nộp khi vượt ngưỡng vi phạm
+  // chống gian lận siết: tự dừng/nộp khi vượt ngưỡng vi phạm
   useEffect(() => {
-    if (started && maxViol > 0 && ac.violations >= maxViol) void doSubmit("violations");
-  }, [started, maxViol, ac.violations, doSubmit]);
+    if (started && ac.violations >= stopAtViolations) void doSubmit("violations");
+  }, [started, stopAtViolations, ac.violations, doSubmit]);
 
   if (!meta.testId) return null;
   if (data.loading) return <div className="wrap"><Spinner /></div>;
@@ -89,7 +90,7 @@ export default function SessionExamPage() {
           <h1>{meta.sessionName}</h1>
           <ul className="steps">
             <li>Thời gian: <strong>{test.time_limit_min} phút</strong>.</li>
-            <li>Chế độ <strong>toàn màn hình</strong>, ghi nhật ký vi phạm. {maxViol > 0 && <strong>Tự nộp khi vi phạm ≥ {maxViol}.</strong>}</li>
+            <li>Chế độ <strong>toàn màn hình</strong>, ghi nhật ký vi phạm. <strong>Tự dừng khi vi phạm {maxViol > 0 && maxViol <= MAX_ALLOWED_VIOLATIONS ? `≥ ${maxViol}` : `trên ${MAX_ALLOWED_VIOLATIONS} lần`}.</strong></li>
             <li>Chỉ được nộp theo quy định của buổi thi.</li>
           </ul>
           <button className="btn primary" onClick={async () => {
@@ -108,7 +109,7 @@ export default function SessionExamPage() {
       <div className="exam-bar">
         <div><strong>{meta.sessionName}</strong> <span className="muted">— {meta.name}</span></div>
         <div className="exam-bar-right">
-          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}{maxViol ? `/${maxViol}` : ""}</span>}
+          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}/{stopAtViolations - 1}</span>}
           <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
             ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
           </span>

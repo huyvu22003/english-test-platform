@@ -11,6 +11,9 @@ export interface AntiCheat {
   enterFullscreen: () => Promise<void>;
 }
 
+export const MAX_ALLOWED_VIOLATIONS = 10; // trên 10 lần sẽ dừng bài thi
+export const VIOLATION_STOP_MESSAGE = "Bài làm đã bị dừng do vượt quá số lần vi phạm cho phép. Học sinh cần nghiêm túc hơn trong lần làm bài tiếp theo.";
+
 const WARN_AT = 1;       // bắt đầu cảnh báo ngay từ lần đầu
 const HIDE_WARN_MS = 4000;
 
