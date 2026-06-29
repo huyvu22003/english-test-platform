@@ -267,6 +267,7 @@ export interface SessionByCode {
   max_violations?: number;
   open_at?: string;
   close_at?: string;
+  server_now?: string;
 }
 
 export interface SessionSubmitResult {

@@ -11,11 +11,12 @@ export interface AntiCheat {
   enterFullscreen: () => Promise<void>;
 }
 
-export const MAX_ALLOWED_VIOLATIONS = 10; // trên 10 lần sẽ dừng bài thi
+export const MAX_ALLOWED_VIOLATIONS = 2; // từ 2 lần sẽ dừng/nộp bài thi
 export const VIOLATION_STOP_MESSAGE = "Bài làm đã bị dừng do vượt quá số lần vi phạm cho phép. Học sinh cần nghiêm túc hơn trong lần làm bài tiếp theo.";
 
 const WARN_AT = 1;       // bắt đầu cảnh báo ngay từ lần đầu
 const HIDE_WARN_MS = 4000;
+const RECORD_COOLDOWN_MS = 1500; // một hành động rời màn hình có thể bắn nhiều event; chỉ tính 1 lần
 
 export function useAntiCheat(active: boolean): AntiCheat {
   const [violations, setViolations] = useState(0);
@@ -23,8 +24,12 @@ export function useAntiCheat(active: boolean): AntiCheat {
   const logRef = useRef<string[]>([]);
   const [log, setLog] = useState("");
   const warnTimer = useRef<number | undefined>(undefined);
+  const lastRecordAt = useRef(0);
 
   const record = useCallback((reason: string) => {
+    const now = Date.now();
+    if (now - lastRecordAt.current < RECORD_COOLDOWN_MS) return;
+    lastRecordAt.current = now;
     const ts = new Date().toLocaleTimeString("vi-VN", { hour12: false });
     logRef.current.push(`${ts} — ${reason}`);
     setLog(logRef.current.join("\n"));

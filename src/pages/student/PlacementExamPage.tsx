@@ -64,7 +64,7 @@ export default function PlacementExamPage() {
   }, [started, secondsLeft, doSubmit]);
 
   useEffect(() => {
-    if (started && ac.violations > MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
+    if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
   }, [started, ac.violations, doSubmit]);
 
   if (data.loading) return <div className="wrap"><Spinner /></div>;
@@ -81,7 +81,7 @@ export default function PlacementExamPage() {
           <ul className="steps">
             <li>{questions.length} câu trắc nghiệm · {test.time_limit_min} phút.</li>
             <li>Hệ thống <strong>tự chấm</strong> và xếp <strong>trình độ CEFR</strong> ngay sau khi nộp.</li>
-            <li>Chế độ toàn màn hình; rời tab/sao chép bị ghi nhận. Vi phạm <strong>trên {MAX_ALLOWED_VIOLATIONS} lần</strong> sẽ bị dừng bài.</li>
+            <li>Chế độ toàn màn hình; rời tab/sao chép bị ghi nhận. Vi phạm <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong> sẽ bị dừng bài.</li>
           </ul>
           <button
             className="btn primary"
