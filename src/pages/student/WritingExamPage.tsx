@@ -70,7 +70,7 @@ export default function WritingExamPage() {
   }, [started, secondsLeft, doSubmit]);
 
   useEffect(() => {
-    if (started && ac.violations > MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
+    if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
   }, [started, ac.violations, doSubmit]);
 
   if (data.loading) return <div className="wrap"><Spinner label="Đang bốc đề…" /></div>;
@@ -86,7 +86,7 @@ export default function WritingExamPage() {
           <ul className="steps">
             <li>Thời gian: <strong>{p.time_limit_min} phút</strong> · tối thiểu <strong>{p.min_words} từ</strong></li>
             <li>Bài chạy ở chế độ <strong>toàn màn hình</strong>; rời tab/sao chép/dán đều bị <strong>ghi nhận</strong>.</li>
-            <li>Nếu vi phạm <strong>trên {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.</li>
+            <li>Nếu vi phạm <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.</li>
             <li>Hết giờ hệ thống <strong>tự nộp</strong>. Bài sẽ do <strong>giáo viên chấm tay</strong>.</li>
           </ul>
           <button

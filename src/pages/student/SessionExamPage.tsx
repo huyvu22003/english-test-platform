@@ -16,7 +16,7 @@ function fmt(sec: number): string {
 
 interface St {
   name?: string; email?: string; testId?: string; skill?: Skill;
-  sessionName?: string; maxViolations?: number;
+  sessionName?: string; maxViolations?: number; closeAt?: string | null; serverNow?: string | null;
 }
 
 export default function SessionExamPage() {
@@ -29,13 +29,19 @@ export default function SessionExamPage() {
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [essay, setEssay] = useState("");
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [deadlineMs, setDeadlineMs] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
   const ac = useAntiCheat(started);
   const isWriting = meta.skill === "writing";
   const maxViol = meta.maxViolations ?? 0;
-  const stopAtViolations = maxViol > 0 ? Math.min(maxViol, MAX_ALLOWED_VIOLATIONS + 1) : MAX_ALLOWED_VIOLATIONS + 1;
+  const stopAtViolations = maxViol > 0 ? maxViol : MAX_ALLOWED_VIOLATIONS;
+  const serverOffsetMs = useMemo(() => {
+    if (!meta.serverNow) return 0;
+    const serverNowMs = new Date(meta.serverNow).getTime();
+    return Number.isFinite(serverNowMs) ? serverNowMs - Date.now() : 0;
+  }, [meta.serverNow]);
 
   useEffect(() => {
     if (!meta.name || !meta.email || !meta.testId) nav("/exam-room", { replace: true });
@@ -64,13 +70,18 @@ export default function SessionExamPage() {
     [submitting, sessionId, meta, answers, essay, isWriting, ac.violations, ac.log, nav]
   );
 
-  // đồng hồ
+  // Đồng hồ dùng deadline tuyệt đối + lệch giờ server, tránh mỗi máy đếm khác nhau.
   useEffect(() => {
-    if (!started || secondsLeft === null) return;
-    if (secondsLeft <= 0) { void doSubmit("timeout"); return; }
-    const id = window.setTimeout(() => setSecondsLeft((s) => (s === null ? null : s - 1)), 1000);
-    return () => window.clearTimeout(id);
-  }, [started, secondsLeft, doSubmit]);
+    if (!started || deadlineMs === null) return;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((deadlineMs - (Date.now() + serverOffsetMs)) / 1000));
+      setSecondsLeft(left);
+      if (left <= 0) void doSubmit("timeout");
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [started, deadlineMs, serverOffsetMs, doSubmit]);
 
   // chống gian lận siết: tự dừng/nộp khi vượt ngưỡng vi phạm
   useEffect(() => {
@@ -90,13 +101,18 @@ export default function SessionExamPage() {
           <h1>{meta.sessionName}</h1>
           <ul className="steps">
             <li>Thời gian: <strong>{test.time_limit_min} phút</strong>.</li>
-            <li>Chế độ <strong>toàn màn hình</strong>, ghi nhật ký vi phạm. <strong>Tự dừng khi vi phạm {maxViol > 0 && maxViol <= MAX_ALLOWED_VIOLATIONS ? `≥ ${maxViol}` : `trên ${MAX_ALLOWED_VIOLATIONS} lần`}.</strong></li>
+            <li>Chế độ <strong>toàn màn hình</strong>, ghi nhật ký vi phạm. <strong>Tự dừng khi vi phạm ≥ {stopAtViolations} lần.</strong></li>
             <li>Chỉ được nộp theo quy định của buổi thi.</li>
           </ul>
           <button className="btn primary" onClick={async () => {
             await ac.enterFullscreen();
             startedAtRef.current = new Date().toISOString();
-            setSecondsLeft(test.time_limit_min * 60);
+            const serverNowMs = Date.now() + serverOffsetMs;
+            const durationDeadlineMs = serverNowMs + test.time_limit_min * 60_000;
+            const closeMs = meta.closeAt ? new Date(meta.closeAt).getTime() : Number.POSITIVE_INFINITY;
+            const nextDeadlineMs = Math.min(durationDeadlineMs, Number.isFinite(closeMs) ? closeMs : Number.POSITIVE_INFINITY);
+            setDeadlineMs(nextDeadlineMs);
+            setSecondsLeft(Math.max(0, Math.ceil((nextDeadlineMs - serverNowMs) / 1000)));
             setStarted(true);
           }}>Bắt đầu thi</button>
         </div>
@@ -109,7 +125,7 @@ export default function SessionExamPage() {
       <div className="exam-bar">
         <div><strong>{meta.sessionName}</strong> <span className="muted">— {meta.name}</span></div>
         <div className="exam-bar-right">
-          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}/{stopAtViolations - 1}</span>}
+          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}/{stopAtViolations}</span>}
           <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
             ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
           </span>

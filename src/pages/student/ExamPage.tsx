@@ -91,7 +91,7 @@ export default function ExamPage() {
   }, [started, secondsLeft, doSubmit]);
 
   useEffect(() => {
-    if (started && ac.violations > MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
+    if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
   }, [started, ac.violations, doSubmit]);
 
   const wordCount = useMemo(
@@ -115,7 +115,7 @@ export default function ExamPage() {
           <ul className="steps">
             <li>Thời gian: <strong>{test.time_limit_min} phút</strong>{isWriting && test.min_words ? ` · tối thiểu ${test.min_words} từ` : ""}</li>
             <li>Bài thi chạy ở chế độ <strong>toàn màn hình</strong>. Rời tab, thoát fullscreen, sao chép/dán… đều bị <strong>ghi nhận vi phạm</strong>.</li>
-            <li>Nếu vi phạm <strong>trên {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.</li>
+            <li>Nếu vi phạm <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.</li>
             <li>Hết giờ hệ thống <strong>tự nộp</strong>.</li>
           </ul>
           <button

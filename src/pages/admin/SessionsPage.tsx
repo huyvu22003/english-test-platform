@@ -53,7 +53,7 @@ function testLabel(t: TestWithTopic): string {
 function NewSession({ tests, onAdded, onErr }: { tests: TestWithTopic[]; onAdded: () => void; onErr: (m: string) => void }) {
   const [f, setF] = useState({
     name: "", test_id: "", access_code: genCode(),
-    open_at: "", close_at: "", one_submission: true, max_violations: 0, show_result: false,
+    open_at: "", close_at: "", one_submission: true, max_violations: 2, show_result: false,
   });
   async function add() {
     if (f.name.trim().length < 2) { onErr("Nhập tên buổi thi."); return; }
@@ -65,7 +65,7 @@ function NewSession({ tests, onAdded, onErr }: { tests: TestWithTopic[]; onAdded
         one_submission: f.one_submission, max_violations: Number(f.max_violations) || 0,
         show_result: f.show_result,
       });
-      setF({ name: "", test_id: "", access_code: genCode(), open_at: "", close_at: "", one_submission: true, max_violations: 0, show_result: false });
+      setF({ name: "", test_id: "", access_code: genCode(), open_at: "", close_at: "", one_submission: true, max_violations: 2, show_result: false });
       onAdded();
     } catch (e) { onErr(e instanceof Error ? e.message : String(e)); }
   }
@@ -88,7 +88,7 @@ function NewSession({ tests, onAdded, onErr }: { tests: TestWithTopic[]; onAdded
             <button className="btn small" type="button" onClick={() => setF({ ...f, access_code: genCode() })}>Đổi mã</button>
           </div>
         </label>
-        <label className="field"><span>Tự nộp khi vi phạm ≥ (0 = tắt)</span>
+        <label className="field"><span>Tự nộp khi vi phạm ≥ (mặc định 2)</span>
           <input type="number" min={0} value={f.max_violations} onChange={(e) => setF({ ...f, max_violations: Number(e.target.value) })} />
         </label>
         <label className="field"><span>Mở lúc (tùy chọn)</span>

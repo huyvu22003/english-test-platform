@@ -622,7 +622,7 @@ grant execute on function rpc_submit_placement(uuid, text, text, jsonb, int, tex
 
 alter table exam_sessions add column if not exists test_id uuid references tests(id);
 alter table exam_sessions add column if not exists one_submission boolean not null default true;
-alter table exam_sessions add column if not exists max_violations int not null default 0;   -- 0 = không tự nộp
+alter table exam_sessions add column if not exists max_violations int not null default 0;   -- 0 = dùng mặc định app (2 lần)
 alter table exam_sessions add column if not exists show_result boolean not null default false;
 
 -- Tra buổi thi theo MÃ THI (anon). Kiểm tra cửa sổ thời gian; trả thông tin để vào làm.
@@ -642,7 +642,8 @@ begin
   select tp.skill into v_skill from tests t join topics tp on tp.id = t.topic_id where t.id = s.test_id;
   return jsonb_build_object(
     'status','open','session_id',s.id,'name',s.name,'test_id',s.test_id,'skill',v_skill,
-    'one_submission',s.one_submission,'max_violations',s.max_violations);
+    'one_submission',s.one_submission,'max_violations',s.max_violations,
+    'open_at',s.open_at,'close_at',s.close_at,'server_now',now());
 end;
 $$;
 

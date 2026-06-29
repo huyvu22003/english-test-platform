@@ -29,6 +29,7 @@ export default function SessionEntryPage() {
         state: {
           name: name.trim(), email: email.trim(), testId: s.test_id, skill: s.skill,
           sessionName: s.name, maxViolations: s.max_violations ?? 0,
+          closeAt: s.close_at, serverNow: s.server_now,
         },
       });
     } catch (e) {
