@@ -15,9 +15,13 @@ function normalizeVi(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-function isIntensiveTopic(name: string) {
+function isLegacyIntensiveName(name: string) {
   const n = normalizeVi(name);
   return n === normalizeVi(INTENSIVE_TOPIC_NAME) || (n.includes("hoc tang cuong") && n.includes("2026"));
+}
+
+function isIntensiveTopic(topic: { topic_name: string; topic_category?: string | null }) {
+  return topic.topic_category === "intensive_2026" || isLegacyIntensiveName(topic.topic_name);
 }
 
 export default function StudentHome() {
@@ -37,11 +41,11 @@ export default function StudentHome() {
 
   const writingTopics = useMemo(() => topics.data ?? [], [topics.data]);
   const normalWritingTopics = useMemo(
-    () => writingTopics.filter((t) => !isIntensiveTopic(t.topic_name)),
+    () => writingTopics.filter((t) => !isIntensiveTopic(t)),
     [writingTopics]
   );
   const intensiveTopics = useMemo(
-    () => writingTopics.filter((t) => isIntensiveTopic(t.topic_name)),
+    () => writingTopics.filter((t) => isIntensiveTopic(t)),
     [writingTopics]
   );
   const practiceExams = useMemo(
@@ -49,7 +53,7 @@ export default function StudentHome() {
     [exams.data]
   );
   const intensiveExamTopics = useMemo(
-    () => (exams.data ?? []).filter((e) => e.skill === "writing" && isIntensiveTopic(e.topic_name)),
+    () => (exams.data ?? []).filter((e) => e.skill === "writing" && isIntensiveTopic(e)),
     [exams.data]
   );
   const selectedIntensiveExamTopic = intensiveExamTopics.find((t) => t.topic_id === selectedIntensiveTopicId) ?? intensiveExamTopics[0];

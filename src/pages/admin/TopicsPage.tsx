@@ -15,9 +15,13 @@ function normalizeVi(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-function isIntensiveTopic(name: string) {
+function isLegacyIntensiveName(name: string) {
   const n = normalizeVi(name);
   return n === normalizeVi(INTENSIVE_TOPIC_NAME) || (n.includes("hoc tang cuong") && n.includes("2026"));
+}
+
+function isIntensiveTopic(topic: Pick<Topic, "name"> & { category?: string | null }) {
+  return topic.category === "intensive_2026" || isLegacyIntensiveName(topic.name);
 }
 
 const SKILL_META: Record<Skill, { label: string; title: string; desc: string; cta: string }> = {
@@ -59,8 +63,8 @@ export default function TopicsPage() {
 
   const visibleTopics = useMemo(() => {
     const rows = topics.data ?? [];
-    if (isIntensive) return rows.filter((t) => t.skill === "writing" && isIntensiveTopic(t.name));
-    if (fixedSkill === "writing") return rows.filter((t) => t.skill === fixedSkill && !isIntensiveTopic(t.name));
+    if (isIntensive) return rows.filter((t) => t.skill === "writing" && isIntensiveTopic(t));
+    if (fixedSkill === "writing") return rows.filter((t) => t.skill === fixedSkill && !isIntensiveTopic(t));
     return fixedSkill ? rows.filter((t) => t.skill === fixedSkill) : rows;
   }, [topics.data, fixedSkill, isIntensive]);
 
@@ -81,12 +85,13 @@ export default function TopicsPage() {
       setErr("Tên chủ đề phải có ít nhất 2 ký tự.");
       return;
     }
-    if (isIntensive && !isIntensiveTopic(topicName)) {
-      setErr('Topic tăng cường phải giữ cụm "Học tăng cường" và "2026" trong tên để không bị rơi khỏi mục này. Ví dụ: "Học tăng cường 2026 - Topic 1".');
-      return;
-    }
     try {
-      await saveTopic({ name: topicName, skill: isIntensive ? "writing" : fixedSkill ?? skill, active: true });
+      await saveTopic({
+        name: topicName,
+        skill: isIntensive ? "writing" : fixedSkill ?? skill,
+        category: isIntensive ? "intensive_2026" : "regular",
+        active: true,
+      });
       setName("");
       topics.reload();
     } catch (e) {
@@ -161,12 +166,11 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
       setName(topic.name);
       return;
     }
-    if (isIntensiveTopic(topic.name) && !isIntensiveTopic(nextName)) {
-      setErr('Không lưu để tránh topic tăng cường biến mất khỏi mục này. Hãy giữ cụm "Học tăng cường" và "2026" trong tên, ví dụ: "Học tăng cường 2026 - Topic 1".');
-      setName(topic.name);
-      return;
-    }
-    const saved = await saveTopic({ ...topic, name: nextName });
+    const saved = await saveTopic({
+      ...topic,
+      name: nextName,
+      category: isIntensiveTopic(topic) ? "intensive_2026" : topic.category ?? "regular",
+    });
     setName(saved.name);
     setEditing(false);
     onChanged();

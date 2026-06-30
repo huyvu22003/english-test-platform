@@ -9,6 +9,7 @@ export interface Topic {
   id: string;
   name: string;
   skill: Skill;
+  category?: "regular" | "intensive_2026" | null;
   active: boolean;
   sort_order: number;
   created_at?: string;
@@ -71,6 +72,7 @@ export interface PublicTest {
 export interface ExamListItem {
   topic_id: string;
   topic_name: string;
+  topic_category?: "regular" | "intensive_2026" | null;
   skill: Skill;
   tests: {
     id: string;
@@ -136,6 +138,7 @@ export type AnswerMap = Record<string, string | string[]>;
 export interface WritingTopic {
   topic_id: string;
   topic_name: string;
+  topic_category?: "regular" | "intensive_2026" | null;
   num_prompts: number;
 }
 

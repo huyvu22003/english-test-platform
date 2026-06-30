@@ -20,6 +20,7 @@ create table if not exists topics (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
   skill       text not null check (skill in ('writing','reading','listening')),
+  category    text not null default 'regular' check (category in ('regular','intensive_2026')),
   active      boolean not null default true,
   sort_order  int not null default 0,
   created_by  uuid references profiles(id),
@@ -182,6 +183,7 @@ language sql security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object(
            'topic_id', tp.id,
            'topic_name', tp.name,
+           'topic_category', tp.category,
            'skill', tp.skill,
            'tests', (select coalesce(jsonb_agg(jsonb_build_object(
                         'id', t.id, 'version_label', t.version_label, 'title', t.title,
@@ -383,7 +385,7 @@ create policy teacher_all_students on students for all to authenticated using (t
 create or replace function rpc_list_writing_topics()
 returns jsonb language sql security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object(
-           'topic_id', tp.id, 'topic_name', tp.name,
+           'topic_id', tp.id, 'topic_name', tp.name, 'topic_category', tp.category,
            'num_prompts', (select count(*) from tests t where t.topic_id = tp.id and t.active)
          ) order by tp.sort_order, tp.name), '[]')
   from topics tp
@@ -514,6 +516,22 @@ do $$ begin
   alter table topics add constraint topics_skill_check
     check (skill in ('writing','reading','listening','use_of_english'));
 exception when others then null; end $$;
+
+alter table topics add column if not exists category text not null default 'regular';
+do $$ begin
+  alter table topics drop constraint if exists topics_category_check;
+  alter table topics add constraint topics_category_check
+    check (category in ('regular','intensive_2026'));
+exception when others then null; end $$;
+
+update topics
+set category = 'intensive_2026'
+where skill = 'writing'
+  and category = 'regular'
+  and (
+    (name ilike '%HỌC TĂNG CƯỜNG%' and name ilike '%2026%')
+    or (name ilike '%hoc tang cuong%' and name ilike '%2026%')
+  );
 
 alter table questions add column if not exists cefr_level text
   check (cefr_level in ('A1','A2','B1','B2','C1','C2'));
