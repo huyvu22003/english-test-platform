@@ -103,6 +103,7 @@ export interface WritingCorrection {
 export interface Submission {
   id: string;
   test_id: string | null;
+  session_id?: string | null;
   topic_name: string | null;
   student_name: string | null;
   student_email: string | null;

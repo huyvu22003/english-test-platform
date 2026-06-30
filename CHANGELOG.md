@@ -7,6 +7,9 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Thêm — Xuất bảng điểm buổi thi
+- Trang **Buổi thi & Mã thi** hiển thị số bài nộp theo từng buổi và có nút **Xuất bảng điểm** dạng CSV. File gồm thông tin học sinh, mã/buổi thi, đề/kỹ năng, điểm tự chấm, band/CEFR, trạng thái chấm Writing, 4 tiêu chí IELTS, số từ, vi phạm và nhận xét. VÌ SAO: trung tâm cần bảng điểm vận hành sau mỗi buổi thi để gửi/đối soát nhanh bằng Excel.
+
 ### Đổi — Trang chủ học sinh premium hơn
 - Redesign `StudentHome`: hero có headline lớn, CTA xếp lớp/phòng thi, stat cards, khối nhận diện học viên dạng glass panel, section “Chọn hành trình học tập”, skill cards cho Placement / Đọc-Nghe / Writing và card đề trực quan hơn. VÌ SAO: UI cũ sạch nhưng đơn điệu, chưa thể hiện cảm giác chuyên nghiệp, trẻ trung, năng động của nền tảng trung tâm.
 - Thêm khối hướng dẫn nhanh cho học sinh/giáo viên và nới layout desktop để giảm khoảng trống hai bên, đồng thời giúp người dùng thao tác đúng luồng.

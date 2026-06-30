@@ -1,10 +1,11 @@
 // Quản lý BUỔI THI (exit/mock): tạo buổi gắn 1 đề + MÃ THI + cửa sổ thời gian +
 // một-lần-nộp + ngưỡng tự nộp khi vi phạm + có/không hiện điểm cho HS.
 import { useMemo, useState } from "react";
-import { deleteSession, listAllTests, listSessions, saveSession } from "../../lib/api";
+import { deleteSession, listAllTests, listSessions, listSubmissions, saveSession } from "../../lib/api";
+import { downloadCsv } from "../../lib/csv";
 import { useAsync } from "../../lib/useAsync";
 import { ErrorBox, Spinner } from "../../components/common";
-import type { ExamSession, TestWithTopic } from "../../lib/types";
+import type { ExamSession, Submission, TestWithTopic } from "../../lib/types";
 
 function genCode(): string {
   const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -14,17 +15,11 @@ function genCode(): string {
 }
 // datetime-local -> ISO; "" -> null
 function toIso(v: string): string | null { return v ? new Date(v).toISOString() : null; }
-// ISO -> datetime-local value
-function toLocal(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const off = d.getTimezoneOffset();
-  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
-}
 
 export default function SessionsPage() {
   const sessions = useAsync<ExamSession[]>(listSessions, []);
   const tests = useAsync<TestWithTopic[]>(listAllTests, []);
+  const submissions = useAsync<Submission[]>(listSubmissions, []);
   const [err, setErr] = useState<string | null>(null);
 
   return (
@@ -33,13 +28,21 @@ export default function SessionsPage() {
       <p className="muted small">Tạo buổi thi gắn 1 đề; học sinh vào bằng <strong>mã thi</strong> tại trang chủ → "Vào phòng thi".</p>
       {err && <ErrorBox msg={err} />}
 
-      <NewSession tests={tests.data ?? []} onAdded={sessions.reload} onErr={setErr} />
+      <NewSession tests={tests.data ?? []} onAdded={() => { sessions.reload(); submissions.reload(); }} onErr={setErr} />
 
       <h2 className="section">Danh sách buổi thi</h2>
       {sessions.loading && <Spinner />}
       {sessions.error && <ErrorBox msg={sessions.error} />}
+      {submissions.error && <ErrorBox msg={`Không tải được bài nộp để xuất bảng điểm: ${submissions.error}`} />}
       {sessions.data?.map((s) => (
-        <SessionRow key={s.id} s={s} tests={tests.data ?? []} onChanged={sessions.reload} onErr={setErr} />
+        <SessionRow
+          key={s.id}
+          s={s}
+          tests={tests.data ?? []}
+          submissions={submissions.data ?? []}
+          onChanged={() => { sessions.reload(); submissions.reload(); }}
+          onErr={setErr}
+        />
       ))}
       {sessions.data && sessions.data.length === 0 && <p className="muted">Chưa có buổi thi nào.</p>}
     </div>
@@ -105,13 +108,58 @@ function NewSession({ tests, onAdded, onErr }: { tests: TestWithTopic[]; onAdded
   );
 }
 
-function SessionRow({ s, tests, onChanged, onErr }: { s: ExamSession; tests: TestWithTopic[]; onChanged: () => void; onErr: (m: string) => void }) {
+function SessionRow({ s, tests, submissions, onChanged, onErr }: {
+  s: ExamSession;
+  tests: TestWithTopic[];
+  submissions: Submission[];
+  onChanged: () => void;
+  onErr: (m: string) => void;
+}) {
   const test = useMemo(() => tests.find((t) => t.id === s.test_id), [tests, s.test_id]);
+  const sessionSubs = useMemo(() => submissions.filter((x) => x.session_id === s.id), [submissions, s.id]);
+
   async function remove() {
     if (!confirm(`Xóa buổi thi "${s.name}"?`)) return;
     try { await deleteSession(s.id); onChanged(); }
     catch (e) { onErr(e instanceof Error ? e.message : String(e)); }
   }
+
+  function exportScores() {
+    if (sessionSubs.length === 0) { onErr("Buổi thi này chưa có bài nộp để xuất bảng điểm."); return; }
+    const header = [
+      "STT", "Thời gian nộp", "Họ tên", "Email", "Buổi thi", "Mã thi", "Đề", "Kỹ năng",
+      "Điểm", "Điểm tối đa", "Tỷ lệ %", "Band tự chấm", "Overall Writing", "CEFR", "Trạng thái",
+      "TR", "CC", "LR", "GRA", "Số từ", "Vi phạm", "Bắt đầu lúc", "Nhận xét",
+    ];
+    const rows = sessionSubs.map((x, idx) => {
+      const percent = x.score != null && x.max_score ? Math.round((Number(x.score) / Number(x.max_score)) * 1000) / 10 : "";
+      return [
+        idx + 1,
+        fmtDate(x.submitted_at),
+        x.student_name ?? "",
+        x.student_email ?? "",
+        s.name,
+        s.access_code ?? "",
+        test ? (test.title ?? `Đề ${test.version_label}`) : (x.topic_name ?? ""),
+        test?.skill ?? "",
+        num(x.score),
+        num(x.max_score),
+        percent,
+        num(x.band),
+        num(x.overall_band),
+        x.cefr ?? "",
+        x.status === "graded" ? "Đã chấm" : "Chờ chấm",
+        num(x.score_tr), num(x.score_cc), num(x.score_lr), num(x.score_gra),
+        wordCount(x.essay),
+        num(x.violations),
+        fmtDate(x.started_at),
+        x.feedback ?? "",
+      ];
+    });
+    const safeName = s.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "buoi-thi";
+    downloadCsv(`bang-diem-${safeName}-${new Date().toISOString().slice(0, 10)}.csv`, [header, ...rows]);
+  }
+
   const now = Date.now();
   const open = (!s.open_at || now >= new Date(s.open_at).getTime()) && (!s.close_at || now <= new Date(s.close_at).getTime());
   return (
@@ -128,9 +176,23 @@ function SessionRow({ s, tests, onChanged, onErr }: { s: ExamSession; tests: Tes
             {s.one_submission ? " · 1 lần/HS" : ""}{s.max_violations ? ` · tự nộp khi vi phạm ≥ ${s.max_violations}` : ""}
             {s.show_result ? " · hiện điểm" : ""}
           </div>
+          <div className="muted small">{sessionSubs.length} bài nộp</div>
         </div>
-        <button className="btn ghost small danger" onClick={remove}>Xóa</button>
+        <div className="actions">
+          <button className="btn small" onClick={exportScores} disabled={sessionSubs.length === 0}>⬇ Xuất bảng điểm</button>
+          <button className="btn ghost small danger" onClick={remove}>Xóa</button>
+        </div>
       </div>
     </div>
   );
+}
+
+function num(v: number | null | undefined): string {
+  return v == null ? "" : String(v);
+}
+function fmtDate(v: string | null | undefined): string {
+  return v ? new Date(v).toLocaleString("vi-VN") : "";
+}
+function wordCount(essay: string | null): number | string {
+  return essay ? essay.trim().split(/\s+/).filter(Boolean).length : "";
 }
