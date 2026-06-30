@@ -222,8 +222,12 @@ export async function listTopics(): Promise<Topic[]> {
 }
 
 export async function saveTopic(t: Partial<Topic>): Promise<Topic> {
-  const row = unwrap(await db().from("topics").upsert(t).select().single());
-  return row as Topic;
+  if (t.id) {
+    const { id, ...patch } = t;
+    return unwrap(await db().from("topics").update(patch).eq("id", id).select().single()) as Topic;
+  }
+
+  return unwrap(await db().from("topics").insert(t).select().single()) as Topic;
 }
 
 export async function deleteTopic(id: string): Promise<void> {

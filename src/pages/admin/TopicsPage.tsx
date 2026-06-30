@@ -77,7 +77,14 @@ export default function TopicsPage() {
   async function addTopic() {
     setErr(null);
     const topicName = isIntensive && !name.trim() ? INTENSIVE_TOPIC_NAME : name.trim();
-    if (topicName.length < 2) return;
+    if (topicName.length < 2) {
+      setErr("Tên chủ đề phải có ít nhất 2 ký tự.");
+      return;
+    }
+    if (isIntensive && !isIntensiveTopic(topicName)) {
+      setErr('Topic tăng cường phải giữ cụm "Học tăng cường" và "2026" trong tên để không bị rơi khỏi mục này. Ví dụ: "Học tăng cường 2026 - Topic 1".');
+      return;
+    }
     try {
       await saveTopic({ name: topicName, skill: isIntensive ? "writing" : fixedSkill ?? skill, active: true });
       setName("");
@@ -140,13 +147,27 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
   const tests = useAsync<Test[]>(() => listTests(topic.id), [topic.id]);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(topic.name);
+  const [err, setErr] = useState<string | null>(null);
 
   async function toggleActive() {
     await saveTopic({ ...topic, active: !topic.active });
     onChanged();
   }
   async function rename() {
-    await saveTopic({ ...topic, name: name.trim() });
+    setErr(null);
+    const nextName = name.trim();
+    if (nextName.length < 2) {
+      setErr("Tên chủ đề phải có ít nhất 2 ký tự.");
+      setName(topic.name);
+      return;
+    }
+    if (isIntensiveTopic(topic.name) && !isIntensiveTopic(nextName)) {
+      setErr('Không lưu để tránh topic tăng cường biến mất khỏi mục này. Hãy giữ cụm "Học tăng cường" và "2026" trong tên, ví dụ: "Học tăng cường 2026 - Topic 1".');
+      setName(topic.name);
+      return;
+    }
+    const saved = await saveTopic({ ...topic, name: nextName });
+    setName(saved.name);
     setEditing(false);
     onChanged();
   }
@@ -181,11 +202,12 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
             <span className="row-form topic-rename-form">
               <input value={name} onChange={(e) => setName(e.target.value)} />
               <button className="btn small" onClick={rename}>Lưu</button>
-              <button className="btn ghost small" onClick={() => setEditing(false)}>Hủy</button>
+              <button className="btn ghost small" onClick={() => { setName(topic.name); setErr(null); setEditing(false); }}>Hủy</button>
             </span>
           ) : (
             <strong>{topic.name}</strong>
           )}
+          {err && <span className="warn-text small">{err}</span>}
           <span className="topic-meta-line">
             <SkillBadge skill={topic.skill} />
             <span className="muted small">{testCount} đề</span>
