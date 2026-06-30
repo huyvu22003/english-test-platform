@@ -454,8 +454,11 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 .skill-icon { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 16px; background: rgba(255,255,255,.18); font-size: 27px; box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
 .skill-card-placement { background: linear-gradient(145deg, #37134f, #ec3a2b); }
 .skill-card-listening { background: linear-gradient(145deg, #0f766e, #f7941d); }
+.skill-card-intensive { background: linear-gradient(145deg, #0f172a, #2563eb 50%, #f7941d); }
 .skill-card-writing { background: linear-gradient(145deg, #312e81, #7a2b8f 52%, #ec3a2b); }
 .learning-list { min-width: 0; }
+.intensive-picker .field { margin-bottom: 12px; }
+.intensive-picker select { min-height: 46px; font-weight: 700; }
 .premium-test-row {
   display: flex; justify-content: space-between; align-items: center; gap: 16px;
   padding: 16px; margin-bottom: 10px; border-radius: 18px;
@@ -483,7 +486,7 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 
 @media (max-width: 860px) {
   .hero-grid, .identity-card, .learning-block, .quick-guide-grid { grid-template-columns: 1fr; }
-  .hero-stats { grid-template-columns: repeat(3, 1fr); }
+  .hero-stats { grid-template-columns: repeat(4, 1fr); }
   .skill-card { position: relative; top: auto; min-height: auto; }
 }
 @media (max-width: 560px) {

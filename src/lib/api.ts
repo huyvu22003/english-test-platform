@@ -59,7 +59,21 @@ export async function listWritingTopics(): Promise<WritingTopic[]> {
   return (unwrap(res) ?? []) as WritingTopic[];
 }
 
-export async function pickPrompt(topicId: string): Promise<PickedPrompt> {
+export async function pickPrompt(topicId: string, testId?: string | null): Promise<PickedPrompt> {
+  if (testId) {
+    const picked = await getTest(testId);
+    if (picked.topic.skill !== "writing") throw new Error("Đề đã chọn không phải đề Writing.");
+    if (picked.test.topic_id !== topicId) throw new Error("Đề đã chọn không thuộc chủ đề này.");
+    return {
+      test_id: picked.test.id,
+      prompt: picked.test.prompt,
+      title: picked.test.title,
+      time_limit_min: picked.test.time_limit_min,
+      min_words: picked.test.min_words,
+      topic_name: picked.topic.name,
+    };
+  }
+
   const res = await db().rpc("rpc_pick_prompt", { p_topic_id: topicId });
   const data = unwrap(res) as PickedPrompt | null;
   if (!data) throw new Error("Chủ đề này chưa có đề nào đang mở.");

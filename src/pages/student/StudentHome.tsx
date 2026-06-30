@@ -9,6 +9,17 @@ import { ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/comm
 import Logo from "../../components/Logo";
 import type { ExamListItem, PlacementItem, WritingTopic } from "../../lib/types";
 
+const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
+
+function normalizeVi(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function isIntensiveTopic(name: string) {
+  const n = normalizeVi(name);
+  return n === normalizeVi(INTENSIVE_TOPIC_NAME) || (n.includes("hoc tang cuong") && n.includes("2026"));
+}
+
 export default function StudentHome() {
   const nav = useNavigate();
   const [name, setName] = useState("");
@@ -17,16 +28,34 @@ export default function StudentHome() {
   const [code, setCode] = useState("");
   const [codeMsg, setCodeMsg] = useState<string | null>(null);
   const [codeBusy, setCodeBusy] = useState(false);
+  const [selectedIntensiveTopicId, setSelectedIntensiveTopicId] = useState("");
+  const [selectedIntensiveTestId, setSelectedIntensiveTestId] = useState("");
+  const [intensiveTouched, setIntensiveTouched] = useState(false);
   const topics = useAsync<WritingTopic[]>(listWritingTopics, []);
   const placements = useAsync<PlacementItem[]>(listPlacements, []);
   const exams = useAsync<ExamListItem[]>(listExams, []);
 
+  const writingTopics = useMemo(() => topics.data ?? [], [topics.data]);
+  const normalWritingTopics = useMemo(
+    () => writingTopics.filter((t) => !isIntensiveTopic(t.topic_name)),
+    [writingTopics]
+  );
+  const intensiveTopics = useMemo(
+    () => writingTopics.filter((t) => isIntensiveTopic(t.topic_name)),
+    [writingTopics]
+  );
   const practiceExams = useMemo(
     () => (exams.data ?? []).filter((e) => e.skill === "reading" || e.skill === "listening"),
     [exams.data]
   );
+  const intensiveExamTopics = useMemo(
+    () => (exams.data ?? []).filter((e) => e.skill === "writing" && isIntensiveTopic(e.topic_name)),
+    [exams.data]
+  );
+  const selectedIntensiveExamTopic = intensiveExamTopics.find((t) => t.topic_id === selectedIntensiveTopicId) ?? intensiveExamTopics[0];
+  const totalIntensiveTests = intensiveExamTopics.reduce((sum, topic) => sum + topic.tests.length, 0);
   const totalPracticeTests = practiceExams.reduce((sum, topic) => sum + topic.tests.length, 0);
-  const totalWritingPrompts = (topics.data ?? []).reduce((sum, topic) => sum + topic.num_prompts, 0);
+  const totalWritingPrompts = normalWritingTopics.reduce((sum, topic) => sum + topic.num_prompts, 0);
   const firstPlacement = placements.data?.[0];
 
   const ready = name.trim().length > 1 && /\S+@\S+\.\S+/.test(email);
@@ -57,6 +86,15 @@ export default function StudentHome() {
     setTouched(true);
     if (!ready) return;
     nav(`/writing/${topicId}`, { state: { name: name.trim(), email: email.trim() } });
+  }
+
+  function startIntensive() {
+    setTouched(true);
+    setIntensiveTouched(true);
+    if (!ready || !selectedIntensiveExamTopic || !selectedIntensiveTestId) return;
+    nav(`/writing/${selectedIntensiveExamTopic.topic_id}?test=${selectedIntensiveTestId}`, {
+      state: { name: name.trim(), email: email.trim() },
+    });
   }
 
   function startPractice(testId: string) {
@@ -96,6 +134,7 @@ export default function StudentHome() {
             <div className="mini-stat"><strong>{placements.data?.length ?? 0}</strong><span>bài xếp lớp</span></div>
             <div className="mini-stat"><strong>{totalPracticeTests}</strong><span>đề Đọc/Nghe</span></div>
             <div className="mini-stat"><strong>{totalWritingPrompts}</strong><span>đề Writing</span></div>
+            <div className="mini-stat"><strong>{totalIntensiveTests}</strong><span>đề tăng cường</span></div>
           </div>
         </div>
       </header>
@@ -230,6 +269,66 @@ export default function StudentHome() {
         </section>
       )}
 
+      {(intensiveTopics.length > 0 || intensiveExamTopics.length > 0) && (
+        <section className="learning-block intensive-block">
+          <div className="skill-card skill-card-intensive">
+            <div className="skill-icon">🚀</div>
+            <div>
+              <span className="eyebrow">2026</span>
+              <h3>Học tăng cường 2026</h3>
+              <p>Học sinh được chọn đúng đề cần làm. Mục chọn đề là bắt buộc, không bốc ngẫu nhiên.</p>
+            </div>
+          </div>
+          <div className="learning-list">
+            {exams.loading && <Spinner label="Đang tải đề tăng cường…" />}
+            {exams.error && <ErrorBox msg={exams.error} />}
+            {intensiveExamTopics.length > 1 && (
+              <label className="field">
+                <span>Chọn topic tăng cường</span>
+                <select
+                  value={selectedIntensiveTopicId || intensiveExamTopics[0]?.topic_id || ""}
+                  onChange={(e) => {
+                    setSelectedIntensiveTopicId(e.target.value);
+                    setSelectedIntensiveTestId("");
+                    setIntensiveTouched(false);
+                  }}
+                >
+                  {intensiveExamTopics.map((topic) => (
+                    <option key={topic.topic_id} value={topic.topic_id}>{topic.topic_name}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {selectedIntensiveExamTopic && (
+              <div className="practice-topic intensive-picker">
+                <div className="practice-topic-head">
+                  <strong>{selectedIntensiveExamTopic.topic_name}</strong>
+                  <span className="muted small">{selectedIntensiveExamTopic.tests.length} đề · bắt buộc chọn</span>
+                </div>
+                <label className="field">
+                  <span>Chọn đề</span>
+                  <select
+                    value={selectedIntensiveTestId}
+                    onChange={(e) => setSelectedIntensiveTestId(e.target.value)}
+                  >
+                    <option value="">— Chọn đề tăng cường —</option>
+                    {selectedIntensiveExamTopic.tests.map((test) => (
+                      <option key={test.id} value={test.id}>
+                        {test.title || `Đề ${test.version_label}`} · {test.time_limit_min} phút
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {intensiveTouched && !selectedIntensiveTestId && (
+                  <p className="warn-text">Vui lòng chọn đề trước khi bắt đầu Học tăng cường 2026.</p>
+                )}
+                <button className="btn primary" onClick={startIntensive}>Làm đề đã chọn</button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       <section className="learning-block writing-block">
         <div className="skill-card skill-card-writing">
           <div className="skill-icon">✍️</div>
@@ -242,11 +341,11 @@ export default function StudentHome() {
         <div className="learning-list">
           {topics.loading && <Spinner />}
           {topics.error && <ErrorBox msg={topics.error} />}
-          {topics.data && topics.data.length === 0 && (
+          {topics.data && normalWritingTopics.length === 0 && (
             <div className="empty-state">Hiện chưa có chủ đề Writing nào được mở.</div>
           )}
           <div className="topic-grid premium-topic-grid">
-            {topics.data?.map((t) => (
+            {normalWritingTopics.map((t) => (
               <button className="topic-pick premium-topic-card" key={t.topic_id} onClick={() => start(t.topic_id)}>
                 <span className="topic-spark">✦</span>
                 <strong>{t.topic_name}</strong>

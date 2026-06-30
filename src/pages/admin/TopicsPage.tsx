@@ -9,6 +9,17 @@ import { ErrorBox, SkillBadge, Spinner } from "../../components/common";
 import type { Skill, Test, Topic } from "../../lib/types";
 
 const AUTHORING_SKILLS: Skill[] = ["writing", "reading", "listening"];
+const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
+
+function normalizeVi(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function isIntensiveTopic(name: string) {
+  const n = normalizeVi(name);
+  return n === normalizeVi(INTENSIVE_TOPIC_NAME) || (n.includes("hoc tang cuong") && n.includes("2026"));
+}
+
 const SKILL_META: Record<Skill, { label: string; title: string; desc: string; cta: string }> = {
   writing: {
     label: "Viết",
@@ -38,8 +49,9 @@ const SKILL_META: Record<Skill, { label: string; title: string; desc: string; ct
 
 export default function TopicsPage() {
   const { skill: skillParam } = useParams();
+  const isIntensive = skillParam === "intensive";
   const fixedSkill = AUTHORING_SKILLS.includes(skillParam as Skill) ? (skillParam as Skill) : null;
-  const isBank = !fixedSkill;
+  const isBank = !fixedSkill && !isIntensive;
   const topics = useAsync<Topic[]>(listTopics, []);
   const [name, setName] = useState("");
   const [skill, setSkill] = useState<Skill>(fixedSkill ?? "reading");
@@ -47,10 +59,16 @@ export default function TopicsPage() {
 
   const visibleTopics = useMemo(() => {
     const rows = topics.data ?? [];
+    if (isIntensive) return rows.filter((t) => t.skill === "writing" && isIntensiveTopic(t.name));
+    if (fixedSkill === "writing") return rows.filter((t) => t.skill === fixedSkill && !isIntensiveTopic(t.name));
     return fixedSkill ? rows.filter((t) => t.skill === fixedSkill) : rows;
-  }, [topics.data, fixedSkill]);
+  }, [topics.data, fixedSkill, isIntensive]);
 
-  const page = fixedSkill ? SKILL_META[fixedSkill] : {
+  const page = isIntensive ? {
+    title: "Học tăng cường 2026",
+    desc: "Quản lý đề Writing tăng cường. Học sinh phải chọn đề cụ thể, không bốc ngẫu nhiên.",
+    cta: "+ Thêm topic tăng cường",
+  } : fixedSkill ? SKILL_META[fixedSkill] : {
     title: "Ngân hàng đề",
     desc: "Xem tổng quan tất cả chủ đề/đề thi. Nên vào Đề Viết, Đề Đọc hoặc Đề Nghe để soạn cho đúng loại.",
     cta: "+ Thêm chủ đề",
@@ -58,9 +76,10 @@ export default function TopicsPage() {
 
   async function addTopic() {
     setErr(null);
-    if (name.trim().length < 2) return;
+    const topicName = isIntensive && !name.trim() ? INTENSIVE_TOPIC_NAME : name.trim();
+    if (topicName.length < 2) return;
     try {
-      await saveTopic({ name: name.trim(), skill: fixedSkill ?? skill, active: true });
+      await saveTopic({ name: topicName, skill: isIntensive ? "writing" : fixedSkill ?? skill, active: true });
       setName("");
       topics.reload();
     } catch (e) {
@@ -83,12 +102,13 @@ export default function TopicsPage() {
           <Link to="/admin/topics/writing" className={fixedSkill === "writing" ? "active" : ""}>Đề Viết</Link>
           <Link to="/admin/topics/reading" className={fixedSkill === "reading" ? "active" : ""}>Đề Đọc</Link>
           <Link to="/admin/topics/listening" className={fixedSkill === "listening" ? "active" : ""}>Đề Nghe</Link>
+          <Link to="/admin/topics/intensive" className={isIntensive ? "active" : ""}>Học tăng cường 2026</Link>
           <Link to="/admin/topics">Ngân hàng đề</Link>
         </div>
       )}
 
       <div className="card topic-create-bar">
-        <input placeholder="Tên chủ đề mới…" value={name} onChange={(e) => setName(e.target.value)} />
+        <input placeholder={isIntensive ? INTENSIVE_TOPIC_NAME : "Tên chủ đề mới…"} value={name} onChange={(e) => setName(e.target.value)} />
         {isBank ? (
           <select value={skill} onChange={(e) => setSkill(e.target.value as Skill)}>
             <option value="reading">Đọc</option>
@@ -96,8 +116,10 @@ export default function TopicsPage() {
             <option value="use_of_english">Use of English</option>
             <option value="writing">Viết</option>
           </select>
+        ) : isIntensive ? (
+          <span className="pill skill-writing">Tăng cường</span>
         ) : (
-          <span className={`pill skill-${fixedSkill}`}>{SKILL_META[fixedSkill].label}</span>
+          <span className={`pill skill-${fixedSkill}`}>{fixedSkill ? SKILL_META[fixedSkill].label : "Chủ đề"}</span>
         )}
         <button className="btn primary" onClick={addTopic}>{page.cta}</button>
       </div>

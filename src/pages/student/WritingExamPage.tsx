@@ -1,5 +1,5 @@
-// Trang viết bài: bốc ngẫu nhiên 1 đề trong chủ đề, hiển thị đề bài, đếm giờ +
-// khóa chống gian lận, học sinh viết essay rồi nộp (rpc_submit_writing → chờ GV chấm).
+// Trang viết bài: bốc ngẫu nhiên 1 đề trong chủ đề hoặc nhận đề đã chọn (?test=)
+// cho luồng Học tăng cường, hiển thị đề bài, đếm giờ + khóa chống gian lận.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { pickPrompt, submitWriting } from "../../lib/api";
@@ -18,8 +18,9 @@ export default function WritingExamPage() {
   const nav = useNavigate();
   const loc = useLocation();
   const meta = (loc.state ?? {}) as { name?: string; email?: string };
+  const selectedTestId = new URLSearchParams(loc.search).get("test");
 
-  const data = useAsync<PickedPrompt>(() => pickPrompt(topicId), [topicId]);
+  const data = useAsync<PickedPrompt>(() => pickPrompt(topicId, selectedTestId), [topicId, selectedTestId]);
   const [started, setStarted] = useState(false);
   const [essay, setEssay] = useState("");
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
@@ -73,7 +74,7 @@ export default function WritingExamPage() {
     if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
   }, [started, ac.violations, doSubmit]);
 
-  if (data.loading) return <div className="wrap"><Spinner label="Đang bốc đề…" /></div>;
+  if (data.loading) return <div className="wrap"><Spinner label={selectedTestId ? "Đang mở đề đã chọn…" : "Đang bốc đề…"} /></div>;
   if (data.error) return <div className="wrap"><ErrorBox msg={data.error} /></div>;
   if (!data.data) return null;
   const p = data.data;
