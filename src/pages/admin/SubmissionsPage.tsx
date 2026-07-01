@@ -1,5 +1,5 @@
 // Hàng đợi chấm: danh sách bài nộp, lọc (tên/chủ đề/trạng thái), xem bài viết +
-// nhật ký vi phạm, CHẤM TAY 4 tiêu chí IELTS (tự tính overall + CEFR), xuất CSV, xóa.
+// nhật ký vi phạm, CHẤM TAY 4 tiêu chí IELTS (tự tính overall + CEFR), xuất Excel đẹp, xóa.
 import { useMemo, useRef, useState } from "react";
 import { deleteSubmission, gradeWriting, listSubmissions, bandToCefr } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
@@ -35,21 +35,14 @@ export default function SubmissionsPage() {
 
   const pending = (subs.data ?? []).filter((s) => s.status === "submitted").length;
 
-  function exportCsv() {
-    const header = [
-      "Thời gian nộp", "Họ tên", "Email", "Chủ đề", "Tiêu đề đề", "Số từ",
-      "Overall band", "CEFR", "TR", "CC", "LR", "GRA", "Trạng thái", "Vi phạm",
-      "Số lỗi sửa câu", "Nhận xét",
-    ];
-    const lines = rows.map((s) => [
-      new Date(s.submitted_at).toLocaleString("vi-VN"),
-      s.student_name ?? "", s.student_email ?? "", s.topic_name ?? "", s.tests?.title ?? "",
-      wc(s.essay), num(s.overall_band), s.cefr ?? "",
-      num(s.score_tr), num(s.score_cc), num(s.score_lr), num(s.score_gra),
-      s.status === "graded" ? "Đã chấm" : "Chờ chấm", num(s.violations),
-      s.writing_corrections?.length ?? 0, s.feedback ?? "",
-    ]);
-    downloadCsv([header, ...lines], `bai-nop-${new Date().toISOString().slice(0, 10)}.csv`);
+  function exportExcel() {
+    downloadGradingExcel(rows, {
+      topic: topic || "Tất cả chủ đề",
+      status: status === "all" ? "Mọi trạng thái" : status === "submitted" ? "Chờ chấm" : "Đã chấm",
+      query: q.trim() || "Không lọc",
+      total: rows.length,
+      pending,
+    });
   }
 
   return (
@@ -58,7 +51,7 @@ export default function SubmissionsPage() {
         <h1>Hàng đợi chấm &amp; Điểm {pending > 0 && <span className="pill off">{pending} chờ chấm</span>}</h1>
         <div className="actions">
           <button className="btn" type="button" onClick={() => setGuideOpen(true)}>❔ Hướng dẫn chấm bài</button>
-          <button className="btn" onClick={exportCsv} disabled={rows.length === 0}>⬇ Xuất CSV</button>
+          <button className="btn" onClick={exportExcel} disabled={rows.length === 0}>⬇ Xuất Excel đẹp</button>
         </div>
       </div>
       {guideOpen && <GradingGuideModal onClose={() => setGuideOpen(false)} />}
@@ -387,18 +380,97 @@ function wc(essay: string | null): number {
   return essay ? essay.trim().split(/\s+/).filter(Boolean).length : 0;
 }
 
-// Xuất CSV có BOM để Excel đọc đúng tiếng Việt.
-function downloadCsv(rows: (string | number)[][], filename: string) {
-  const esc = (v: string | number) => {
-    const s = String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  const csv = "﻿" + rows.map((r) => r.map(esc).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+interface GradingExportMeta {
+  topic: string;
+  status: string;
+  query: string;
+  total: number;
+  pending: number;
+}
+
+// Xuất dạng HTML .xls để Excel mở ra có định dạng đẹp hơn CSV thô, không cần thêm thư viện.
+function downloadGradingExcel(rows: Submission[], meta: GradingExportMeta) {
+  const today = new Date();
+  const graded = rows.filter((s) => s.status === "graded").length;
+  const pendingRows = rows.filter((s) => s.status === "submitted").length;
+  const violationRows = rows.filter((s) => (s.violations ?? 0) > 0).length;
+  const avgBand = average(rows.map((s) => s.overall_band ?? s.band));
+  const bodyRows = rows.map((s, idx) => {
+    const statusText = s.status === "graded" ? "Đã chấm" : "Chờ chấm";
+    const statusClass = s.status === "graded" ? "ok" : "pending";
+    const viol = s.violations ?? 0;
+    return `<tr>
+      <td class="center">${idx + 1}</td>
+      <td>${escExcel(new Date(s.submitted_at).toLocaleString("vi-VN"))}</td>
+      <td>${escExcel(s.student_name ?? "")}</td>
+      <td>${escExcel(s.student_email ?? "")}</td>
+      <td>${escExcel(s.topic_name ?? "")}</td>
+      <td>${escExcel(s.tests?.title ?? "")}</td>
+      <td class="center">${wc(s.essay)}</td>
+      <td class="center band">${num(s.overall_band ?? s.band)}</td>
+      <td class="center">${escExcel(s.cefr ?? "")}</td>
+      <td class="center">${num(s.score_tr)}</td>
+      <td class="center">${num(s.score_cc)}</td>
+      <td class="center">${num(s.score_lr)}</td>
+      <td class="center">${num(s.score_gra)}</td>
+      <td class="${statusClass}">${statusText}</td>
+      <td class="center ${viol ? "danger" : ""}">${viol}</td>
+      <td class="center">${s.writing_corrections?.length ?? 0}</td>
+      <td class="wrap">${escExcel(s.feedback ?? "")}</td>
+    </tr>`;
+  }).join("");
+
+  const html = `<!doctype html><html><head><meta charset="utf-8" />
+    <style>
+      body { font-family: Arial, sans-serif; color: #221b26; }
+      .title { font-size: 22px; font-weight: 800; color: #7a2b8f; }
+      .subtitle { color: #6c6880; font-size: 12px; }
+      .summary td { border: 1px solid #ececf1; padding: 8px 10px; }
+      .summary .label { background: #fff7ed; color: #9a3412; font-weight: 700; }
+      table.report { border-collapse: collapse; width: 100%; }
+      .report th { background: #7a2b8f; color: #fff; font-weight: 700; border: 1px solid #5b1b6f; padding: 8px; text-align: center; }
+      .report td { border: 1px solid #e5e7eb; padding: 7px; vertical-align: top; }
+      .report tr:nth-child(even) td { background: #fafafe; }
+      .center { text-align: center; }
+      .band { font-size: 16px; font-weight: 800; color: #ec3a2b; }
+      .ok { background: #ecfdf5; color: #166534; font-weight: 700; text-align: center; }
+      .pending { background: #fff1f2; color: #be123c; font-weight: 700; text-align: center; }
+      .danger { color: #be123c; font-weight: 800; background: #fff1f2; }
+      .wrap { white-space: normal; width: 360px; }
+      .hint { color: #6c6880; font-size: 12px; }
+    </style>
+  </head><body>
+    <table><tr><td class="title" colspan="17">BÁO CÁO CHẤM WRITING — IELTS MS. TRÀ MY</td></tr>
+    <tr><td class="subtitle" colspan="17">Xuất lúc ${escExcel(today.toLocaleString("vi-VN"))}. File dùng để lưu hồ sơ, lọc điểm, theo dõi bài chờ chấm và gửi báo cáo nội bộ.</td></tr></table>
+    <br />
+    <table class="summary">
+      <tr><td class="label">Bộ lọc chủ đề</td><td>${escExcel(meta.topic)}</td><td class="label">Trạng thái</td><td>${escExcel(meta.status)}</td><td class="label">Tìm kiếm</td><td>${escExcel(meta.query)}</td></tr>
+      <tr><td class="label">Tổng bài trong file</td><td>${meta.total}</td><td class="label">Đã chấm</td><td>${graded}</td><td class="label">Chờ chấm</td><td>${pendingRows}</td></tr>
+      <tr><td class="label">Bài có vi phạm</td><td>${violationRows}</td><td class="label">Band trung bình</td><td>${avgBand == null ? "—" : avgBand.toFixed(1)}</td><td class="label">Tổng chờ chấm hệ thống</td><td>${meta.pending}</td></tr>
+    </table>
+    <p class="hint">Mẹo: mở bằng Excel/Google Sheets rồi bật Filter để lọc theo học sinh, chủ đề, trạng thái, vi phạm hoặc band.</p>
+    <table class="report">
+      <thead><tr>
+        <th>STT</th><th>Thời gian nộp</th><th>Họ tên</th><th>Email</th><th>Chủ đề</th><th>Tiêu đề đề</th><th>Số từ</th>
+        <th>Overall</th><th>CEFR</th><th>TR</th><th>CC</th><th>LR</th><th>GRA</th><th>Trạng thái</th><th>Vi phạm</th><th>Số lỗi sửa câu</th><th>Nhận xét</th>
+      </tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+  </body></html>`;
+  const blob = new Blob(["\ufeff" + html], { type: "application/vnd.ms-excel;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = filename;
+  a.download = `bao-cao-cham-writing-${today.toISOString().slice(0, 10)}.xls`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function average(values: Array<number | null | undefined>): number | null {
+  const nums = values.filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+  if (nums.length === 0) return null;
+  return nums.reduce((sum, value) => sum + value, 0) / nums.length;
+}
+function escExcel(v: unknown): string {
+  return String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 }
