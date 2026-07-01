@@ -50,10 +50,15 @@ export default function SessionsPage() {
 }
 
 function testLabel(t: TestWithTopic): string {
-  return `${t.topic_name} · ${t.title ?? "Đề " + t.version_label} (${t.skill})`;
+  const skill = t.skill === "writing" ? "Viết" : t.skill === "reading" ? "Đọc" : t.skill === "listening" ? "Nghe" : "Use of English";
+  const kind = t.topic_category === "intensive_2026" ? " · Tăng cường" : "";
+  const state = t.active === false ? " · ĐANG KHÓA" : "";
+  return `${t.topic_name}${kind} · ${t.title ?? "Đề " + t.version_label} (${skill})${state}`;
 }
 
 function NewSession({ tests, onAdded, onErr }: { tests: TestWithTopic[]; onAdded: () => void; onErr: (m: string) => void }) {
+  const activeTests = useMemo(() => tests.filter((t) => t.active !== false), [tests]);
+  const lockedCount = tests.length - activeTests.length;
   const [f, setF] = useState({
     name: "", test_id: "", access_code: genCode(),
     open_at: "", close_at: "", one_submission: true, max_violations: 2, show_result: false,
@@ -81,9 +86,10 @@ function NewSession({ tests, onAdded, onErr }: { tests: TestWithTopic[]; onAdded
         </label>
         <label className="field"><span>Đề thi</span>
           <select value={f.test_id} onChange={(e) => setF({ ...f, test_id: e.target.value })}>
-            <option value="">— Chọn đề —</option>
-            {tests.map((t) => <option key={t.id} value={t.id}>{testLabel(t)}</option>)}
+            <option value="">— Chọn đề đang mở —</option>
+            {activeTests.map((t) => <option key={t.id} value={t.id}>{testLabel(t)}</option>)}
           </select>
+          <span className="muted small">{activeTests.length} đề đang mở{lockedCount > 0 ? ` · ${lockedCount} đề đang khóa đã ẩn` : ""}</span>
         </label>
         <label className="field"><span>Mã thi</span>
           <div className="row-form">
@@ -162,13 +168,15 @@ function SessionRow({ s, tests, submissions, onChanged, onErr }: {
 
   const now = Date.now();
   const open = (!s.open_at || now >= new Date(s.open_at).getTime()) && (!s.close_at || now <= new Date(s.close_at).getTime());
+  const canUse = open && test?.active !== false;
   return (
     <div className="card sub">
       <div className="q-row-head">
         <div>
           <strong>{s.name}</strong>{" "}
           <span className="pill">{s.access_code}</span>{" "}
-          {open ? <span className="ok-text small">đang mở</span> : <span className="pill off small">đóng/chưa mở</span>}
+          {canUse ? <span className="ok-text small">đang mở</span> : <span className="pill off small">đóng/chưa mở</span>}
+          {test?.active === false && <span className="pill off small">đề đang khóa</span>}
           <div className="muted small">{test ? testLabel(test) : "(đề đã xóa?)"}</div>
           <div className="muted small">
             {s.open_at ? `Mở: ${new Date(s.open_at).toLocaleString("vi-VN")}` : "Mở: ngay"} ·{" "}

@@ -257,7 +257,9 @@ export interface TestWithTopic {
   title: string | null;
   version_label: string;
   purpose: string;
+  active?: boolean;
   topic_name: string;
+  topic_category?: "regular" | "intensive_2026" | null;
   skill: Skill;
 }
 

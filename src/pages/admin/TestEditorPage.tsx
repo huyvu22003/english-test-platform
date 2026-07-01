@@ -26,19 +26,46 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
   const passages = useAsync<Passage[]>(() => listPassages(test.id), [test.id]);
   const questions = useAsync<Question[]>(() => listQuestions(test.id), [test.id]);
   const skill: Skill | undefined = topic.data?.skill;
+  const isIntensive = topic.data?.category === "intensive_2026";
+  const isWriting = skill === "writing";
+  const hasPrompt = Boolean(test.prompt?.trim());
+  const hasQuestions = (questions.data?.length ?? 0) > 0;
+  const hasPassage = (passages.data?.length ?? 0) > 0;
 
-  const backTo = skill && ["writing", "reading", "listening"].includes(skill) ? `/admin/topics/${skill}` : "/admin/topics";
-  const backLabel = skill === "writing" ? "Đề Viết" : skill === "reading" ? "Đề Đọc" : skill === "listening" ? "Đề Nghe" : "Ngân hàng đề";
+  const backTo = isIntensive ? "/admin/topics/intensive" : skill && ["writing", "reading", "listening"].includes(skill) ? `/admin/topics/${skill}` : "/admin/topics";
+  const backLabel = isIntensive ? "Học tăng cường 2026" : skill === "writing" ? "Đề Viết" : skill === "reading" ? "Đề Đọc" : skill === "listening" ? "Đề Nghe" : "Ngân hàng đề";
 
   return (
     <div>
       <Link className="link" to={backTo}>← {backLabel}</Link>
       <div className="title-row">
-        <h1>Soạn đề {test.version_label}</h1>
-        {skill && <SkillBadge skill={skill} />}
+        <div>
+          <h1>Soạn đề {test.version_label}{test.title ? ` — ${test.title}` : ""}</h1>
+          <p className="muted small sub">{topic.data?.name ?? "Đang tải chủ đề…"}</p>
+        </div>
+        <span>
+          {skill && <SkillBadge skill={skill} />}
+          {isIntensive && <span className="pill skill-writing" style={{ marginLeft: 6 }}>Tăng cường</span>}
+          {!test.active && <span className="pill off small" style={{ marginLeft: 6 }}>Đang khóa</span>}
+        </span>
       </div>
 
-      <MetaForm test={test} onSaved={reloadTest} isWriting={skill === "writing"} />
+      <div className="card sub">
+        <strong>Checklist trước khi mở cho học sinh</strong>
+        <ul className="compact-list">
+          <li className={test.active ? "ok-text" : "warn-text"}>{test.active ? "✓ Đề đang mở" : "• Đề đang khóa — học sinh chưa thấy"}</li>
+          {isWriting ? (
+            <li className={hasPrompt ? "ok-text" : "warn-text"}>{hasPrompt ? "✓ Đã có prompt Writing" : "• Chưa có prompt Writing"}</li>
+          ) : (
+            <>
+              <li className={hasPassage ? "ok-text" : "warn-text"}>{hasPassage ? "✓ Đã có tư liệu" : "• Chưa có đoạn đọc/audio"}</li>
+              <li className={hasQuestions ? "ok-text" : "warn-text"}>{hasQuestions ? `✓ Đã có ${questions.data?.length ?? 0} câu hỏi` : "• Chưa có câu hỏi"}</li>
+            </>
+          )}
+        </ul>
+      </div>
+
+      <MetaForm test={test} onSaved={reloadTest} isWriting={isWriting} />
 
       <h2 className="section">Tư liệu (đoạn đọc / audio)</h2>
       {passages.loading && <Spinner />}

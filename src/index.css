@@ -515,3 +515,11 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 .guide-card ol { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; font-weight: 650; line-height: 1.65; }
 .guide-student { background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(255,247,237,.74)); }
 .guide-teacher { background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(245,243,255,.76)); }
+
+.compact-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+.compact-list li {
+  margin: 4px 0;
+}

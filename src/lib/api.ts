@@ -167,12 +167,12 @@ export async function submitSession(args: {
 // Giáo viên: danh sách đề (kèm tên chủ đề + kỹ năng) để chọn khi tạo buổi thi.
 export async function listAllTests(): Promise<TestWithTopic[]> {
   const rows = unwrap<{
-    id: string; title: string | null; version_label: string; purpose: string;
-    topics: { name: string; skill: Skill } | null;
-  }[]>(await db().from("tests").select("id,title,version_label,purpose,topics(name,skill)").order("created_at"));
+    id: string; title: string | null; version_label: string; purpose: string; active: boolean;
+    topics: { name: string; skill: Skill; category?: "regular" | "intensive_2026" | null } | null;
+  }[]>(await db().from("tests").select("id,title,version_label,purpose,active,topics(name,skill,category)").order("created_at"));
   return rows.map((r) => ({
-    id: r.id, title: r.title, version_label: r.version_label, purpose: r.purpose,
-    topic_name: r.topics?.name ?? "?", skill: (r.topics?.skill ?? "reading") as Skill,
+    id: r.id, title: r.title, version_label: r.version_label, purpose: r.purpose, active: r.active,
+    topic_name: r.topics?.name ?? "?", topic_category: r.topics?.category ?? "regular", skill: (r.topics?.skill ?? "reading") as Skill,
   }));
 }
 
