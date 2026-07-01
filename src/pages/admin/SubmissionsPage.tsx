@@ -13,6 +13,7 @@ export default function SubmissionsPage() {
   const [q, setQ] = useState("");
   const [topic, setTopic] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const topics = useMemo(() => {
     const s = new Set<string>();
@@ -55,8 +56,12 @@ export default function SubmissionsPage() {
     <div>
       <div className="title-row">
         <h1>Hàng đợi chấm &amp; Điểm {pending > 0 && <span className="pill off">{pending} chờ chấm</span>}</h1>
-        <button className="btn" onClick={exportCsv} disabled={rows.length === 0}>⬇ Xuất CSV</button>
+        <div className="actions">
+          <button className="btn" type="button" onClick={() => setGuideOpen(true)}>❔ Hướng dẫn chấm bài</button>
+          <button className="btn" onClick={exportCsv} disabled={rows.length === 0}>⬇ Xuất CSV</button>
+        </div>
       </div>
+      {guideOpen && <GradingGuideModal onClose={() => setGuideOpen(false)} />}
 
       <div className="card row-form">
         <input placeholder="Tìm tên / email…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -87,6 +92,76 @@ export default function SubmissionsPage() {
             )}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+
+function GradingGuideModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="grading-guide-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="card grading-guide-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-mini-head">
+          <div>
+            <h2>Hướng dẫn chấm bài Writing</h2>
+            <p className="muted small">Quy trình khuyến nghị để giáo viên chấm đúng, đủ điểm và phản hồi rõ cho học sinh.</p>
+          </div>
+          <button className="btn ghost small" type="button" onClick={onClose}>Đóng ✕</button>
+        </div>
+
+        <div className="guide-steps">
+          <section>
+            <h3>1. Lọc và mở bài cần chấm</h3>
+            <ol>
+              <li>Dùng ô tìm kiếm để lọc theo tên/email học sinh.</li>
+              <li>Chọn chủ đề hoặc trạng thái <strong>Chờ chấm</strong> nếu cần.</li>
+              <li>Bấm <strong>Chấm</strong> ở dòng bài làm để mở chi tiết.</li>
+            </ol>
+          </section>
+
+          <section>
+            <h3>2. Đọc đề và bài viết</h3>
+            <ol>
+              <li>Đọc khung <strong>Đề bài</strong> trước để nắm yêu cầu.</li>
+              <li>Đọc bài viết, chú ý số từ và nhật ký vi phạm nếu có.</li>
+              <li>Nếu bài có vi phạm, mở <strong>Nhật ký vi phạm</strong> để xem chi tiết trước khi quyết định điểm.</li>
+            </ol>
+          </section>
+
+          <section>
+            <h3>3. Sửa câu chi tiết cho học sinh</h3>
+            <ol>
+              <li>Bôi chọn trực tiếp câu/đoạn sai trong bài viết.</li>
+              <li>Bấm <strong>+ Sửa câu đã chọn</strong>.</li>
+              <li>Nhập câu sửa đúng và ghi chú lỗi nếu cần.</li>
+              <li>Bấm <strong>Thêm vào danh sách sửa</strong>. Các lỗi này sẽ được highlight ở trang tiến bộ của học sinh.</li>
+            </ol>
+          </section>
+
+          <section>
+            <h3>4. Nhập điểm IELTS</h3>
+            <ol>
+              <li>Nhập 4 tiêu chí: <strong>TR</strong>, <strong>CC</strong>, <strong>LR</strong>, <strong>GRA</strong>.</li>
+              <li>Điểm phải nằm trong thang <strong>0–9</strong> và theo bước <strong>0.5</strong>.</li>
+              <li>Hệ thống tự tính <strong>Overall</strong> và <strong>CEFR</strong>.</li>
+            </ol>
+          </section>
+
+          <section>
+            <h3>5. Viết nhận xét và lưu</h3>
+            <ol>
+              <li>Viết nhận xét tổng quan: điểm mạnh, điểm cần cải thiện, hướng luyện tiếp.</li>
+              <li>Có thể dùng nhanh các nút <strong>+ Điểm mạnh</strong>, <strong>+ Cần cải thiện</strong>, <strong>+ Gợi ý luyện</strong>.</li>
+              <li>Bấm <strong>Lưu điểm &amp; chấm xong</strong>. Bài sẽ chuyển sang trạng thái <strong>Đã chấm</strong>.</li>
+              <li>Học sinh xem phản hồi trong mục <strong>Xem tiến bộ</strong> và có thể <strong>In / Tải PDF</strong>.</li>
+            </ol>
+          </section>
+        </div>
+
+        <div className="guide-note">
+          <strong>Lưu ý:</strong> Nên luôn có ít nhất nhận xét tổng quan hoặc sửa câu chi tiết trước khi lưu để học sinh hiểu cần cải thiện gì.
+        </div>
       </div>
     </div>
   );
