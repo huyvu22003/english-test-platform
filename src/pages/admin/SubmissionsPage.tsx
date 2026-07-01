@@ -51,7 +51,7 @@ export default function SubmissionsPage() {
         <h1>Hàng đợi chấm &amp; Điểm {pending > 0 && <span className="pill off">{pending} chờ chấm</span>}</h1>
         <div className="actions">
           <button className="btn" type="button" onClick={() => setGuideOpen(true)}>❔ Hướng dẫn chấm bài</button>
-          <button className="btn" onClick={exportExcel} disabled={rows.length === 0}>⬇ Xuất Excel đẹp</button>
+          <button className="btn" onClick={exportExcel} disabled={rows.length === 0}>⬇ Xuất Excel</button>
         </div>
       </div>
       {guideOpen && <GradingGuideModal onClose={() => setGuideOpen(false)} />}
