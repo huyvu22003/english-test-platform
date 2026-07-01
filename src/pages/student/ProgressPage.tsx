@@ -100,7 +100,7 @@ export default function ProgressPage() {
       )}
 
       {items && items.length === 0 && (
-        <div className="card muted">Chưa có bài nộp nào với email này.</div>
+        <div className="card muted">Chưa có bài nộp nào khớp thông tin đã nhập.</div>
       )}
     </div>
   );
@@ -175,7 +175,7 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
               <div>{bandOf(item) ?? "—"}</div>
               <span>Band</span>
             </div>
-            <button className="btn small" onClick={() => printProgressPdf(item, corrections)}>Tải PDF</button>
+            <button className="btn small" onClick={() => printProgressPdf(item, corrections)}>In / Tải PDF</button>
             <button className="btn ghost small" onClick={onClose}>Đóng ✕</button>
           </div>
         </div>

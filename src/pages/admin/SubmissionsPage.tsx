@@ -35,12 +35,18 @@ export default function SubmissionsPage() {
   const pending = (subs.data ?? []).filter((s) => s.status === "submitted").length;
 
   function exportCsv() {
-    const header = ["Thời gian nộp", "Họ tên", "Email", "Chủ đề", "Số từ", "Overall band", "CEFR", "Trạng thái", "Vi phạm"];
+    const header = [
+      "Thời gian nộp", "Họ tên", "Email", "Chủ đề", "Tiêu đề đề", "Số từ",
+      "Overall band", "CEFR", "TR", "CC", "LR", "GRA", "Trạng thái", "Vi phạm",
+      "Số lỗi sửa câu", "Nhận xét",
+    ];
     const lines = rows.map((s) => [
       new Date(s.submitted_at).toLocaleString("vi-VN"),
-      s.student_name ?? "", s.student_email ?? "", s.topic_name ?? "",
+      s.student_name ?? "", s.student_email ?? "", s.topic_name ?? "", s.tests?.title ?? "",
       wc(s.essay), num(s.overall_band), s.cefr ?? "",
+      num(s.score_tr), num(s.score_cc), num(s.score_lr), num(s.score_gra),
       s.status === "graded" ? "Đã chấm" : "Chờ chấm", num(s.violations),
+      s.writing_corrections?.length ?? 0, s.feedback ?? "",
     ]);
     downloadCsv([header, ...lines], `bai-nop-${new Date().toISOString().slice(0, 10)}.csv`);
   }
@@ -109,19 +115,29 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
   const essayRef = useRef<HTMLParagraphElement>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
 
   const overall = Math.round(((sc.tr + sc.cc + sc.lr + sc.gra) / 4) * 2) / 2;
 
   async function save() {
-    setBusy(true); setErr(null);
+    setErr(null); setMsg(null);
+    const invalid = CRITERIA.find((c) => !isValidBandScore(sc[c.key]));
+    if (invalid) { setErr(`${invalid.label} phải nằm trong thang 0–9 và theo bước 0.5.`); return; }
+    if (!feedback.trim() && corrections.length === 0 && !confirm("Chưa có nhận xét hoặc sửa câu chi tiết. Vẫn lưu điểm?")) return;
+    setBusy(true);
     try {
       await gradeWriting(s.id, sc, feedback.trim(), corrections);
+      setMsg("Đã lưu điểm và phản hồi.");
       onChanged();
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
+  }
+
+  function appendFeedback(text: string) {
+    setFeedback((prev) => [prev.trim(), text].filter(Boolean).join("\n"));
   }
   function captureSelection() {
     const sel = window.getSelection();
@@ -263,10 +279,16 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
               </div>
             </div>
             <label className="field"><span>Nhận xét cho học sinh</span>
-              <textarea rows={3} value={feedback} onChange={(e) => setFeedback(e.target.value)}
+              <textarea rows={4} value={feedback} onChange={(e) => setFeedback(e.target.value)}
                 placeholder="Điểm mạnh, điểm cần cải thiện theo từng tiêu chí…" />
             </label>
+            <div className="quick-feedback-row">
+              <button className="btn ghost small" type="button" onClick={() => appendFeedback("Điểm mạnh: bài có ý tưởng rõ và bám đề tốt.")}>+ Điểm mạnh</button>
+              <button className="btn ghost small" type="button" onClick={() => appendFeedback("Cần cải thiện: phát triển luận điểm cụ thể hơn, thêm ví dụ và giải thích rõ hơn.")}>+ Cần cải thiện</button>
+              <button className="btn ghost small" type="button" onClick={() => appendFeedback("Gợi ý luyện tập: viết lại các câu đã sửa và rà soát lỗi ngữ pháp/từ vựng lặp lại.")}>+ Gợi ý luyện</button>
+            </div>
             {err && <ErrorBox msg={err} />}
+            {msg && <span className="ok-text">{msg}</span>}
             <div className="actions">
               <button className="btn small primary" disabled={busy} onClick={save}>
                 {busy ? "Đang lưu…" : s.status === "graded" ? "Cập nhật điểm" : "Lưu điểm & chấm xong"}
@@ -280,6 +302,9 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
   );
 }
 
+function isValidBandScore(v: number): boolean {
+  return Number.isFinite(v) && v >= 0 && v <= 9 && Math.abs(v * 2 - Math.round(v * 2)) < 0.001;
+}
 function num(v: number | null | undefined): string {
   return v == null ? "" : String(v);
 }

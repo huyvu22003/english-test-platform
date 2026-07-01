@@ -523,3 +523,5 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 .compact-list li {
   margin: 4px 0;
 }
+
+.quick-feedback-row { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 10px; }
