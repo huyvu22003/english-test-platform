@@ -38,6 +38,7 @@ export default function WritingExamPage() {
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
       if (submitting || !data.data) return;
+      if (reason === "manual" && data.data.min_words > 0 && wordCount < data.data.min_words && !confirm(`Bài chưa đủ ${data.data.min_words} từ. Vẫn nộp bài?`)) return;
       setSubmitting(true);
       setSubmitErr(null);
       try {
@@ -60,7 +61,7 @@ export default function WritingExamPage() {
         setSubmitting(false);
       }
     },
-    [submitting, data.data, meta, essay, ac.violations, ac.log, nav]
+    [submitting, data.data, wordCount, meta, essay, ac.violations, ac.log, nav]
   );
 
   useEffect(() => {

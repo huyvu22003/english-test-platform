@@ -14,6 +14,11 @@ function fmt(sec: number): string {
   return `${m}:${String(sec % 60).padStart(2, "0")}`;
 }
 
+function isAnswered(value: string | string[] | undefined): boolean {
+  if (Array.isArray(value)) return value.length > 0;
+  return typeof value === "string" && value.trim().length > 0;
+}
+
 interface St {
   name?: string; email?: string; testId?: string; skill?: Skill;
   sessionName?: string; maxViolations?: number; closeAt?: string | null; serverNow?: string | null;
@@ -52,6 +57,11 @@ export default function SessionExamPage() {
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
       if (submitting) return;
+      if (reason === "manual" && data.data) {
+        const missing = isWriting ? 0 : data.data.questions.filter((q) => !isAnswered(answers[q.id])).length;
+        if (missing > 0 && !confirm(`Bạn còn ${missing} câu chưa trả lời. Vẫn nộp bài?`)) return;
+        if (isWriting && data.data.test.min_words > 0 && wordCount < data.data.test.min_words && !confirm(`Bài chưa đủ ${data.data.test.min_words} từ. Vẫn nộp bài?`)) return;
+      }
       setSubmitting(true);
       setSubmitErr(null);
       try {
@@ -67,7 +77,7 @@ export default function SessionExamPage() {
         setSubmitting(false);
       }
     },
-    [submitting, sessionId, meta, answers, essay, isWriting, ac.violations, ac.log, nav]
+    [submitting, data.data, isWriting, answers, wordCount, sessionId, meta, essay, ac.violations, ac.log, nav]
   );
 
   // Đồng hồ dùng deadline tuyệt đối + lệch giờ server, tránh mỗi máy đếm khác nhau.
@@ -147,6 +157,9 @@ export default function SessionExamPage() {
             />
           )}
           {p.kind === "reading" && p.body && <div className="passage-body">{p.body}</div>}
+          {p.media_url && p.kind === "reading" && (
+            <img src={p.media_url} alt="" style={{ maxWidth: "100%" }} />
+          )}
         </div>
       ))}
 
@@ -164,6 +177,9 @@ export default function SessionExamPage() {
       )}
 
       {submitErr && <ErrorBox msg={submitErr} />}
+      {isWriting && test.min_words > 0 && wordCount < test.min_words && (
+        <p className="warn-text">Bài chưa đạt tối thiểu {test.min_words} từ — vẫn có thể nộp nhưng nên viết thêm.</p>
+      )}
       <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
         {submitting ? "Đang nộp…" : "Nộp bài"}
       </button>

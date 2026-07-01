@@ -20,6 +20,11 @@ function fmt(sec: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+function isAnswered(value: string | string[] | undefined): boolean {
+  if (Array.isArray(value)) return value.length > 0;
+  return typeof value === "string" && value.trim().length > 0;
+}
+
 export default function ExamPage() {
   const { testId = "" } = useParams();
   const nav = useNavigate();
@@ -37,6 +42,10 @@ export default function ExamPage() {
 
   const ac = useAntiCheat(started);
   const isWriting = data.data?.topic.skill === "writing";
+  const wordCount = useMemo(
+    () => essay.trim().split(/\s+/).filter(Boolean).length,
+    [essay]
+  );
 
   // Không có thông tin học sinh -> quay lại màn nhập.
   useEffect(() => {
@@ -46,6 +55,11 @@ export default function ExamPage() {
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
       if (submitting) return;
+      if (reason === "manual" && data.data) {
+        const missing = isWriting ? 0 : data.data.questions.filter((q) => !isAnswered(answers[q.id])).length;
+        if (missing > 0 && !confirm(`Bạn còn ${missing} câu chưa trả lời. Vẫn nộp bài?`)) return;
+        if (isWriting && data.data.test.min_words > 0 && wordCount < data.data.test.min_words && !confirm(`Bài chưa đủ ${data.data.test.min_words} từ. Vẫn nộp bài?`)) return;
+      }
       setSubmitting(true);
       setSubmitErr(null);
       try {
@@ -76,7 +90,7 @@ export default function ExamPage() {
         setSubmitting(false);
       }
     },
-    [submitting, testId, meta, answers, ac.violations, ac.log, isWriting, essay, nav, data.data]
+    [submitting, data.data, isWriting, answers, wordCount, testId, meta, ac.violations, ac.log, essay, nav]
   );
 
   // Đồng hồ đếm ngược — hết giờ tự nộp.
@@ -93,11 +107,6 @@ export default function ExamPage() {
   useEffect(() => {
     if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
   }, [started, ac.violations, doSubmit]);
-
-  const wordCount = useMemo(
-    () => essay.trim().split(/\s+/).filter(Boolean).length,
-    [essay]
-  );
 
   if (data.loading) return <div className="wrap"><Spinner /></div>;
   if (data.error) return <div className="wrap"><ErrorBox msg={data.error} /></div>;

@@ -14,6 +14,11 @@ function fmt(sec: number): string {
   return `${m}:${String(sec % 60).padStart(2, "0")}`;
 }
 
+function isAnswered(value: string | string[] | undefined): boolean {
+  if (Array.isArray(value)) return value.length > 0;
+  return typeof value === "string" && value.trim().length > 0;
+}
+
 export default function PlacementExamPage() {
   const { testId = "" } = useParams();
   const nav = useNavigate();
@@ -36,6 +41,10 @@ export default function PlacementExamPage() {
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
       if (submitting) return;
+      if (reason === "manual" && data.data) {
+        const missing = data.data.questions.filter((q) => !isAnswered(answers[q.id])).length;
+        if (missing > 0 && !confirm(`Bạn còn ${missing} câu chưa trả lời. Vẫn nộp bài?`)) return;
+      }
       setSubmitting(true);
       setSubmitErr(null);
       try {
@@ -53,7 +62,7 @@ export default function PlacementExamPage() {
         setSubmitting(false);
       }
     },
-    [submitting, testId, meta, answers, ac.violations, ac.log, nav, data.data]
+    [submitting, data.data, answers, testId, meta, ac.violations, ac.log, nav]
   );
 
   useEffect(() => {
@@ -124,6 +133,9 @@ export default function PlacementExamPage() {
             />
           )}
           {p.kind === "reading" && p.body && <div className="passage-body">{p.body}</div>}
+          {p.media_url && p.kind === "reading" && (
+            <img src={p.media_url} alt="" style={{ maxWidth: "100%" }} />
+          )}
         </div>
       ))}
 
