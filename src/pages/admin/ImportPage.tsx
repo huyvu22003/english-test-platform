@@ -1,9 +1,9 @@
-// Nhập nội dung hàng loạt từ CSV (mở/lưu được bằng Excel, UTF-8).
+// Nhập nội dung hàng loạt từ Excel/CSV: tải template Excel chuẩn, điền nội dung, lưu CSV UTF-8 để import.
 // 2 loại: ĐỀ VIẾT (topic + prompt) và TRẮC NGHIỆM (câu hỏi gắn cefr_level...).
 // Quy trình: tải mẫu → upload CSV → xem trước → Nhập (tạo topic/đề/câu hỏi).
 import { useState } from "react";
 import { listTopics, saveQuestion, saveTest, saveTopic } from "../../lib/api";
-import { parseCsv, downloadCsv } from "../../lib/csv";
+import { parseCsv } from "../../lib/csv";
 import { ErrorBox } from "../../components/common";
 import type { QType, Skill, Topic } from "../../lib/types";
 
@@ -17,14 +17,20 @@ export default function ImportPage() {
   const [mode, setMode] = useState<Mode>("writing");
   return (
     <div>
-      <h1>Nhập nội dung từ Excel/CSV</h1>
+      <h1>Nhập nội dung từ Excel</h1>
       <div className="row-form" style={{ marginBottom: 14 }}>
         <button className={`btn ${mode === "writing" ? "primary" : ""}`} onClick={() => setMode("writing")}>Đề Viết</button>
         <button className={`btn ${mode === "mcq" ? "primary" : ""}`} onClick={() => setMode("mcq")}>Câu hỏi trắc nghiệm</button>
       </div>
-      <p className="muted small">
-        Tải mẫu → điền trong Excel → <strong>Lưu dạng CSV UTF-8</strong> → tải lên. Cột phân tách bằng dấu phẩy.
-      </p>
+      <div className="card sub import-guide">
+        <strong>Quy trình chuẩn</strong>
+        <ol>
+          <li>Bấm <strong>Tải template Excel</strong> để lấy file mẫu có sẵn cột và ví dụ.</li>
+          <li>Mở file trong Excel/Google Sheets, điền dữ liệu theo đúng cột.</li>
+          <li>Khi nhập vào hệ thống, lưu/xuất lại thành <strong>CSV UTF-8</strong> rồi tải file CSV lên.</li>
+        </ol>
+        <p className="muted small">Lý do: template Excel giúp giáo viên nhập dễ đọc; CSV UTF-8 giúp hệ thống import ổn định, không lỗi font tiếng Việt.</p>
+      </div>
       {mode === "writing" ? <WritingImport /> : <McqImport />}
     </div>
   );
@@ -98,16 +104,73 @@ function Preview({ rows, cols }: { rows: Record<string, string>[]; cols: string[
   );
 }
 
+
+interface TemplateExcelArgs {
+  filename: string;
+  title: string;
+  cols: string[];
+  rows: string[][];
+  notes: string[];
+}
+
+function downloadTemplateExcel({ filename, title, cols, rows, notes }: TemplateExcelArgs) {
+  const colHeader = cols.map((c) => `<th>${escExcel(c)}</th>`).join("");
+  const exampleRows = rows.map((r) => `<tr>${cols.map((_, idx) => `<td>${escExcel(r[idx] ?? "")}</td>`).join("")}</tr>`).join("");
+  const noteRows = notes.map((n, idx) => `<tr><td class="center">${idx + 1}</td><td colspan="${Math.max(1, cols.length - 1)}">${escExcel(n)}</td></tr>`).join("");
+  const html = `<!doctype html><html><head><meta charset="utf-8" />
+    <style>
+      body { font-family: Arial, sans-serif; color: #221b26; }
+      .title { font-size: 22px; font-weight: 800; color: #7a2b8f; }
+      .subtitle { color: #6c6880; font-size: 12px; }
+      table { border-collapse: collapse; width: 100%; }
+      th { background: #7a2b8f; color: #fff; border: 1px solid #5b1b6f; padding: 8px; text-align: center; }
+      td { border: 1px solid #e5e7eb; padding: 7px; vertical-align: top; }
+      .notes td { background: #fffbeb; }
+      .data tr:nth-child(even) td { background: #fafafe; }
+      .center { text-align: center; }
+      .hint { color: #9a3412; font-weight: 700; }
+    </style>
+  </head><body>
+    <table><tr><td class="title" colspan="${cols.length}">${escExcel(title)} — IELTS MS. TRÀ MY</td></tr>
+    <tr><td class="subtitle" colspan="${cols.length}">File template Excel chuẩn để giáo viên nhập nội dung. Sau khi điền xong, lưu/xuất thành CSV UTF-8 rồi upload vào hệ thống.</td></tr></table>
+    <br />
+    <table class="notes"><tr><th style="width:60px">STT</th><th colspan="${Math.max(1, cols.length - 1)}">Hướng dẫn sử dụng</th></tr>${noteRows}</table>
+    <br />
+    <p class="hint">Nhập dữ liệu từ dòng bên dưới. Giữ nguyên tên cột.</p>
+    <table class="data"><thead><tr>${colHeader}</tr></thead><tbody>${exampleRows}</tbody></table>
+  </body></html>`;
+  const blob = new Blob(["\ufeff" + html], { type: "application/vnd.ms-excel;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function escExcel(v: unknown): string {
+  return String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
+}
+
 // ---------- Import ĐỀ VIẾT ----------
 function WritingImport() {
   const { st, setSt, onFile } = useImporter();
 
   function template() {
-    downloadCsv("mau_de_viet.csv", [
-      WRITING_COLS,
-      ["Education", "Some people think teachers should teach values. Discuss both views and give your opinion.", "40", "250"],
-      ["Technology", "Technology makes people less sociable. To what extent do you agree?", "40", "250"],
-    ]);
+    downloadTemplateExcel({
+      filename: "template-de-viet-ielts.xls",
+      title: "TEMPLATE NHẬP ĐỀ WRITING",
+      cols: WRITING_COLS,
+      rows: [
+        ["Education", "Some people think teachers should teach values. Discuss both views and give your opinion.", "40", "250"],
+        ["Technology", "Technology makes people less sociable. To what extent do you agree?", "40", "250"],
+      ],
+      notes: [
+        "Mỗi dòng = 1 đề Writing.",
+        "Các dòng cùng topic sẽ được gom vào cùng một chủ đề.",
+        "Sau khi điền xong: File → Save As/Download → CSV UTF-8, rồi upload CSV vào hệ thống.",
+      ],
+    });
   }
 
   async function run() {
@@ -143,10 +206,10 @@ function WritingImport() {
     <div>
       <div className="card">
         <div className="row-form">
-          <button className="btn small" onClick={template}>⬇ Tải mẫu CSV</button>
+          <button className="btn small" onClick={template}>⬇ Tải template Excel</button>
           <FilePick onFile={onFile} />
         </div>
-        <p className="muted small">Cột: <code>{WRITING_COLS.join(", ")}</code>. Mỗi dòng = 1 đề; cùng <code>topic</code> sẽ gom vào 1 chủ đề.</p>
+        <p className="muted small">Upload file <strong>CSV UTF-8</strong> sau khi điền template. Cột bắt buộc: <code>{WRITING_COLS.join(", ")}</code>.</p>
       </div>
       {st.error && <ErrorBox msg={st.error} />}
       {st.rows && (
@@ -169,13 +232,23 @@ function McqImport() {
   const { st, setSt, onFile } = useImporter();
 
   function template() {
-    downloadCsv("mau_trac_nghiem.csv", [
-      MCQ_COLS,
-      ["Placement UoE", "use_of_english", "placement", "0.6", "Use of English A", "single",
-        "She ___ to school every day.", "go", "goes", "going", "gone", "goes", "A2", "1"],
-      ["Placement UoE", "use_of_english", "placement", "0.6", "Use of English A", "fill",
-        "The opposite of 'big' is ___.", "", "", "", "", "small", "A1", "1"],
-    ]);
+    downloadTemplateExcel({
+      filename: "template-trac-nghiem-ielts.xls",
+      title: "TEMPLATE NHẬP CÂU HỎI TRẮC NGHIỆM",
+      cols: MCQ_COLS,
+      rows: [
+        ["Placement UoE", "use_of_english", "placement", "0.6", "Use of English A", "single",
+          "She ___ to school every day.", "go", "goes", "going", "gone", "goes", "A2", "1"],
+        ["Placement UoE", "use_of_english", "placement", "0.6", "Use of English A", "fill",
+          "The opposite of 'big' is ___.", "", "", "", "", "small", "A1", "1"],
+      ],
+      notes: [
+        "Cùng topic + test_title sẽ được gom vào một đề.",
+        "qtype hợp lệ: single, multi, tfng, fill.",
+        "correct phải là giá trị đáp án; multi/fill nhiều đáp án ngăn bằng dấu |; tfng dùng true/false/notgiven.",
+        "Sau khi điền xong: File → Save As/Download → CSV UTF-8, rồi upload CSV vào hệ thống.",
+      ],
+    });
   }
 
   async function run() {
@@ -236,11 +309,11 @@ function McqImport() {
     <div>
       <div className="card">
         <div className="row-form">
-          <button className="btn small" onClick={template}>⬇ Tải mẫu CSV</button>
+          <button className="btn small" onClick={template}>⬇ Tải template Excel</button>
           <FilePick onFile={onFile} />
         </div>
         <p className="muted small">
-          Cột chính: <code>topic, skill, purpose, test_title, qtype, prompt, option1..4, correct, cefr_level, points</code>.
+          Upload file <strong>CSV UTF-8</strong> sau khi điền template. Cột chính: <code>topic, skill, purpose, test_title, qtype, prompt, option1..4, correct, cefr_level, points</code>.
           Cùng <code>topic + test_title</code> gom vào 1 đề. <code>correct</code> = giá trị đáp án;
           với <em>multi/fill</em> nhiều đáp án ngăn bằng <code>|</code>. <em>tfng</em>: correct = <code>true/false/notgiven</code>.
         </p>
