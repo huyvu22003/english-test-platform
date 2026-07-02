@@ -535,3 +535,162 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 .guide-steps ol { margin: 0; padding-left: 20px; color: var(--muted); line-height: 1.65; }
 .guide-note { margin-top: 12px; border-left: 4px solid var(--accent); background: #fffbeb; border-radius: 10px; padding: 10px 12px; color: var(--ink); }
 @media (max-width: 560px) { .grading-guide-backdrop { padding: 10px; align-items: stretch; } .grading-guide-modal { max-height: calc(100vh - 20px); } }
+
+/* ============================================================
+   MOBILE FULL PASS — student + admin
+   Mục tiêu: không vỡ layout, dễ bấm, dễ đọc, dễ cuộn trên 360–768px.
+   ============================================================ */
+@media (max-width: 900px) {
+  body { background-attachment: scroll; }
+  .wrap { width: 100%; max-width: 100%; padding: 14px 12px 42px; }
+  .card { padding: 16px; border-radius: 14px; }
+  .topbar, .title-row, .q-row-head, .chart-title, .detail-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .title-row .actions, .topbar .actions, .q-row-head .actions { width: 100%; flex-wrap: wrap; }
+  .title-row .actions .btn { flex: 1 1 160px; }
+  h1 { font-size: 23px; line-height: 1.18; }
+  h2 { font-size: 19px; }
+  .grid2, .progress-lookup-grid { grid-template-columns: 1fr; }
+  .row-form { align-items: stretch; }
+  .row-form > input, .row-form > select, .row-form > .btn, .row-form > button { flex: 1 1 100%; }
+  .actions { flex-wrap: wrap; align-items: stretch; }
+  .actions .btn { flex: 1 1 auto; }
+  input, select, textarea, .btn { min-height: 44px; }
+  .btn.small { min-height: 36px; }
+
+  /* Student home */
+  .student-shell { padding-left: 10px; padding-right: 10px; }
+  .student-hero { padding: 18px; border-radius: 20px; }
+  .hero-top { align-items: flex-start; }
+  .hero-links { width: 100%; gap: 8px; }
+  .hero-links .link { flex: 1 1 auto; text-align: center; padding: 9px 10px; border-radius: 999px; background: rgba(255,255,255,.12); }
+  .hero-grid, .identity-card, .learning-block, .quick-guide-grid { grid-template-columns: 1fr; }
+  .hero-grid { gap: 18px; margin-top: 24px; }
+  .hero-copy h1 { font-size: clamp(30px, 9vw, 44px); line-height: 1.02; }
+  .tagline { font-size: 14px; }
+  .hero-cta .btn { flex: 1 1 100%; text-align: center; }
+  .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mini-stat { padding: 12px; }
+  .mini-stat strong { font-size: 25px; }
+  .identity-card { padding: 14px; border-radius: 18px; margin-bottom: 18px; }
+  .identity-copy { padding: 16px; }
+  .code-login input { max-width: none; }
+  .quick-guide-grid { margin: 0 0 18px; }
+  .guide-card { grid-template-columns: 44px 1fr; padding: 14px; border-radius: 18px; }
+  .guide-icon { width: 40px; height: 40px; font-size: 22px; }
+  .section-head { align-items: flex-start; flex-direction: column; }
+  .section-head h2 { font-size: 24px; }
+  .skill-card { position: relative; top: auto; min-height: auto; border-radius: 18px; padding: 16px; }
+  .skill-card h3 { font-size: 21px; }
+  .premium-test-row, .practice-topic-head { align-items: stretch; flex-direction: column; }
+  .premium-test-row .btn, .practice-topic .btn, .intensive-picker .btn { width: 100%; }
+  .premium-topic-grid { grid-template-columns: 1fr; }
+
+  /* Taking exams on phones */
+  .exam { padding-bottom: 88px; }
+  .exam-bar { top: 0; border-radius: 0 0 16px 16px; margin: -14px -12px 12px; padding: 10px 12px; align-items: flex-start; flex-direction: column; gap: 8px; }
+  .exam-bar-right { width: 100%; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .timer { font-size: 18px; }
+  .passage-body { font-size: 15px; line-height: 1.72; }
+  .essay { min-height: 340px; font-size: 16px; }
+  .question.card { padding: 14px; }
+  .opt { align-items: flex-start; padding: 11px; }
+  .fill { max-width: none; }
+  .btn.big { position: sticky; bottom: 10px; z-index: 4; box-shadow: 0 14px 30px rgba(236,58,43,.28); }
+
+  /* Admin shell */
+  .admin { display: block; min-height: 100vh; }
+  .sidebar {
+    position: sticky; top: 0; z-index: 30;
+    padding: 10px 10px 8px;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,.12);
+  }
+  .sidebar .brand { margin: 0; }
+  .sidebar nav {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 0 4px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sidebar nav a { flex: 0 0 auto; white-space: nowrap; padding: 8px 10px; font-size: 13px; }
+  .nav-group-label { display: none; }
+  .sidebar-foot { display: none; }
+  .content { padding: 16px 12px 44px; overflow: visible; }
+  .authoring-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .authoring-tabs a { flex: 0 0 auto; white-space: nowrap; }
+  .topic-create-bar { grid-template-columns: 1fr; }
+  .topic-title-block { min-width: 0; width: 100%; }
+  .topic-head, .compact-topic-head { align-items: stretch; flex-direction: column; }
+  .topic-actions, .test-actions { width: 100%; }
+  .topic-actions .btn, .test-actions .btn { flex: 1 1 45%; }
+  .compact-test-row { grid-template-columns: 1fr; }
+  .test-title-line { flex-wrap: wrap; }
+  .test-name { white-space: normal; }
+  .topic-rename-form input { min-width: 0; }
+
+  /* Tables stay readable via horizontal scroll */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table { min-width: 760px; }
+  .progress-history .table { min-width: 680px; }
+  .table th, .table td { padding: 9px 10px; }
+  .detail-row > td { min-width: 720px; }
+
+  /* Writing grading */
+  .grading-essay-head { align-items: stretch; flex-direction: column; }
+  .grading-essay-head .btn { width: 100%; }
+  .grade-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .grade-grid .field.inline { width: auto; }
+  .overall-box { grid-column: 1 / -1; }
+  .quick-feedback-row .btn { flex: 1 1 100%; }
+  .correction-compose-backdrop, .grading-guide-backdrop, .progress-modal-backdrop { padding: 10px; align-items: stretch; place-items: stretch; }
+  .correction-compose-modal, .grading-guide-modal, .progress-modal { width: 100%; max-height: calc(100vh - 20px); overflow: auto; }
+  .modal-mini-head, .modal-head, .modal-head-actions { flex-direction: column; align-items: stretch; }
+  .correction-compose-actions .btn { flex: 1 1 100%; }
+  .guide-steps section { padding: 11px; }
+
+  /* Progress */
+  .progress-summary-grid, .progress-chart-grid { grid-template-columns: 1fr; }
+  .progress-modal { padding: 14px; }
+  .progress-detail-grid { grid-template-columns: 1fr; }
+  .teacher-column { position: static; }
+  .essay-detail-box, .feedback-box { max-height: none; }
+  .detail-score { width: 100%; }
+  .crit-cards.compact { grid-template-columns: repeat(2, 1fr); }
+
+  /* Import/session/roster forms */
+  .import-guide ol { padding-left: 18px; }
+  .chip-list { gap: 6px; }
+  .auth-box { padding: 22px; }
+}
+
+@media (max-width: 520px) {
+  .wrap { padding: 10px 10px 36px; }
+  .card { padding: 14px; margin-bottom: 12px; }
+  h1 { font-size: 21px; }
+  .small { font-size: 12px; }
+  .hero-stats { grid-template-columns: 1fr; }
+  .hero-links .link { flex-basis: 100%; }
+  .logo-wm b { font-size: 17px; }
+  .logo-wm i { font-size: 9px; letter-spacing: .1em; }
+  .guide-card { grid-template-columns: 1fr; }
+  .premium-test-row { padding: 13px; border-radius: 14px; }
+  .practice-topic { padding: 12px; border-radius: 16px; }
+  .skill-icon { width: 44px; height: 44px; }
+  .sidebar nav a { font-size: 12px; padding: 7px 9px; }
+  .content { padding: 14px 10px 40px; }
+  .title-row .actions .btn, .actions .btn, .topic-actions .btn, .test-actions .btn { flex: 1 1 100%; }
+  .grade-grid { grid-template-columns: 1fr; }
+  .crit-cards.compact { grid-template-columns: 1fr 1fr; }
+  .table { min-width: 700px; font-size: 13px; }
+  .detail-row > td { min-width: 680px; }
+  .progress-modal-backdrop, .grading-guide-backdrop, .correction-compose-backdrop { padding: 0; }
+  .progress-modal, .grading-guide-modal, .correction-compose-modal { min-height: 100vh; max-height: 100vh; border-radius: 0; }
+  .auth-page { padding: 14px; }
+}
