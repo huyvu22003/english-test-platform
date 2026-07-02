@@ -440,8 +440,13 @@ function findExactInsensitive(text: string, needle: string, used: Set<number>) {
 function rangeUsed(start: number, len: number, used: Set<number>) { for (let i = start; i < start + len; i++) if (used.has(i)) return true; return false; }
 
 function printProgressPdf(item: ProgressItem, corrections: CorrectionPair[]) {
-  const w = window.open("", "_blank", "noopener,noreferrer,width=980,height=900");
-  if (!w) return;
+  // Không dùng `noopener` ở đây: trình duyệt sẽ trả về `null`, khiến app không thể
+  // ghi nội dung phiếu PDF vào tab in vừa mở.
+  const w = window.open("", "_blank", "width=980,height=900");
+  if (!w) {
+    window.alert("Trình duyệt đang chặn cửa sổ in. Vui lòng cho phép pop-up rồi thử lại.");
+    return;
+  }
   const html = buildPdfHtml(item, corrections);
   w.document.open();
   w.document.write(html);
