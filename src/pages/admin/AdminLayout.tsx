@@ -1,4 +1,5 @@
 // Khung trang quản trị: thanh điều hướng + nội dung con (Outlet).
+import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
 import Logo from "../../components/Logo";
@@ -6,6 +7,7 @@ import Logo from "../../components/Logo";
 export default function AdminLayout() {
   const { session, signOut } = useAuth();
   const nav = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   async function logout() {
     await signOut();
@@ -15,8 +17,13 @@ export default function AdminLayout() {
   return (
     <div className="admin">
       <aside className="sidebar">
-        <div className="brand"><Logo height={30} light /></div>
-        <nav>
+        <div className="admin-mobile-head">
+          <div className="brand"><Logo height={30} light /></div>
+          <button className="btn small admin-menu-toggle" type="button" onClick={() => setMenuOpen((v) => !v)}>
+            {menuOpen ? "Đóng ✕" : "☰ Menu"}
+          </button>
+        </div>
+        <nav className={menuOpen ? "open" : ""} onClick={() => setMenuOpen(false)}>
           <div className="nav-group-label">Soạn đề</div>
           <NavLink to="/admin/topics/writing" className={({ isActive }) => (isActive ? "active" : "")}>Đề Viết</NavLink>
           <NavLink to="/admin/topics/reading" className={({ isActive }) => (isActive ? "active" : "")}>Đề Đọc</NavLink>
