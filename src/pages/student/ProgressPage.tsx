@@ -189,15 +189,15 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
 
             <section className="detail-section">
               <h3>Bài làm của học viên</h3>
-              {item.essay ? (
+              {essayTextOf(item) ? (
                 <>
-                  <div className="detail-box prewrap essay-detail-box"><HighlightedEssay essay={item.essay} corrections={corrections} activeId={activeCorrection} openNoteId={openNoteId} onToggleNote={setOpenNoteId} /></div>
+                  <div className="detail-box prewrap essay-detail-box"><HighlightedEssay essay={essayTextOf(item)!} corrections={corrections} activeId={activeCorrection} openNoteId={openNoteId} onToggleNote={setOpenNoteId} /></div>
                   {openCorrection && <CorrectionInlineNote correction={openCorrection} onClose={() => setOpenNoteId(null)} />}
                 </>
               ) : item.score != null && item.max_score != null ? (
                 <div className="detail-box">Điểm tự chấm: <b>{item.score}/{item.max_score}</b></div>
               ) : (
-                <div className="detail-box muted">Chưa có nội dung bài làm hiển thị.</div>
+                <div className="detail-box muted">Chưa có bài làm lưu trực tiếp trong hệ thống. Nếu giáo viên chấm qua Google Docs, vui lòng mở link trong phần nhận xét tổng quan.</div>
               )}
             </section>
           </div>
@@ -212,9 +212,9 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
 
             <section className="detail-section">
               <h3>Nhận xét tổng quan của giáo viên</h3>
-              <div className="detail-box prewrap feedback-box">{item.feedback || "Chưa có nhận xét tổng quan."}</div>
+              <div className="detail-box prewrap feedback-box"><FeedbackText text={item.feedback || "Chưa có nhận xét tổng quan."} /></div>
               <h3>Sửa câu chi tiết</h3>
-              {corrections.length > 0 ? <StructuredCorrectionList corrections={corrections} activeId={activeCorrection} onFocus={setActiveCorrection} onOpenNote={setOpenNoteId} /> : <p className="muted small">Chưa có dữ liệu sửa câu có cấu trúc.</p>}
+              {corrections.length > 0 ? <StructuredCorrectionList corrections={corrections} activeId={activeCorrection} onFocus={setActiveCorrection} onOpenNote={setOpenNoteId} /> : <p className="muted small">Chưa có dữ liệu sửa câu có cấu trúc trong hệ thống. Nếu nhận xét nằm trong Google Docs, hãy mở link ở phần nhận xét tổng quan.</p>}
             </section>
           </div>
         </div>
@@ -247,6 +247,11 @@ function HighlightedEssay({ essay, corrections, activeId, openNoteId, onToggleNo
       >{p.text}</button>
     );
   })}</>;
+}
+
+function FeedbackText({ text }: { text: string }) {
+  const parts = String(text).split(/(https?:\/\/[^\s]+)/g);
+  return <>{parts.map((part, idx) => /^https?:\/\//.test(part) ? <a key={idx} className="link" href={part} target="_blank" rel="noopener noreferrer">{part}</a> : <span key={idx}>{part}</span>)}</>;
 }
 
 function CorrectionInlineNote({ correction, onClose }: { correction: CorrectionPair; onClose: () => void }) {
@@ -456,20 +461,25 @@ function printProgressPdf(item: ProgressItem, corrections: CorrectionPair[]) {
 }
 
 function buildPdfHtml(item: ProgressItem, corrections: CorrectionPair[]) {
-  const essayHtml = item.essay ? highlightEssayParts(item.essay, corrections).map((p) => p.hit ? `<mark>${esc(p.text)}</mark>` : esc(p.text)).join("") : "Chưa có nội dung bài làm.";
-  const highlightedCount = item.essay ? highlightEssayParts(item.essay, corrections).filter((p) => p.hit).length : 0;
-  const correctionHtml = corrections.length ? corrections.map((c) => `<div class="fix"><b>Lỗi #${c.index}</b><p class="bad">${esc(c.original)}</p>${c.note ? `<p class="muted">${esc(c.note)}</p>` : ""}<p class="good">${esc(c.corrected)}</p></div>`).join("") : "<p class=\"muted\">Chưa có dữ liệu sửa câu có cấu trúc.</p>";
+  const essay = essayTextOf(item);
+  const essayHtml = essay ? highlightEssayParts(essay, corrections).map((p) => p.hit ? `<mark>${esc(p.text)}</mark>` : esc(p.text)).join("") : "<p class=\"muted\">Chưa có bài làm lưu trực tiếp trong hệ thống. Nếu giáo viên chấm qua Google Docs, vui lòng mở link trong phần nhận xét tổng quan.</p>";
+  const highlightedCount = essay ? highlightEssayParts(essay, corrections).filter((p) => p.hit).length : 0;
+  const correctionHtml = corrections.length ? corrections.map((c) => `<div class="fix"><b>Lỗi #${c.index}</b><p class="bad">${esc(c.original)}</p>${c.note ? `<p class="muted">${esc(c.note)}</p>` : ""}<p class="good">${esc(c.corrected)}</p></div>`).join("") : "<p class=\"muted\">Chưa có dữ liệu sửa câu có cấu trúc trong hệ thống. Nếu nhận xét nằm trong Google Docs, hãy mở link ở phần nhận xét tổng quan.</p>";
   const scores = [["TR", item.score_tr], ["CC", item.score_cc], ["LR", item.score_lr], ["GRA", item.score_gra]].map(([k, v]) => `<div class="score"><b>${v ?? "—"}</b><span>${k}</span></div>`).join("");
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(item.topic_name ?? "Bài kiểm tra")}</title><style>
-    @page{size:A4;margin:14mm} body{font-family:Arial,sans-serif;color:#221b26;margin:0;line-height:1.55}.brand{display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #ec3a2b;padding-bottom:14px;margin-bottom:18px}.brand img{height:54px}.brand-title{text-align:right}.brand-title h1{margin:0;font-size:24px}.muted{color:#6c6880}.pill{display:inline-block;background:#e7f0ff;color:#1d4ed8;border-radius:99px;padding:3px 10px;font-weight:700;font-size:12px}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.meta div,.box{border:1px solid #ececf1;border-radius:12px;padding:10px;background:#fafafe}.scores{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.score{text-align:center;border:1px solid #fed7aa;background:#fff7ed;border-radius:12px;padding:10px}.score b{display:block;color:#ee5a24;font-size:24px}.score span{font-size:12px;color:#6c6880}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:start}.section{margin-top:16px}.section h2{font-size:17px;margin:0 0 8px}.essay{white-space:pre-wrap}.feedback{white-space:pre-wrap}.fix{border-left:4px solid #ec3a2b;background:#fff7f7;padding:8px 10px;margin:8px 0;border-radius:8px}.bad{background:#fff1f2;margin:6px 0;padding:7px;border-radius:6px}.good{background:#ecfdf5;margin:6px 0;padding:7px;border-radius:6px}mark{background:#ffe4e6;color:#9f1239;border-bottom:2px solid #fb7185;padding:0 2px;border-radius:3px}.footer{margin-top:20px;border-top:1px solid #ececf1;padding-top:8px;font-size:12px;color:#6c6880}@media print{button{display:none}.box,.score,.fix{break-inside:avoid}}
+    @page{size:A4;margin:14mm} body{font-family:Arial,sans-serif;color:#221b26;margin:0;line-height:1.55}.brand{display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #ec3a2b;padding-bottom:14px;margin-bottom:18px}.brand img{height:72px;max-width:320px;object-fit:contain;border-radius:4px}.brand-title{text-align:right}.brand-title h1{margin:0;font-size:24px}.muted{color:#6c6880}.pill{display:inline-block;background:#e7f0ff;color:#1d4ed8;border-radius:99px;padding:3px 10px;font-weight:700;font-size:12px}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.meta div,.box{border:1px solid #ececf1;border-radius:12px;padding:10px;background:#fafafe}.scores{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.score{text-align:center;border:1px solid #fed7aa;background:#fff7ed;border-radius:12px;padding:10px}.score b{display:block;color:#ee5a24;font-size:24px}.score span{font-size:12px;color:#6c6880}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:start}.section{margin-top:16px}.section h2{font-size:17px;margin:0 0 8px}.essay{white-space:pre-wrap}.feedback{white-space:pre-wrap;overflow-wrap:anywhere}.feedback a{color:#1d4ed8;text-decoration:underline}.fix{border-left:4px solid #ec3a2b;background:#fff7f7;padding:8px 10px;margin:8px 0;border-radius:8px}.bad{background:#fff1f2;margin:6px 0;padding:7px;border-radius:6px}.good{background:#ecfdf5;margin:6px 0;padding:7px;border-radius:6px}mark{background:#ffe4e6;color:#9f1239;border-bottom:2px solid #fb7185;padding:0 2px;border-radius:3px}.footer{margin-top:20px;border-top:1px solid #ececf1;padding-top:8px;font-size:12px;color:#6c6880}@media print{button{display:none}.box,.score,.fix{break-inside:avoid}}
   </style></head><body>
-    <div class="brand"><img src="/logo.png"/><div class="brand-title"><span class="pill">${esc(skillLabel(item.skill))}</span><h1>${esc(item.topic_name ?? item.test_title ?? "Bài kiểm tra")}</h1><div class="muted">${dateVi(item.submitted_at)}</div></div></div>
+    <div class="brand"><img src="/logo-ielts-tra-my.jpg"/><div class="brand-title"><span class="pill">${esc(skillLabel(item.skill))}</span><h1>${esc(item.topic_name ?? item.test_title ?? "Bài kiểm tra")}</h1><div class="muted">${dateVi(item.submitted_at)}</div></div></div>
     <div class="meta"><div><b>Học viên</b><br>${esc(item.student_name ?? "—")}</div><div><b>Mã HV</b><br>${esc(item.student_code ?? "—")}</div><div><b>Lớp</b><br>${esc(item.class_name ?? "—")}</div><div><b>Trạng thái</b><br>${item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</div></div>
     <div class="section"><h2>Điểm</h2><div class="scores"><div class="score"><b>${bandOf(item) ?? "—"}</b><span>Band</span></div>${scores}</div><p class="muted">CEFR: <b>${esc(item.cefr ?? "—")}</b></p></div>
     <div class="section"><h2>Đề bài</h2><div class="box">${esc(item.prompt || item.test_title || item.topic_name || "Chưa có đề bài lưu trong hệ thống.")}</div></div>
-    <div class="grid"><div class="section"><h2>Bài làm của học viên</h2><p class="muted">${highlightedCount ? `${highlightedCount} đoạn được highlight theo dữ liệu sửa câu.` : "Không có đoạn nào được highlight tự động."}</p><div class="box essay">${essayHtml}</div></div><div class="section"><h2>Nhận xét tổng quan</h2><div class="box feedback">${esc(item.feedback || "Chưa có nhận xét tổng quan.")}</div><h2>Sửa câu chi tiết</h2>${correctionHtml}</div></div>
+    <div class="grid"><div class="section"><h2>Bài làm của học viên</h2><p class="muted">${highlightedCount ? `${highlightedCount} đoạn được highlight theo dữ liệu sửa câu.` : "Không có đoạn nào được highlight tự động."}</p><div class="box essay">${essayHtml}</div></div><div class="section"><h2>Nhận xét tổng quan</h2><div class="box feedback">${linkifyHtml(item.feedback || "Chưa có nhận xét tổng quan.")}</div><h2>Sửa câu chi tiết</h2>${correctionHtml}</div></div>
     <div class="footer">IELTS Ms. Trà My · Phiếu kết quả được tạo tự động từ English Test Platform</div>
   </body></html>`;
+}
+function essayTextOf(item: ProgressItem) { return item.essay?.trim() || null; }
+function linkifyHtml(value: unknown) {
+  return esc(value).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
 }
 function esc(v: unknown) { return String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string)); }
 
