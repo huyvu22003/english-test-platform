@@ -107,17 +107,18 @@ function styleBodyRow(row: ExcelJSType.Row, index: number) {
 }
 
 function addLogo(ws: ExcelJSType.Worksheet, workbook: ExcelJSType.Workbook, logoBase64: string | null, startRow = 1) {
-  ws.mergeCells(`A${startRow}:D${startRow + 4}`);
+  ws.mergeCells(`A${startRow}:C${startRow + 2}`);
+  for (let i = startRow; i <= startRow + 2; i++) ws.getRow(i).height = 22;
   if (!logoBase64) {
     const c = ws.getCell(`A${startRow}`);
     c.value = "IELTS\nMS. TRÀ MY";
-    c.font = { bold: true, size: 22, color: { argb: "FFFFFFFF" } };
+    c.font = { bold: true, size: 18, color: { argb: "FFFFFFFF" } };
     c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF772B8F" } };
     c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
     return;
   }
   const imageId = workbook.addImage({ base64: logoBase64, extension: "jpeg" });
-  ws.addImage(imageId, { tl: { col: 0, row: startRow - 1 }, ext: { width: 315, height: 101 } });
+  ws.addImage(imageId, { tl: { col: 0, row: startRow - 1 }, ext: { width: 225, height: 72 } });
 }
 
 export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs): Promise<void> {
@@ -136,7 +137,7 @@ export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs)
     .filter((v): v is number => typeof v === "number");
   const avgPercent = avgPercentValues.length ? (avgPercentValues.reduce((a, b) => a + b, 0) / avgPercentValues.length).toFixed(1) + "%" : "—";
 
-  const ws = workbook.addWorksheet("Bảng điểm", { views: [{ state: "frozen", ySplit: 12 }] });
+  const ws = workbook.addWorksheet("Bảng điểm", { views: [{ state: "frozen", ySplit: 11 }] });
   ws.properties.defaultRowHeight = 20;
   ws.columns = [
     { width: 6 }, { width: 19 }, { width: 24 }, { width: 32 }, { width: 31 }, { width: 15 }, { width: 28 }, { width: 13 },
@@ -144,9 +145,9 @@ export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs)
     { width: 8 }, { width: 8 }, { width: 8 }, { width: 8 }, { width: 9 }, { width: 10 }, { width: 19 }, { width: 42 },
   ];
   addLogo(ws, workbook, logoBase64);
-  styleMergedTitle(ws, "E1:W2", "BẢNG ĐIỂM KIỂM TRA", 22);
-  styleMergedTitle(ws, "E3:W3", `${BRAND.name} · ${BRAND.subtitle}`, 13);
-  ws.getCell("E3").font = { bold: true, size: 13, color: { argb: `FF${BRAND.muted}` } };
+  styleMergedTitle(ws, "D1:W2", "BẢNG ĐIỂM KIỂM TRA", 21);
+  styleMergedTitle(ws, "D3:W3", `${BRAND.name} · ${BRAND.subtitle}`, 12);
+  ws.getCell("D3").font = { bold: true, size: 12, color: { argb: `FF${BRAND.muted}` } };
 
   const info = [
     ["Buổi thi", session.name, "Mã thi", session.access_code || "—", "Lớp", className || "Tất cả"],
@@ -155,24 +156,24 @@ export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs)
     ["Mở lúc", dateVi(session.open_at) || "Ngay", "Đóng lúc", dateVi(session.close_at) || "Không giới hạn", "Đề", testName(test, submissions[0]?.topic_name)],
   ];
   info.forEach((r, i) => {
-    const row = ws.getRow(6 + i);
+    const row = ws.getRow(5 + i);
     row.values = r;
     row.eachCell((cell, col) => styleInfoCell(cell, col % 2 === 1));
   });
 
-  ws.getCell("A11").value = "I. Bảng điểm tổng";
-  ws.getCell("A11").font = { bold: true, size: 14, color: { argb: `FF${BRAND.primary}` } };
+  ws.getCell("A10").value = "I. Bảng điểm tổng";
+  ws.getCell("A10").font = { bold: true, size: 14, color: { argb: `FF${BRAND.primary}` } };
 
   const headers = [
     "STT", "Thời gian nộp", "Họ tên", "Email", "Buổi thi", "Mã thi", "Đề", "Kỹ năng",
     "Điểm", "Tối đa", "Tỷ lệ", "Band tự chấm", "Overall Writing", "CEFR", "Trạng thái",
     "TR", "CC", "LR", "GRA", "Số từ", "Vi phạm", "Bắt đầu lúc", "Nhận xét",
   ];
-  ws.getRow(12).values = headers;
-  styleHeader(ws.getRow(12));
+  ws.getRow(11).values = headers;
+  styleHeader(ws.getRow(11));
 
   submissions.forEach((x, idx) => {
-    const row = ws.getRow(13 + idx);
+    const row = ws.getRow(12 + idx);
     row.values = [
       idx + 1, dateVi(x.submitted_at), x.student_name ?? "", x.student_email ?? "", session.name, session.access_code ?? "",
       testName(test, x.topic_name), skillLabel(test?.skill), num(x.score), num(x.max_score), percentOf(x), num(x.band), num(x.overall_band),
@@ -182,7 +183,7 @@ export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs)
     styleBodyRow(row, idx);
     row.getCell(3).font = { bold: true, color: { argb: `FF${BRAND.primary}` } };
   });
-  ws.autoFilter = { from: "A12", to: `W${Math.max(12, 12 + submissions.length)}` };
+  ws.autoFilter = { from: "A11", to: `W${Math.max(11, 11 + submissions.length)}` };
 
   const personal = workbook.addWorksheet("Phiếu cá nhân");
   personal.columns = [{ width: 18 }, { width: 34 }, { width: 18 }, { width: 34 }];
@@ -192,7 +193,7 @@ export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs)
       personal.getRow(r).addPageBreak();
     }
     addLogo(personal, workbook, logoBase64, r);
-    r += 6;
+    r += 4;
     personal.mergeCells(`A${r}:D${r}`);
     const title = personal.getCell(`A${r}`);
     title.value = `PHIẾU ĐIỂM CÁ NHÂN #${idx + 1}`;
