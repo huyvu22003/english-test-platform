@@ -18,27 +18,12 @@ export interface DownloadGradeReportArgs {
 const BRAND = {
   name: "IELTS Ms. Trà My",
   subtitle: "English Test Platform",
-  logoPath: "/logo-ielts-tra-my.jpg",
   primary: "#14532d",
+  purple: "#772b8f",
+  orange: "#f97316",
   accent: "#16a34a",
   gold: "#f59e0b",
 };
-
-async function imageToDataUrl(path: string): Promise<string | null> {
-  try {
-    const res = await fetch(path);
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : null);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
-}
 
 function esc(v: unknown): string {
   return String(v ?? "")
@@ -72,7 +57,6 @@ function safeSheetText(v: string): string {
 
 export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs): Promise<void> {
   const { session, test, className, submissions, filename } = args;
-  const logo = await imageToDataUrl(BRAND.logoPath);
   const graded = submissions.filter((x) => x.status === "graded").length;
   const waiting = submissions.length - graded;
   const avgBandValues = submissions
@@ -145,13 +129,17 @@ export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs)
 <style>
   @page { margin: 0.45in; }
   body { font-family: "Plus Jakarta Sans", Calibri, Arial, sans-serif; color: #0f172a; }
-  .cover { border: 2px solid ${BRAND.primary}; border-radius: 18px; padding: 22px 24px; margin-bottom: 20px; background: #f8fafc; }
-  .brand { display: flex; align-items: center; gap: 16px; }
-  .brand img { width: 82px; height: 82px; object-fit: contain; border-radius: 12px; }
-  .brand-title { font-size: 15px; color: #64748b; text-transform: uppercase; letter-spacing: 1.8px; font-weight: 700; }
-  h1 { margin: 4px 0 2px; color: ${BRAND.primary}; font-size: 28px; }
+  .cover { border: 2px solid ${BRAND.primary}; border-radius: 18px; padding: 0 0 18px; margin-bottom: 20px; background: #f8fafc; }
+  .brand-table { border-collapse: collapse; width: 100%; margin-bottom: 16px; }
+  .brand-mark { width: 140px; background: ${BRAND.purple}; color: ${BRAND.orange}; font-size: 34px; font-weight: 900; text-align: center; padding: 18px 10px; border: 0; }
+  .brand-word { background: ${BRAND.purple}; color: #fff; padding: 16px 18px; border: 0; }
+  .brand-word-main { font-size: 44px; font-weight: 900; letter-spacing: 2px; line-height: 1.05; }
+  .brand-word-sub { font-size: 30px; font-weight: 900; letter-spacing: 1px; line-height: 1.1; }
+  .brand-title { font-size: 15px; color: #64748b; text-transform: uppercase; letter-spacing: 1.8px; font-weight: 700; margin-left: 18px; }
+  h1 { margin: 4px 18px 2px; color: ${BRAND.primary}; font-size: 28px; }
   h2 { margin: 0; color: ${BRAND.primary}; font-size: 20px; }
-  .meta { margin-top: 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .brand-note { margin-left: 18px; }
+  .meta { margin: 16px 18px 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
   .box { border: 1px solid #dbeafe; border-left: 5px solid ${BRAND.accent}; background: #fff; padding: 10px 12px; border-radius: 10px; }
   .box b { display: block; color: ${BRAND.primary}; font-size: 18px; }
   .label { color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: .7px; }
@@ -172,19 +160,23 @@ export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs)
   .personal th { width: 16%; background: #f0fdf4; color: ${BRAND.primary}; text-align: left; border: 1px solid #bbf7d0; padding: 8px; }
   .personal td { width: 34%; border: 1px solid #d1fae5; padding: 8px; }
   .feedback-cell { white-space: normal; min-height: 60px; }
-  .footer { margin-top: 14px; color: #64748b; font-size: 12px; text-align: right; }
+  .footer { margin: 14px 18px 0; color: #64748b; font-size: 12px; text-align: right; }
 </style>
 </head>
 <body>
   <section class="cover">
-    <div class="brand">
-      ${logo ? `<img src="${logo}" alt="Logo" />` : ""}
-      <div>
-        <div class="brand-title">${BRAND.subtitle}</div>
-        <h1>BẢNG ĐIỂM KIỂM TRA</h1>
-        <div><b>${BRAND.name}</b> · Báo cáo xuất từ hệ thống</div>
-      </div>
-    </div>
+    <table class="brand-table">
+      <tr>
+        <td class="brand-mark">❯❯<br/>❯❯</td>
+        <td class="brand-word">
+          <div class="brand-word-main">IELTS</div>
+          <div class="brand-word-sub">MS. TRÀ MY</div>
+        </td>
+      </tr>
+    </table>
+    <div class="brand-title">${BRAND.subtitle}</div>
+    <h1>BẢNG ĐIỂM KIỂM TRA</h1>
+    <div class="brand-note"><b>${BRAND.name}</b> · Báo cáo xuất từ hệ thống</div>
     <div class="meta">
       <div class="box"><span class="label">Buổi thi</span><b>${esc(session.name)}</b></div>
       <div class="box"><span class="label">Mã thi</span><b>${esc(session.access_code || "—")}</b></div>
