@@ -151,7 +151,7 @@ function SessionRow({ s, tests, submissions, classes, onChanged, onErr }: {
         test,
         className,
         submissions: sessionSubs,
-        filename: `bang-diem-${safeName}-${new Date().toISOString().slice(0, 10)}.xls`,
+        filename: `bang-diem-${safeName}-${new Date().toISOString().slice(0, 10)}.xlsx`,
       });
     } catch (e) {
       onErr(e instanceof Error ? e.message : String(e));

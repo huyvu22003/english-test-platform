@@ -1,3 +1,4 @@
+import type * as ExcelJSType from "exceljs";
 import type { Submission, TestWithTopic } from "./types";
 
 export interface GradeReportSession {
@@ -18,19 +19,34 @@ export interface DownloadGradeReportArgs {
 const BRAND = {
   name: "IELTS Ms. Trà My",
   subtitle: "English Test Platform",
-  primary: "#14532d",
-  purple: "#772b8f",
-  orange: "#f97316",
-  accent: "#16a34a",
-  gold: "#f59e0b",
+  logoPath: "/logo-ielts-tra-my.jpg",
+  primary: "14532D",
+  light: "F0FDF4",
+  border: "BBF7D0",
+  text: "0F172A",
+  muted: "64748B",
+  gold: "F59E0B",
 };
 
-function esc(v: unknown): string {
-  return String(v ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+const THIN = { style: "thin", color: { argb: "FFD1D5DB" } } as const;
+
+async function imageToBase64(path: string): Promise<string | null> {
+  try {
+    const res = await fetch(path);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const s = typeof reader.result === "string" ? reader.result : "";
+        resolve(s.includes(",") ? s.split(",")[1] : s || null);
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 function num(v: number | null | undefined): string { return v == null ? "" : String(v); }
@@ -49,167 +65,188 @@ function skillLabel(skill?: string): string {
   if (skill === "use_of_english") return "Use of English";
   return skill || "";
 }
+function testName(test: TestWithTopic | undefined, fallback: string | null): string {
+  return test ? (test.title ?? `Đề ${test.version_label}`) : (fallback ?? "");
+}
 
-function safeSheetText(v: string): string {
-  // Excel HTML giữ tốt tiếng Việt, nhưng tránh control char lạ làm hỏng file.
-  return v.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, " ");
+function safeName(v: string): string {
+  return v.replace(/[\\/?*\[\]:]/g, " ").slice(0, 31) || "Sheet";
+}
+
+function styleMergedTitle(ws: ExcelJSType.Worksheet, range: string, value: string, size = 18) {
+  ws.mergeCells(range);
+  const cell = ws.getCell(range.split(":")[0]);
+  cell.value = value;
+  cell.font = { bold: true, size, color: { argb: `FF${BRAND.primary}` } };
+  cell.alignment = { vertical: "middle", horizontal: "left" };
+}
+
+function styleInfoCell(cell: ExcelJSType.Cell, muted = false) {
+  cell.font = { bold: !muted, color: { argb: muted ? `FF${BRAND.muted}` : `FF${BRAND.text}` } };
+  cell.alignment = { vertical: "middle", wrapText: true };
+  cell.border = { top: THIN, left: THIN, bottom: THIN, right: THIN };
+  cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: muted ? "FFF8FAFC" : "FFFFFFFF" } };
+}
+
+function styleHeader(row: ExcelJSType.Row) {
+  row.height = 24;
+  row.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${BRAND.primary}` } };
+    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    cell.border = { top: THIN, left: THIN, bottom: THIN, right: THIN };
+  });
+}
+
+function styleBodyRow(row: ExcelJSType.Row, index: number) {
+  row.eachCell((cell) => {
+    cell.alignment = { vertical: "top", wrapText: true };
+    cell.border = { top: THIN, left: THIN, bottom: THIN, right: THIN };
+    if (index % 2 === 0) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FAFC" } };
+  });
+}
+
+function addLogo(ws: ExcelJSType.Worksheet, workbook: ExcelJSType.Workbook, logoBase64: string | null, startRow = 1) {
+  ws.mergeCells(`A${startRow}:D${startRow + 4}`);
+  if (!logoBase64) {
+    const c = ws.getCell(`A${startRow}`);
+    c.value = "IELTS\nMS. TRÀ MY";
+    c.font = { bold: true, size: 22, color: { argb: "FFFFFFFF" } };
+    c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF772B8F" } };
+    c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    return;
+  }
+  const imageId = workbook.addImage({ base64: logoBase64, extension: "jpeg" });
+  ws.addImage(imageId, { tl: { col: 0, row: startRow - 1 }, ext: { width: 315, height: 101 } });
 }
 
 export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs): Promise<void> {
   const { session, test, className, submissions, filename } = args;
+  const [{ default: ExcelJS }, logoBase64] = await Promise.all([import("exceljs"), imageToBase64(BRAND.logoPath)]);
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = BRAND.name;
+  workbook.created = new Date();
+
   const graded = submissions.filter((x) => x.status === "graded").length;
   const waiting = submissions.length - graded;
-  const avgBandValues = submissions
-    .map((x) => x.overall_band ?? x.band)
-    .filter((v): v is number => typeof v === "number");
+  const avgBandValues = submissions.map((x) => x.overall_band ?? x.band).filter((v): v is number => typeof v === "number");
   const avgBand = avgBandValues.length ? (avgBandValues.reduce((a, b) => a + Number(b), 0) / avgBandValues.length).toFixed(1) : "—";
   const avgPercentValues = submissions
     .map((x) => x.score != null && x.max_score ? Number(x.score) / Number(x.max_score) * 100 : null)
     .filter((v): v is number => typeof v === "number");
   const avgPercent = avgPercentValues.length ? (avgPercentValues.reduce((a, b) => a + b, 0) / avgPercentValues.length).toFixed(1) + "%" : "—";
-  const generatedAt = new Date().toLocaleString("vi-VN");
 
-  const rows = submissions.map((x, idx) => `
-    <tr>
-      <td class="center">${idx + 1}</td>
-      <td>${esc(dateVi(x.submitted_at))}</td>
-      <td class="name">${esc(x.student_name)}</td>
-      <td>${esc(x.student_email)}</td>
-      <td>${esc(session.name)}</td>
-      <td class="center code">${esc(session.access_code)}</td>
-      <td>${esc(test ? (test.title ?? `Đề ${test.version_label}`) : (x.topic_name ?? ""))}</td>
-      <td class="center">${esc(skillLabel(test?.skill))}</td>
-      <td class="num">${esc(num(x.score))}</td>
-      <td class="num">${esc(num(x.max_score))}</td>
-      <td class="num">${esc(percentOf(x))}</td>
-      <td class="num band">${esc(num(x.band))}</td>
-      <td class="num band">${esc(num(x.overall_band))}</td>
-      <td class="center">${esc(x.cefr)}</td>
-      <td class="center status">${esc(statusOf(x))}</td>
-      <td class="num">${esc(num(x.score_tr))}</td>
-      <td class="num">${esc(num(x.score_cc))}</td>
-      <td class="num">${esc(num(x.score_lr))}</td>
-      <td class="num">${esc(num(x.score_gra))}</td>
-      <td class="num">${esc(wordCount(x.essay))}</td>
-      <td class="num">${esc(num(x.violations))}</td>
-      <td>${esc(dateVi(x.started_at))}</td>
-      <td class="feedback">${esc(x.feedback)}</td>
-    </tr>`).join("");
+  const ws = workbook.addWorksheet("Bảng điểm", { views: [{ state: "frozen", ySplit: 12 }] });
+  ws.properties.defaultRowHeight = 20;
+  ws.columns = [
+    { width: 6 }, { width: 19 }, { width: 24 }, { width: 32 }, { width: 31 }, { width: 15 }, { width: 28 }, { width: 13 },
+    { width: 10 }, { width: 10 }, { width: 10 }, { width: 13 }, { width: 15 }, { width: 10 }, { width: 14 },
+    { width: 8 }, { width: 8 }, { width: 8 }, { width: 8 }, { width: 9 }, { width: 10 }, { width: 19 }, { width: 42 },
+  ];
+  addLogo(ws, workbook, logoBase64);
+  styleMergedTitle(ws, "E1:W2", "BẢNG ĐIỂM KIỂM TRA", 22);
+  styleMergedTitle(ws, "E3:W3", `${BRAND.name} · ${BRAND.subtitle}`, 13);
+  ws.getCell("E3").font = { bold: true, size: 13, color: { argb: `FF${BRAND.muted}` } };
 
-  const individualCards = submissions.map((x, idx) => `
-    <section class="student-card">
-      <div class="student-head">
-        <div>
-          <div class="student-index">PHIẾU ĐIỂM CÁ NHÂN #${idx + 1}</div>
-          <h2>${esc(x.student_name || "Học viên")}</h2>
-          <p>${esc(x.student_email || "")}</p>
-        </div>
-        <div class="student-score">
-          <span>Band</span>
-          <strong>${esc(bandOf(x) || "—")}</strong>
-        </div>
-      </div>
-      <table class="personal">
-        <tr><th>Buổi thi</th><td>${esc(session.name)}</td><th>Mã thi</th><td>${esc(session.access_code)}</td></tr>
-        <tr><th>Đề</th><td>${esc(test ? (test.title ?? `Đề ${test.version_label}`) : (x.topic_name ?? ""))}</td><th>Kỹ năng</th><td>${esc(skillLabel(test?.skill))}</td></tr>
-        <tr><th>Trạng thái</th><td>${esc(statusOf(x))}</td><th>Nộp lúc</th><td>${esc(dateVi(x.submitted_at))}</td></tr>
-        <tr><th>Điểm</th><td>${esc(num(x.score))} / ${esc(num(x.max_score))} (${esc(percentOf(x))})</td><th>CEFR</th><td>${esc(x.cefr || "")}</td></tr>
-        <tr><th>TR</th><td>${esc(num(x.score_tr))}</td><th>CC</th><td>${esc(num(x.score_cc))}</td></tr>
-        <tr><th>LR</th><td>${esc(num(x.score_lr))}</td><th>GRA</th><td>${esc(num(x.score_gra))}</td></tr>
-        <tr><th>Số từ</th><td>${esc(wordCount(x.essay))}</td><th>Vi phạm</th><td>${esc(num(x.violations))}</td></tr>
-        <tr><th>Nhận xét</th><td colspan="3" class="feedback-cell">${esc(x.feedback || "Chưa có nhận xét.")}</td></tr>
-      </table>
-    </section>`).join("");
+  const info = [
+    ["Buổi thi", session.name, "Mã thi", session.access_code || "—", "Lớp", className || "Tất cả"],
+    ["Kỹ năng", skillLabel(test?.skill) || "—", "Số bài nộp", submissions.length, "Đã chấm / Chờ", `${graded} / ${waiting}`],
+    ["Band TB", avgBand, "Điểm TB", avgPercent, "Xuất lúc", new Date().toLocaleString("vi-VN")],
+    ["Mở lúc", dateVi(session.open_at) || "Ngay", "Đóng lúc", dateVi(session.close_at) || "Không giới hạn", "Đề", testName(test, submissions[0]?.topic_name)],
+  ];
+  info.forEach((r, i) => {
+    const row = ws.getRow(6 + i);
+    row.values = r;
+    row.eachCell((cell, col) => styleInfoCell(cell, col % 2 === 1));
+  });
 
-  const html = safeSheetText(`<!doctype html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-<meta charset="utf-8" />
-<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Bảng điểm</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
-<style>
-  @page { margin: 0.45in; }
-  body { font-family: "Plus Jakarta Sans", Calibri, Arial, sans-serif; color: #0f172a; }
-  .cover { border: 2px solid ${BRAND.primary}; border-radius: 18px; padding: 0 0 18px; margin-bottom: 20px; background: #f8fafc; }
-  .brand-table { border-collapse: collapse; width: 100%; margin-bottom: 16px; }
-  .brand-mark { width: 140px; background: ${BRAND.purple}; color: ${BRAND.orange}; font-size: 34px; font-weight: 900; text-align: center; padding: 18px 10px; border: 0; }
-  .brand-word { background: ${BRAND.purple}; color: #fff; padding: 16px 18px; border: 0; }
-  .brand-word-main { font-size: 44px; font-weight: 900; letter-spacing: 2px; line-height: 1.05; }
-  .brand-word-sub { font-size: 30px; font-weight: 900; letter-spacing: 1px; line-height: 1.1; }
-  .brand-title { font-size: 15px; color: #64748b; text-transform: uppercase; letter-spacing: 1.8px; font-weight: 700; margin-left: 18px; }
-  h1 { margin: 4px 18px 2px; color: ${BRAND.primary}; font-size: 28px; }
-  h2 { margin: 0; color: ${BRAND.primary}; font-size: 20px; }
-  .brand-note { margin-left: 18px; }
-  .meta { margin: 16px 18px 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .box { border: 1px solid #dbeafe; border-left: 5px solid ${BRAND.accent}; background: #fff; padding: 10px 12px; border-radius: 10px; }
-  .box b { display: block; color: ${BRAND.primary}; font-size: 18px; }
-  .label { color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: .7px; }
-  .section-title { margin: 22px 0 8px; color: ${BRAND.primary}; font-size: 18px; font-weight: 800; }
-  table { border-collapse: collapse; width: 100%; }
-  .score-table th { background: ${BRAND.primary}; color: #fff; padding: 9px 8px; border: 1px solid #0b3d22; font-weight: 700; text-align: center; vertical-align: middle; }
-  .score-table td { border: 1px solid #d1d5db; padding: 8px 7px; vertical-align: top; }
-  .score-table tr:nth-child(even) td { background: #f8fafc; }
-  .center { text-align: center; } .num { text-align: right; } .name { font-weight: 700; color: ${BRAND.primary}; }
-  .code { font-weight: 800; color: ${BRAND.gold}; } .band { font-weight: 800; color: ${BRAND.primary}; }
-  .status { font-weight: 700; } .feedback { min-width: 260px; white-space: normal; }
-  .student-card { page-break-before: always; border: 1px solid #bbf7d0; border-radius: 16px; padding: 18px; margin-top: 24px; }
-  .student-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #dcfce7; padding-bottom: 12px; margin-bottom: 12px; }
-  .student-index { color: #64748b; font-size: 12px; letter-spacing: 1.4px; font-weight: 800; }
-  .student-score { text-align: center; border: 2px solid ${BRAND.primary}; border-radius: 16px; padding: 10px 18px; min-width: 90px; background: #f0fdf4; }
-  .student-score span { display: block; color: #64748b; font-size: 12px; text-transform: uppercase; }
-  .student-score strong { display: block; color: ${BRAND.primary}; font-size: 30px; }
-  .personal th { width: 16%; background: #f0fdf4; color: ${BRAND.primary}; text-align: left; border: 1px solid #bbf7d0; padding: 8px; }
-  .personal td { width: 34%; border: 1px solid #d1fae5; padding: 8px; }
-  .feedback-cell { white-space: normal; min-height: 60px; }
-  .footer { margin: 14px 18px 0; color: #64748b; font-size: 12px; text-align: right; }
-</style>
-</head>
-<body>
-  <section class="cover">
-    <table class="brand-table">
-      <tr>
-        <td class="brand-mark">❯❯<br/>❯❯</td>
-        <td class="brand-word">
-          <div class="brand-word-main">IELTS</div>
-          <div class="brand-word-sub">MS. TRÀ MY</div>
-        </td>
-      </tr>
-    </table>
-    <div class="brand-title">${BRAND.subtitle}</div>
-    <h1>BẢNG ĐIỂM KIỂM TRA</h1>
-    <div class="brand-note"><b>${BRAND.name}</b> · Báo cáo xuất từ hệ thống</div>
-    <div class="meta">
-      <div class="box"><span class="label">Buổi thi</span><b>${esc(session.name)}</b></div>
-      <div class="box"><span class="label">Mã thi</span><b>${esc(session.access_code || "—")}</b></div>
-      <div class="box"><span class="label">Lớp</span><b>${esc(className || "Tất cả")}</b></div>
-      <div class="box"><span class="label">Kỹ năng</span><b>${esc(skillLabel(test?.skill) || "—")}</b></div>
-      <div class="box"><span class="label">Số bài nộp</span><b>${submissions.length}</b></div>
-      <div class="box"><span class="label">Đã chấm / Chờ</span><b>${graded} / ${waiting}</b></div>
-      <div class="box"><span class="label">Band TB</span><b>${avgBand}</b></div>
-      <div class="box"><span class="label">Điểm TB</span><b>${avgPercent}</b></div>
-    </div>
-    <div class="footer">Xuất lúc ${esc(generatedAt)} · ${esc(session.open_at ? `Mở ${dateVi(session.open_at)}` : "Mở ngay")} · ${esc(session.close_at ? `Đóng ${dateVi(session.close_at)}` : "Không giới hạn đóng")}</div>
-  </section>
+  ws.getCell("A11").value = "I. Bảng điểm tổng";
+  ws.getCell("A11").font = { bold: true, size: 14, color: { argb: `FF${BRAND.primary}` } };
 
-  <div class="section-title">I. Bảng điểm tổng</div>
-  <table class="score-table">
-    <thead><tr>
-      <th>STT</th><th>Thời gian nộp</th><th>Họ tên</th><th>Email</th><th>Buổi thi</th><th>Mã thi</th><th>Đề</th><th>Kỹ năng</th>
-      <th>Điểm</th><th>Tối đa</th><th>Tỷ lệ</th><th>Band tự chấm</th><th>Overall Writing</th><th>CEFR</th><th>Trạng thái</th>
-      <th>TR</th><th>CC</th><th>LR</th><th>GRA</th><th>Số từ</th><th>Vi phạm</th><th>Bắt đầu lúc</th><th>Nhận xét</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
+  const headers = [
+    "STT", "Thời gian nộp", "Họ tên", "Email", "Buổi thi", "Mã thi", "Đề", "Kỹ năng",
+    "Điểm", "Tối đa", "Tỷ lệ", "Band tự chấm", "Overall Writing", "CEFR", "Trạng thái",
+    "TR", "CC", "LR", "GRA", "Số từ", "Vi phạm", "Bắt đầu lúc", "Nhận xét",
+  ];
+  ws.getRow(12).values = headers;
+  styleHeader(ws.getRow(12));
 
-  <div class="section-title">II. Bảng điểm cá nhân</div>
-  ${individualCards || "<p>Chưa có bài nộp.</p>"}
-</body>
-</html>`);
+  submissions.forEach((x, idx) => {
+    const row = ws.getRow(13 + idx);
+    row.values = [
+      idx + 1, dateVi(x.submitted_at), x.student_name ?? "", x.student_email ?? "", session.name, session.access_code ?? "",
+      testName(test, x.topic_name), skillLabel(test?.skill), num(x.score), num(x.max_score), percentOf(x), num(x.band), num(x.overall_band),
+      x.cefr ?? "", statusOf(x), num(x.score_tr), num(x.score_cc), num(x.score_lr), num(x.score_gra), wordCount(x.essay),
+      num(x.violations), dateVi(x.started_at), x.feedback ?? "",
+    ];
+    styleBodyRow(row, idx);
+    row.getCell(3).font = { bold: true, color: { argb: `FF${BRAND.primary}` } };
+  });
+  ws.autoFilter = { from: "A12", to: `W${Math.max(12, 12 + submissions.length)}` };
 
-  const blob = new Blob(["\ufeff", html], { type: "application/vnd.ms-excel;charset=utf-8;" });
+  const personal = workbook.addWorksheet("Phiếu cá nhân");
+  personal.columns = [{ width: 18 }, { width: 34 }, { width: 18 }, { width: 34 }];
+  let r = 1;
+  submissions.forEach((x, idx) => {
+    if (idx > 0) {
+      personal.getRow(r).addPageBreak();
+    }
+    addLogo(personal, workbook, logoBase64, r);
+    r += 6;
+    personal.mergeCells(`A${r}:D${r}`);
+    const title = personal.getCell(`A${r}`);
+    title.value = `PHIẾU ĐIỂM CÁ NHÂN #${idx + 1}`;
+    title.font = { bold: true, size: 16, color: { argb: `FF${BRAND.primary}` } };
+    title.alignment = { horizontal: "center" };
+    r += 1;
+    personal.mergeCells(`A${r}:D${r}`);
+    const name = personal.getCell(`A${r}`);
+    name.value = x.student_name || "Học viên";
+    name.font = { bold: true, size: 18, color: { argb: `FF${BRAND.primary}` } };
+    name.alignment = { horizontal: "center" };
+    r += 1;
+    personal.mergeCells(`A${r}:D${r}`);
+    personal.getCell(`A${r}`).value = x.student_email || "";
+    personal.getCell(`A${r}`).alignment = { horizontal: "center" };
+    r += 2;
+
+    const data = [
+      ["Buổi thi", session.name, "Mã thi", session.access_code || ""],
+      ["Đề", testName(test, x.topic_name), "Kỹ năng", skillLabel(test?.skill)],
+      ["Trạng thái", statusOf(x), "Nộp lúc", dateVi(x.submitted_at)],
+      ["Điểm", `${num(x.score)} / ${num(x.max_score)} (${percentOf(x)})`, "Band", bandOf(x) || "—"],
+      ["TR", num(x.score_tr), "CC", num(x.score_cc)],
+      ["LR", num(x.score_lr), "GRA", num(x.score_gra)],
+      ["CEFR", x.cefr || "", "Số từ", wordCount(x.essay)],
+      ["Vi phạm", num(x.violations), "Bắt đầu lúc", dateVi(x.started_at)],
+      ["Nhận xét", x.feedback || "Chưa có nhận xét.", "", ""],
+    ];
+    data.forEach((line) => {
+      const row = personal.getRow(r++);
+      row.values = line;
+      row.eachCell((cell, col) => {
+        cell.border = { top: THIN, left: THIN, bottom: THIN, right: THIN };
+        cell.alignment = { vertical: "top", wrapText: true };
+        if (col === 1 || col === 3) {
+          cell.font = { bold: true, color: { argb: `FF${BRAND.primary}` } };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${BRAND.light}` } };
+        }
+      });
+      if (line[0] === "Nhận xét") {
+        personal.mergeCells(`B${r - 1}:D${r - 1}`);
+        row.height = 54;
+      }
+    });
+    r += 3;
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = filename.endsWith(".xls") ? filename : `${filename}.xls`;
+  a.download = filename.replace(/\.xls$/i, ".xlsx").replace(/\.csv$/i, ".xlsx");
+  if (!/\.xlsx$/i.test(a.download)) a.download = `${a.download}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }
