@@ -2,7 +2,7 @@
 // một-lần-nộp + ngưỡng tự nộp khi vi phạm + có/không hiện điểm cho HS.
 import { useMemo, useState } from "react";
 import { deleteSession, listAllTests, listClasses, listSessions, listSubmissions, saveSession } from "../../lib/api";
-import { downloadCsv } from "../../lib/csv";
+import { downloadGradeReportWorkbook } from "../../lib/gradeReport";
 import { useAsync } from "../../lib/useAsync";
 import { ErrorBox, Spinner } from "../../components/common";
 import type { ClassRow, ExamSession, Submission, TestWithTopic } from "../../lib/types";
@@ -142,40 +142,20 @@ function SessionRow({ s, tests, submissions, classes, onChanged, onErr }: {
     catch (e) { onErr(e instanceof Error ? e.message : String(e)); }
   }
 
-  function exportScores() {
+  async function exportScores() {
     if (sessionSubs.length === 0) { onErr("Buổi thi này chưa có bài nộp để xuất bảng điểm."); return; }
-    const header = [
-      "STT", "Thời gian nộp", "Họ tên", "Email", "Buổi thi", "Mã thi", "Đề", "Kỹ năng",
-      "Điểm", "Điểm tối đa", "Tỷ lệ %", "Band tự chấm", "Overall Writing", "CEFR", "Trạng thái",
-      "TR", "CC", "LR", "GRA", "Số từ", "Vi phạm", "Bắt đầu lúc", "Nhận xét",
-    ];
-    const rows = sessionSubs.map((x, idx) => {
-      const percent = x.score != null && x.max_score ? Math.round((Number(x.score) / Number(x.max_score)) * 1000) / 10 : "";
-      return [
-        idx + 1,
-        fmtDate(x.submitted_at),
-        x.student_name ?? "",
-        x.student_email ?? "",
-        s.name,
-        s.access_code ?? "",
-        test ? (test.title ?? `Đề ${test.version_label}`) : (x.topic_name ?? ""),
-        test?.skill ?? "",
-        num(x.score),
-        num(x.max_score),
-        percent,
-        num(x.band),
-        num(x.overall_band),
-        x.cefr ?? "",
-        x.status === "graded" ? "Đã chấm" : "Chờ chấm",
-        num(x.score_tr), num(x.score_cc), num(x.score_lr), num(x.score_gra),
-        wordCount(x.essay),
-        num(x.violations),
-        fmtDate(x.started_at),
-        x.feedback ?? "",
-      ];
-    });
     const safeName = s.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "buoi-thi";
-    downloadCsv(`bang-diem-${safeName}-${new Date().toISOString().slice(0, 10)}.csv`, [header, ...rows]);
+    try {
+      await downloadGradeReportWorkbook({
+        session: s,
+        test,
+        className,
+        submissions: sessionSubs,
+        filename: `bang-diem-${safeName}-${new Date().toISOString().slice(0, 10)}.xls`,
+      });
+    } catch (e) {
+      onErr(e instanceof Error ? e.message : String(e));
+    }
   }
 
   const now = Date.now();
@@ -206,14 +186,4 @@ function SessionRow({ s, tests, submissions, classes, onChanged, onErr }: {
       </div>
     </div>
   );
-}
-
-function num(v: number | null | undefined): string {
-  return v == null ? "" : String(v);
-}
-function fmtDate(v: string | null | undefined): string {
-  return v ? new Date(v).toLocaleString("vi-VN") : "";
-}
-function wordCount(essay: string | null): number | string {
-  return essay ? essay.trim().split(/\s+/).filter(Boolean).length : "";
 }
