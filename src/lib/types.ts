@@ -242,6 +242,7 @@ export interface ExamSession {
   id: string;
   name: string;
   test_id: string | null;
+  class_id?: string | null;
   access_code: string | null;
   open_at: string | null;
   close_at: string | null;
@@ -264,11 +265,13 @@ export interface TestWithTopic {
 }
 
 export interface SessionByCode {
-  status: "open" | "not_open" | "closed" | "no_test";
+  status: "open" | "not_open" | "closed" | "no_test" | "class_mismatch";
   session_id?: string;
   name?: string;
   test_id?: string;
   skill?: Skill;
+  class_id?: string | null;
+  class_name?: string | null;
   one_submission?: boolean;
   max_violations?: number;
   open_at?: string;

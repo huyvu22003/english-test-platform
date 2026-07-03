@@ -1,11 +1,11 @@
 // Quản lý BUỔI THI (exit/mock): tạo buổi gắn 1 đề + MÃ THI + cửa sổ thời gian +
 // một-lần-nộp + ngưỡng tự nộp khi vi phạm + có/không hiện điểm cho HS.
 import { useMemo, useState } from "react";
-import { deleteSession, listAllTests, listSessions, listSubmissions, saveSession } from "../../lib/api";
+import { deleteSession, listAllTests, listClasses, listSessions, listSubmissions, saveSession } from "../../lib/api";
 import { downloadCsv } from "../../lib/csv";
 import { useAsync } from "../../lib/useAsync";
 import { ErrorBox, Spinner } from "../../components/common";
-import type { ExamSession, Submission, TestWithTopic } from "../../lib/types";
+import type { ClassRow, ExamSession, Submission, TestWithTopic } from "../../lib/types";
 
 function genCode(): string {
   const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -20,6 +20,7 @@ export default function SessionsPage() {
   const sessions = useAsync<ExamSession[]>(listSessions, []);
   const tests = useAsync<TestWithTopic[]>(listAllTests, []);
   const submissions = useAsync<Submission[]>(listSubmissions, []);
+  const classes = useAsync<ClassRow[]>(listClasses, []);
   const [err, setErr] = useState<string | null>(null);
 
   return (
@@ -28,7 +29,7 @@ export default function SessionsPage() {
       <p className="muted small">Tạo buổi thi gắn 1 đề; học sinh vào bằng <strong>mã thi</strong> tại trang chủ → "Vào phòng thi".</p>
       {err && <ErrorBox msg={err} />}
 
-      <NewSession tests={tests.data ?? []} onAdded={() => { sessions.reload(); submissions.reload(); }} onErr={setErr} />
+      <NewSession tests={tests.data ?? []} classes={classes.data ?? []} onAdded={() => { sessions.reload(); submissions.reload(); }} onErr={setErr} />
 
       <h2 className="section">Danh sách buổi thi</h2>
       {sessions.loading && <Spinner />}
@@ -40,6 +41,7 @@ export default function SessionsPage() {
           s={s}
           tests={tests.data ?? []}
           submissions={submissions.data ?? []}
+          classes={classes.data ?? []}
           onChanged={() => { sessions.reload(); submissions.reload(); }}
           onErr={setErr}
         />
@@ -56,11 +58,11 @@ function testLabel(t: TestWithTopic): string {
   return `${t.topic_name}${kind} · ${t.title ?? "Đề " + t.version_label} (${skill})${state}`;
 }
 
-function NewSession({ tests, onAdded, onErr }: { tests: TestWithTopic[]; onAdded: () => void; onErr: (m: string) => void }) {
+function NewSession({ tests, classes, onAdded, onErr }: { tests: TestWithTopic[]; classes: ClassRow[]; onAdded: () => void; onErr: (m: string) => void }) {
   const activeTests = useMemo(() => tests.filter((t) => t.active !== false), [tests]);
   const lockedCount = tests.length - activeTests.length;
   const [f, setF] = useState({
-    name: "", test_id: "", access_code: genCode(),
+    name: "", test_id: "", class_id: "", access_code: genCode(),
     open_at: "", close_at: "", one_submission: true, max_violations: 2, show_result: false,
   });
   async function add() {
@@ -69,11 +71,12 @@ function NewSession({ tests, onAdded, onErr }: { tests: TestWithTopic[]; onAdded
     try {
       await saveSession({
         name: f.name.trim(), test_id: f.test_id, access_code: f.access_code.trim().toUpperCase(),
+        ...(f.class_id ? { class_id: f.class_id } : {}),
         open_at: toIso(f.open_at), close_at: toIso(f.close_at),
         one_submission: f.one_submission, max_violations: Number(f.max_violations) || 0,
         show_result: f.show_result,
       });
-      setF({ name: "", test_id: "", access_code: genCode(), open_at: "", close_at: "", one_submission: true, max_violations: 2, show_result: false });
+      setF({ name: "", test_id: "", class_id: "", access_code: genCode(), open_at: "", close_at: "", one_submission: true, max_violations: 2, show_result: false });
       onAdded();
     } catch (e) { onErr(e instanceof Error ? e.message : String(e)); }
   }
@@ -97,6 +100,13 @@ function NewSession({ tests, onAdded, onErr }: { tests: TestWithTopic[]; onAdded
             <button className="btn small" type="button" onClick={() => setF({ ...f, access_code: genCode() })}>Đổi mã</button>
           </div>
         </label>
+        <label className="field"><span>Giới hạn lớp (tùy chọn)</span>
+          <select value={f.class_id} onChange={(e) => setF({ ...f, class_id: e.target.value })}>
+            <option value="">Tất cả học sinh có mã thi</option>
+            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <span className="muted small">Chọn lớp để chỉ học sinh trong roster lớp đó được vào/nộp bài.</span>
+        </label>
         <label className="field"><span>Tự nộp khi vi phạm ≥ (mặc định 2)</span>
           <input type="number" min={0} value={f.max_violations} onChange={(e) => setF({ ...f, max_violations: Number(e.target.value) })} />
         </label>
@@ -114,14 +124,16 @@ function NewSession({ tests, onAdded, onErr }: { tests: TestWithTopic[]; onAdded
   );
 }
 
-function SessionRow({ s, tests, submissions, onChanged, onErr }: {
+function SessionRow({ s, tests, submissions, classes, onChanged, onErr }: {
   s: ExamSession;
   tests: TestWithTopic[];
   submissions: Submission[];
+  classes: ClassRow[];
   onChanged: () => void;
   onErr: (m: string) => void;
 }) {
   const test = useMemo(() => tests.find((t) => t.id === s.test_id), [tests, s.test_id]);
+  const className = useMemo(() => classes.find((c) => c.id === s.class_id)?.name ?? null, [classes, s.class_id]);
   const sessionSubs = useMemo(() => submissions.filter((x) => x.session_id === s.id), [submissions, s.id]);
 
   async function remove() {
@@ -181,6 +193,7 @@ function SessionRow({ s, tests, submissions, onChanged, onErr }: {
           <div className="muted small">
             {s.open_at ? `Mở: ${new Date(s.open_at).toLocaleString("vi-VN")}` : "Mở: ngay"} ·{" "}
             {s.close_at ? `Đóng: ${new Date(s.close_at).toLocaleString("vi-VN")}` : "Đóng: không giới hạn"}
+            {className ? ` · lớp: ${className}` : " · mọi lớp"}
             {s.one_submission ? " · 1 lần/HS" : ""}{s.max_violations ? ` · tự nộp khi vi phạm ≥ ${s.max_violations}` : ""}
             {s.show_result ? " · hiện điểm" : ""}
           </div>

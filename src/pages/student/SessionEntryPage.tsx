@@ -20,11 +20,12 @@ export default function SessionEntryPage() {
     if (!ready) { setErr("Nhập mã thi, họ tên và email hợp lệ."); return; }
     setBusy(true);
     try {
-      const s = await sessionByCode(code.trim());
+      const s = await sessionByCode(code.trim(), email.trim());
       if (!s) { setErr("Mã thi không đúng."); return; }
       if (s.status === "no_test") { setErr("Buổi thi chưa gắn đề."); return; }
       if (s.status === "not_open") { setErr(`Buổi thi chưa mở (mở lúc ${s.open_at ? new Date(s.open_at).toLocaleString("vi-VN") : "?"}).`); return; }
       if (s.status === "closed") { setErr(`Buổi thi đã đóng (${s.close_at ? new Date(s.close_at).toLocaleString("vi-VN") : ""}).`); return; }
+      if (s.status === "class_mismatch") { setErr(`Email này không thuộc lớp được phép vào buổi thi${s.class_name ? ` (${s.class_name})` : ""}. Vui lòng kiểm tra email hoặc liên hệ giáo viên.`); return; }
       nav(`/session/${s.session_id}`, {
         state: {
           name: name.trim(), email: email.trim(), testId: s.test_id, skill: s.skill,

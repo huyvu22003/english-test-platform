@@ -146,7 +146,18 @@ export async function submitPlacement(args: {
 }
 
 // ---------- Phase F: buổi thi / mã thi ----------
-export async function sessionByCode(code: string): Promise<SessionByCode | null> {
+export async function sessionByCode(code: string, email?: string): Promise<SessionByCode | null> {
+  if (email?.trim()) {
+    const checked = await db().rpc("rpc_session_by_code_for_student", {
+      p_code: code,
+      p_email: email.trim(),
+    });
+    if (!checked.error) return (checked.data ?? null) as SessionByCode | null;
+    // DB production cũ chưa chạy migration giới hạn lớp: fallback để không làm vỡ phòng thi hiện tại.
+    if (!/rpc_session_by_code_for_student|schema cache|Could not find/i.test(checked.error.message)) {
+      throw new Error(checked.error.message);
+    }
+  }
   const res = await db().rpc("rpc_session_by_code", { p_code: code });
   return (unwrap(res) ?? null) as SessionByCode | null;
 }
