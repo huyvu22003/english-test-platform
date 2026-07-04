@@ -12,6 +12,8 @@ export default function RosterPage() {
   const classes = useAsync<ClassRow[]>(listClasses, []);
   const students = useAsync<Student[]>(listStudents, []);
   const [err, setErr] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [classFilter, setClassFilter] = useState("");
 
   function reload() { classes.reload(); students.reload(); }
   const classMap = useMemo(() => {
@@ -20,27 +22,67 @@ export default function RosterPage() {
     return m;
   }, [classes.data]);
 
+  const studentRows = students.data ?? [];
+  const assignedCount = studentRows.filter((s) => !!s.class_id).length;
+  const emailCount = studentRows.filter((s) => !!s.email).length;
+  const filteredStudents = studentRows.filter((s) => {
+    const q = query.trim().toLowerCase();
+    const matchesQuery = !q || [s.code, s.full_name, s.email, s.class_id ? classMap.get(s.class_id) : ""].some((v) => (v ?? "").toLowerCase().includes(q));
+    const matchesClass = !classFilter || (classFilter === "__none" ? !s.class_id : s.class_id === classFilter);
+    return matchesQuery && matchesClass;
+  });
+
   return (
-    <div>
-      <h1>Lớp &amp; Học viên</h1>
+    <div className="admin-page roster-page">
+      <header className="admin-page-head">
+        <div>
+          <span className="eyebrow dark">Roster & phân lớp</span>
+          <h1>Lớp &amp; Học viên</h1>
+          <p className="muted small">Quản lý lớp, email và mã học viên để giới hạn buổi thi theo roster chính xác.</p>
+        </div>
+      </header>
+
+      <section className="admin-stat-grid" aria-label="Tổng quan roster">
+        <div className="admin-stat-card"><span>Học viên</span><strong>{studentRows.length}</strong></div>
+        <div className="admin-stat-card"><span>Lớp / khóa</span><strong>{classes.data?.length ?? 0}</strong></div>
+        <div className="admin-stat-card"><span>Đã xếp lớp</span><strong>{assignedCount}</strong></div>
+        <div className="admin-stat-card"><span>Có email</span><strong>{emailCount}</strong></div>
+      </section>
+
       {err && <ErrorBox msg={err} />}
-      <div className="grid2">
+      <div className="grid2 admin-split-grid">
         <ClassPanel classes={classes.data ?? []} loading={classes.loading} onChanged={reload} onErr={setErr} />
         <NewStudent classes={classes.data ?? []} onAdded={students.reload} onErr={setErr} />
       </div>
 
-      <h2 className="section">Danh sách học viên</h2>
+      <div className="section-head admin-section-head">
+        <div>
+          <h2 className="section">Danh sách học viên</h2>
+          <p className="muted small">Hiển thị {filteredStudents.length}/{studentRows.length} học viên.</p>
+        </div>
+        <div className="roster-toolbar">
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm tên, email, mã, lớp…" />
+          <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)}>
+            <option value="">Tất cả lớp</option>
+            <option value="__none">Chưa xếp lớp</option>
+            {classes.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+      </div>
       {students.loading && <Spinner />}
       {students.error && <ErrorBox msg={students.error} />}
-      <div className="card table-wrap">
-        <table className="table">
+      <div className="card table-wrap roster-table-card">
+        <table className="table roster-table">
           <thead><tr><th>Mã</th><th>Họ tên</th><th>Email</th><th>Lớp</th><th></th></tr></thead>
           <tbody>
-            {students.data?.map((s) => (
+            {filteredStudents.map((s) => (
               <StudentRow key={s.id} s={s} classes={classes.data ?? []} className={s.class_id ? classMap.get(s.class_id) : ""} onChanged={students.reload} onErr={setErr} />
             ))}
-            {students.data && students.data.length === 0 && (
+            {studentRows.length === 0 && (
               <tr><td colSpan={5} className="muted">Chưa có học viên. Thêm ở ô bên phải, hoặc học viên sẽ tự được tạo khi nộp bài (theo email).</td></tr>
+            )}
+            {studentRows.length > 0 && filteredStudents.length === 0 && (
+              <tr><td colSpan={5} className="muted">Không có học viên khớp bộ lọc hiện tại.</td></tr>
             )}
           </tbody>
         </table>
@@ -64,14 +106,19 @@ function ClassPanel({ classes, loading, onChanged, onErr }: {
     catch (e) { onErr(e instanceof Error ? e.message : String(e)); }
   }
   return (
-    <div className="card">
-      <h3>Lớp / khóa</h3>
-      <div className="row-form">
+    <div className="card admin-form-card roster-panel">
+      <div className="card-title-row compact">
+        <div>
+          <h3>Lớp / khóa</h3>
+          <p className="muted small">Dùng để giới hạn buổi thi và lọc tiến bộ.</p>
+        </div>
+      </div>
+      <div className="row-form roster-add-row">
         <input placeholder="Tên lớp mới…" value={name} onChange={(e) => setName(e.target.value)} />
         <button className="btn primary small" onClick={add}>+ Thêm</button>
       </div>
       {loading && <Spinner />}
-      <ul className="chip-list">
+      <ul className="chip-list roster-chip-list">
         {classes.map((c) => (
           <li key={c.id} className="chip">
             {c.name}
@@ -100,9 +147,14 @@ function NewStudent({ classes, onAdded, onErr }: {
     } catch (e) { onErr(e instanceof Error ? e.message : String(e)); }
   }
   return (
-    <div className="card">
-      <h3>Thêm học viên</h3>
-      <div className="grid2">
+    <div className="card admin-form-card roster-panel">
+      <div className="card-title-row compact">
+        <div>
+          <h3>Thêm học viên</h3>
+          <p className="muted small">Email là thông tin chính để kiểm tra đúng lớp khi vào phòng thi.</p>
+        </div>
+      </div>
+      <div className="grid2 admin-form-grid">
         <label className="field"><span>Mã (tùy chọn)</span>
           <input value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} placeholder="vd: HV001" />
         </label>
@@ -119,7 +171,9 @@ function NewStudent({ classes, onAdded, onErr }: {
           </select>
         </label>
       </div>
-      <button className="btn primary" onClick={add}>+ Thêm học viên</button>
+      <div className="form-actions">
+        <button className="btn primary" onClick={add}>+ Thêm học viên</button>
+      </div>
     </div>
   );
 }
@@ -144,7 +198,7 @@ function StudentRow({ s, classes, className, onChanged, onErr }: {
 
   if (edit) {
     return (
-      <tr>
+      <tr className="editing-row">
         <td><input value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} /></td>
         <td><input value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} /></td>
         <td><input value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></td>
@@ -154,17 +208,17 @@ function StudentRow({ s, classes, className, onChanged, onErr }: {
             {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </td>
-        <td><button className="btn small primary" onClick={save}>Lưu</button> <button className="btn ghost small" onClick={() => setEdit(false)}>Hủy</button></td>
+        <td><div className="row-actions"><button className="btn small primary" onClick={save}>Lưu</button><button className="btn ghost small" onClick={() => setEdit(false)}>Hủy</button></div></td>
       </tr>
     );
   }
   return (
     <tr>
-      <td>{s.code || <span className="muted">—</span>}</td>
-      <td>{s.full_name}</td>
+      <td>{s.code ? <span className="pill code-pill">{s.code}</span> : <span className="muted">—</span>}</td>
+      <td><strong>{s.full_name}</strong></td>
       <td className="small">{s.email || <span className="muted">—</span>}</td>
-      <td>{className || <span className="muted">—</span>}</td>
-      <td><button className="btn ghost small" onClick={() => setEdit(true)}>Sửa</button> <button className="btn ghost small danger" onClick={remove}>Xóa</button></td>
+      <td>{className ? <span className="status-badge open">{className}</span> : <span className="status-badge closed">Chưa xếp</span>}</td>
+      <td><div className="row-actions"><button className="btn ghost small" onClick={() => setEdit(true)}>Sửa</button><button className="btn ghost small danger" onClick={remove}>Xóa</button></div></td>
     </tr>
   );
 }

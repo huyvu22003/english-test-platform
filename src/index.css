@@ -211,6 +211,7 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .admin-stat-card strong { display: block; margin-top: 4px; font-size: 26px; line-height: 1; color: var(--plum); }
 .title-row { display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px; }
 .card-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.card-title-row.compact { margin-bottom: 12px; }
 .card-title-row h3, .card-title-row p { margin: 0; }
 .admin-form-card { border-color: rgba(122,43,143,.14); background: rgba(255,255,255,.96); }
 .admin-form-grid { align-items: start; }
@@ -240,6 +241,20 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .session-meta-grid b { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
 .session-rules { margin-top: 8px; }
 .session-actions { margin-top: 0; }
+.admin-split-grid { align-items: stretch; }
+.admin-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: 22px; }
+.admin-section-head .section { margin: 0 0 2px; }
+.roster-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) 190px; gap: 10px; min-width: min(520px, 100%); }
+.roster-panel { height: 100%; }
+.roster-add-row { align-items: stretch; }
+.roster-add-row input { flex: 1 1 220px; }
+.roster-chip-list { margin-top: 12px; }
+.roster-table-card { border-color: rgba(122,43,143,.12); }
+.roster-table th:last-child, .roster-table td:last-child { text-align: right; white-space: nowrap; }
+.roster-table td { vertical-align: middle; }
+.row-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+.editing-row td { background: #fff8f3; }
+.editing-row input, .editing-row select { min-width: 130px; }
 
 /* admin question editor */
 .q-row-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -671,6 +686,8 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   .content { padding: 16px 12px 44px; overflow: visible; }
   .admin-page-head { padding: 16px; border-radius: 18px; flex-direction: column; }
   .admin-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .admin-section-head { align-items: stretch; flex-direction: column; }
+  .roster-toolbar { grid-template-columns: 1fr; min-width: 0; }
   .card-title-row, .session-card-head { flex-direction: column; }
   .form-actions { justify-content: stretch; }
   .form-actions .btn { width: 100%; }
