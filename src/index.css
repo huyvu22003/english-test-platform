@@ -209,6 +209,8 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 }
 .admin-stat-card span { display: block; color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
 .admin-stat-card strong { display: block; margin-top: 4px; font-size: 26px; line-height: 1; color: var(--plum); }
+.admin-stat-card.urgent { border-color: #fecaca; background: linear-gradient(145deg, #fff, #fff1f2); }
+.admin-stat-card.urgent strong { color: var(--danger); }
 .title-row { display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px; }
 .card-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .card-title-row.compact { margin-bottom: 12px; }
@@ -255,6 +257,16 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .row-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
 .editing-row td { background: #fff8f3; }
 .editing-row input, .editing-row select { min-width: 130px; }
+.grading-head-actions { margin-top: 0; flex-wrap: wrap; justify-content: flex-end; }
+.grading-filter-card { padding: 16px; }
+.grading-filter-card .pill.off { align-self: flex-start; }
+.grading-filter-grid { display: grid; grid-template-columns: minmax(220px, 1.25fr) minmax(180px, 1fr) minmax(150px, .75fr); gap: 12px; align-items: end; }
+.grading-table-card { border-color: rgba(122,43,143,.12); }
+.grading-table-card th:nth-child(4), .grading-table-card td:nth-child(4),
+.grading-table-card th:nth-child(5), .grading-table-card td:nth-child(5),
+.grading-table-card th:nth-child(7), .grading-table-card td:nth-child(7) { text-align: center; }
+.grading-table-card th:last-child, .grading-table-card td:last-child { text-align: right; }
+.grading-table-card tbody tr.has-viol > td { background: #fff7ed; }
 
 /* admin question editor */
 .q-row-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -687,7 +699,9 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   .admin-page-head { padding: 16px; border-radius: 18px; flex-direction: column; }
   .admin-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .admin-section-head { align-items: stretch; flex-direction: column; }
-  .roster-toolbar { grid-template-columns: 1fr; min-width: 0; }
+  .roster-toolbar, .grading-filter-grid { grid-template-columns: 1fr; min-width: 0; }
+  .grading-head-actions { width: 100%; justify-content: stretch; }
+  .grading-head-actions .btn { flex: 1 1 160px; }
   .card-title-row, .session-card-head { flex-direction: column; }
   .form-actions { justify-content: stretch; }
   .form-actions .btn { width: 100%; }

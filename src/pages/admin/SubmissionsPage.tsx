@@ -33,7 +33,11 @@ export default function SubmissionsPage() {
     });
   }, [subs.data, q, topic, status]);
 
-  const pending = (subs.data ?? []).filter((s) => s.status === "submitted").length;
+  const allRows = subs.data ?? [];
+  const pending = allRows.filter((s) => s.status === "submitted").length;
+  const graded = allRows.filter((s) => s.status === "graded").length;
+  const violationCount = allRows.filter((s) => (s.violations ?? 0) > 0).length;
+  const avgBand = average(allRows.map((s) => s.overall_band ?? s.band));
 
   function exportExcel() {
     downloadGradingExcel(rows, {
@@ -46,34 +50,59 @@ export default function SubmissionsPage() {
   }
 
   return (
-    <div>
-      <div className="title-row">
-        <h1>Hàng đợi chấm &amp; Điểm {pending > 0 && <span className="pill off">{pending} chờ chấm</span>}</h1>
-        <div className="actions">
-          <button className="btn" type="button" onClick={() => setGuideOpen(true)}>❔ Hướng dẫn chấm bài</button>
-          <button className="btn" onClick={exportExcel} disabled={rows.length === 0}>⬇ Xuất Excel</button>
+    <div className="admin-page grading-page">
+      <header className="admin-page-head">
+        <div>
+          <span className="eyebrow dark">Writing grading</span>
+          <h1>Hàng đợi chấm &amp; Điểm</h1>
+          <p className="muted small">Lọc bài nộp, chấm 4 tiêu chí IELTS, sửa câu chi tiết và xuất báo cáo điểm.</p>
         </div>
-      </div>
+        <div className="actions grading-head-actions">
+          <button className="btn" type="button" onClick={() => setGuideOpen(true)}>❔ Hướng dẫn</button>
+          <button className="btn primary" onClick={exportExcel} disabled={rows.length === 0}>⬇ Xuất Excel</button>
+        </div>
+      </header>
+
+      <section className="admin-stat-grid" aria-label="Tổng quan bài chấm">
+        <div className="admin-stat-card"><span>Tổng bài</span><strong>{allRows.length}</strong></div>
+        <div className="admin-stat-card urgent"><span>Chờ chấm</span><strong>{pending}</strong></div>
+        <div className="admin-stat-card"><span>Đã chấm</span><strong>{graded}</strong></div>
+        <div className="admin-stat-card"><span>Band TB</span><strong>{avgBand == null ? "—" : avgBand.toFixed(1)}</strong></div>
+      </section>
       {guideOpen && <GradingGuideModal onClose={() => setGuideOpen(false)} />}
 
-      <div className="card row-form">
-        <input placeholder="Tìm tên / email…" value={q} onChange={(e) => setQ(e.target.value)} />
-        <select value={topic} onChange={(e) => setTopic(e.target.value)}>
-          <option value="">Tất cả chủ đề</option>
-          {topics.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}>
-          <option value="all">Mọi trạng thái</option>
-          <option value="submitted">Chờ chấm</option>
-          <option value="graded">Đã chấm</option>
-        </select>
-        <span className="muted small">{rows.length} bài</span>
+      <div className="card admin-form-card grading-filter-card">
+        <div className="card-title-row compact">
+          <div>
+            <h3>Bộ lọc bài nộp</h3>
+            <p className="muted small">Đang hiển thị {rows.length}/{allRows.length} bài. {violationCount > 0 ? `${violationCount} bài có vi phạm.` : "Chưa có bài vi phạm."}</p>
+          </div>
+          {pending > 0 && <span className="pill off">{pending} chờ chấm</span>}
+        </div>
+        <div className="grading-filter-grid">
+          <label className="field inline"><span>Tìm học sinh</span>
+            <input placeholder="Tên / email…" value={q} onChange={(e) => setQ(e.target.value)} />
+          </label>
+          <label className="field inline"><span>Chủ đề</span>
+            <select value={topic} onChange={(e) => setTopic(e.target.value)}>
+              <option value="">Tất cả chủ đề</option>
+              {topics.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </label>
+          <label className="field inline"><span>Trạng thái</span>
+            <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}>
+              <option value="all">Mọi trạng thái</option>
+              <option value="submitted">Chờ chấm</option>
+              <option value="graded">Đã chấm</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       {subs.loading && <Spinner />}
       {subs.error && <ErrorBox msg={subs.error} />}
 
-      <div className="card table-wrap">
+      <div className="card table-wrap grading-table-card">
         <table className="table">
           <thead>
             <tr><th>Nộp lúc</th><th>Học sinh</th><th>Chủ đề</th><th>Band</th><th>CEFR</th><th>Trạng thái</th><th>Vi phạm</th><th></th></tr>
