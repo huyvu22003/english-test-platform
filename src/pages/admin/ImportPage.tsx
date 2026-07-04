@@ -16,20 +16,45 @@ const MCQ_COLS = ["topic", "skill", "purpose", "pass_threshold", "test_title", "
 export default function ImportPage() {
   const [mode, setMode] = useState<Mode>("writing");
   return (
-    <div>
-      <h1>Nhập nội dung từ Excel</h1>
-      <div className="row-form" style={{ marginBottom: 14 }}>
-        <button className={`btn ${mode === "writing" ? "primary" : ""}`} onClick={() => setMode("writing")}>Đề Viết</button>
-        <button className={`btn ${mode === "mcq" ? "primary" : ""}`} onClick={() => setMode("mcq")}>Câu hỏi trắc nghiệm</button>
+    <div className="admin-page import-page">
+      <header className="admin-page-head">
+        <div>
+          <span className="eyebrow dark">Bulk import</span>
+          <h1>Nhập nội dung từ Excel</h1>
+          <p className="muted small">Tải template, nhập dữ liệu hàng loạt và xem trước CSV trước khi ghi vào hệ thống.</p>
+        </div>
+      </header>
+
+      <section className="admin-stat-grid" aria-label="Tổng quan import">
+        <div className="admin-stat-card"><span>Đề Writing</span><strong>{WRITING_COLS.length}</strong><small className="muted">cột mẫu</small></div>
+        <div className="admin-stat-card"><span>Trắc nghiệm</span><strong>{MCQ_COLS.length}</strong><small className="muted">cột mẫu</small></div>
+        <div className="admin-stat-card"><span>Định dạng</span><strong>CSV</strong><small className="muted">UTF-8</small></div>
+        <div className="admin-stat-card"><span>Kiểm tra</span><strong>15</strong><small className="muted">dòng preview</small></div>
+      </section>
+
+      <div className="card sub import-guide import-guide-card">
+        <div>
+          <strong>Quy trình chuẩn</strong>
+          <ol>
+            <li>Bấm <strong>Tải template Excel</strong> để lấy file mẫu có sẵn cột và ví dụ.</li>
+            <li>Mở file trong Excel/Google Sheets, điền dữ liệu theo đúng cột.</li>
+            <li>Khi nhập vào hệ thống, lưu/xuất lại thành <strong>CSV UTF-8</strong> rồi tải file CSV lên.</li>
+          </ol>
+          <p className="muted small">Template Excel giúp giáo viên nhập dễ đọc; CSV UTF-8 giúp import ổn định, không lỗi font tiếng Việt.</p>
+        </div>
       </div>
-      <div className="card sub import-guide">
-        <strong>Quy trình chuẩn</strong>
-        <ol>
-          <li>Bấm <strong>Tải template Excel</strong> để lấy file mẫu có sẵn cột và ví dụ.</li>
-          <li>Mở file trong Excel/Google Sheets, điền dữ liệu theo đúng cột.</li>
-          <li>Khi nhập vào hệ thống, lưu/xuất lại thành <strong>CSV UTF-8</strong> rồi tải file CSV lên.</li>
-        </ol>
-        <p className="muted small">Lý do: template Excel giúp giáo viên nhập dễ đọc; CSV UTF-8 giúp hệ thống import ổn định, không lỗi font tiếng Việt.</p>
+
+      <div className="card import-mode-card">
+        <div className="card-title-row compact">
+          <div>
+            <h3>Chọn loại dữ liệu</h3>
+            <p className="muted small">Mỗi loại có template và kiểm tra cột riêng.</p>
+          </div>
+        </div>
+        <div className="import-mode-tabs">
+          <button className={`btn ${mode === "writing" ? "primary" : ""}`} onClick={() => setMode("writing")}>✍️ Đề Viết</button>
+          <button className={`btn ${mode === "mcq" ? "primary" : ""}`} onClick={() => setMode("mcq")}>✅ Câu hỏi trắc nghiệm</button>
+        </div>
       </div>
       {mode === "writing" ? <WritingImport /> : <McqImport />}
     </div>
@@ -81,16 +106,19 @@ function useImporter() {
 
 function FilePick({ onFile }: { onFile: (f: File) => void }) {
   return (
-    <input type="file" accept=".csv,text/csv" onChange={(e) => {
-      const f = e.target.files?.[0];
-      if (f) onFile(f);
-    }} />
+    <label className="file-pick">
+      <span>Chọn file CSV UTF-8</span>
+      <input type="file" accept=".csv,text/csv" onChange={(e) => {
+        const f = e.target.files?.[0];
+        if (f) onFile(f);
+      }} />
+    </label>
   );
 }
 
 function Preview({ rows, cols }: { rows: Record<string, string>[]; cols: string[] }) {
   return (
-    <div className="card table-wrap">
+    <div className="card table-wrap import-preview-card">
       <table className="table">
         <thead><tr>{cols.map((c) => <th key={c}>{c}</th>)}</tr></thead>
         <tbody>
@@ -99,7 +127,7 @@ function Preview({ rows, cols }: { rows: Record<string, string>[]; cols: string[
           ))}
         </tbody>
       </table>
-      {rows.length > 15 && <div className="muted small" style={{ padding: 8 }}>… và {rows.length - 15} dòng nữa</div>}
+      {rows.length > 15 && <div className="muted small import-preview-more">… và {rows.length - 15} dòng nữa</div>}
     </div>
   );
 }
@@ -204,18 +232,24 @@ function WritingImport() {
 
   return (
     <div>
-      <div className="card">
-        <div className="row-form">
+      <div className="card admin-form-card import-run-card">
+        <div className="card-title-row compact">
+          <div>
+            <h3>Import đề Writing</h3>
+            <p className="muted small">Mỗi dòng CSV sẽ tạo một đề Writing trong chủ đề tương ứng.</p>
+          </div>
           <button className="btn small" onClick={template}>⬇ Tải template Excel</button>
-          <FilePick onFile={onFile} />
         </div>
-        <p className="muted small">Upload file <strong>CSV UTF-8</strong> sau khi điền template. Cột bắt buộc: <code>{WRITING_COLS.join(", ")}</code>.</p>
+        <div className="import-upload-row">
+          <FilePick onFile={onFile} />
+          <p className="muted small">Cột bắt buộc: <code>{WRITING_COLS.join(", ")}</code>.</p>
+        </div>
       </div>
       {st.error && <ErrorBox msg={st.error} />}
       {st.rows && (
         <>
           <Preview rows={st.rows} cols={WRITING_COLS} />
-          <button className="btn primary" disabled={st.busy} onClick={run}>
+          <button className="btn primary import-submit" disabled={st.busy} onClick={run}>
             {st.busy ? "Đang nhập…" : `Nhập ${st.rows.length} dòng`}
           </button>
         </>
@@ -307,22 +341,27 @@ function McqImport() {
 
   return (
     <div>
-      <div className="card">
-        <div className="row-form">
+      <div className="card admin-form-card import-run-card">
+        <div className="card-title-row compact">
+          <div>
+            <h3>Import câu hỏi trắc nghiệm</h3>
+            <p className="muted small">Cùng topic + test_title sẽ gom vào một đề; mỗi dòng là một câu hỏi.</p>
+          </div>
           <button className="btn small" onClick={template}>⬇ Tải template Excel</button>
-          <FilePick onFile={onFile} />
         </div>
-        <p className="muted small">
-          Upload file <strong>CSV UTF-8</strong> sau khi điền template. Cột chính: <code>topic, skill, purpose, test_title, qtype, prompt, option1..4, correct, cefr_level, points</code>.
-          Cùng <code>topic + test_title</code> gom vào 1 đề. <code>correct</code> = giá trị đáp án;
-          với <em>multi/fill</em> nhiều đáp án ngăn bằng <code>|</code>. <em>tfng</em>: correct = <code>true/false/notgiven</code>.
-        </p>
+        <div className="import-upload-row">
+          <FilePick onFile={onFile} />
+          <p className="muted small">
+            Cột chính: <code>topic, skill, purpose, test_title, qtype, prompt, option1..4, correct, cefr_level, points</code>.
+            <code>correct</code> = giá trị đáp án; multi/fill nhiều đáp án ngăn bằng <code>|</code>; tfng dùng <code>true/false/notgiven</code>.
+          </p>
+        </div>
       </div>
       {st.error && <ErrorBox msg={st.error} />}
       {st.rows && (
         <>
           <Preview rows={st.rows} cols={MCQ_COLS} />
-          <button className="btn primary" disabled={st.busy} onClick={run}>
+          <button className="btn primary import-submit" disabled={st.busy} onClick={run}>
             {st.busy ? "Đang nhập…" : `Nhập ${st.rows.length} dòng`}
           </button>
         </>

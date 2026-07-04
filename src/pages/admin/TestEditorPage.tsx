@@ -36,21 +36,29 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
   const backLabel = isIntensive ? "Học tăng cường 2026" : skill === "writing" ? "Đề Viết" : skill === "reading" ? "Đề Đọc" : skill === "listening" ? "Đề Nghe" : "Ngân hàng đề";
 
   return (
-    <div>
+    <div className="admin-page test-editor-page">
       <Link className="link" to={backTo}>← {backLabel}</Link>
-      <div className="title-row">
+      <header className="admin-page-head test-editor-head">
         <div>
+          <span className="eyebrow dark">Test editor</span>
           <h1>Soạn đề {test.version_label}{test.title ? ` — ${test.title}` : ""}</h1>
-          <p className="muted small sub">{topic.data?.name ?? "Đang tải chủ đề…"}</p>
+          <p className="muted small">{topic.data?.name ?? "Đang tải chủ đề…"}</p>
         </div>
-        <span>
+        <div className="test-editor-badges">
           {skill && <SkillBadge skill={skill} />}
-          {isIntensive && <span className="pill skill-writing" style={{ marginLeft: 6 }}>Tăng cường</span>}
-          {!test.active && <span className="pill off small" style={{ marginLeft: 6 }}>Đang khóa</span>}
-        </span>
-      </div>
+          {isIntensive && <span className="pill skill-writing">Tăng cường</span>}
+          {!test.active && <span className="pill off small">Đang khóa</span>}
+        </div>
+      </header>
 
-      <div className="card sub">
+      <section className="admin-stat-grid" aria-label="Tổng quan đề thi">
+        <div className={`admin-stat-card ${test.active ? "" : "urgent"}`}><span>Trạng thái</span><strong>{test.active ? "Mở" : "Khóa"}</strong></div>
+        <div className="admin-stat-card"><span>Thời gian</span><strong>{test.time_limit_min}′</strong></div>
+        <div className="admin-stat-card"><span>Tư liệu</span><strong>{passages.data?.length ?? 0}</strong></div>
+        <div className="admin-stat-card"><span>Câu hỏi</span><strong>{questions.data?.length ?? 0}</strong></div>
+      </section>
+
+      <div className="card sub editor-checklist-card">
         <strong>Checklist trước khi mở cho học sinh</strong>
         <ul className="compact-list">
           <li className={test.active ? "ok-text" : "warn-text"}>{test.active ? "✓ Đề đang mở" : "• Đề đang khóa — học sinh chưa thấy"}</li>
@@ -129,7 +137,8 @@ function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => voi
   }
 
   return (
-    <div className="card">
+    <div className="card admin-form-card editor-meta-card">
+      <div className="card-title-row compact"><div><h3>Thông tin đề</h3><p className="muted small">Thiết lập tiêu đề, thời gian, mục đích và trạng thái hiển thị.</p></div></div>
       {isWriting && (
         <label className="field"><span>Đề bài (prompt) — học sinh sẽ thấy</span>
           <textarea rows={4} value={prompt} onChange={(e) => setPrompt(e.target.value)}
@@ -216,7 +225,7 @@ function PassageRow({ passage, onChanged }: { passage: Passage; onChanged: () =>
   }
 
   return (
-    <div className="card sub">
+    <div className="card sub editor-resource-card">
       <div className="muted small">{isAudio ? "🎧 Audio" : "📄 Đoạn đọc"}</div>
       {passage.kind === "reading" ? (
         <textarea rows={5} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Nội dung đoạn đọc…" />
@@ -254,12 +263,14 @@ function NewPassage({ testId, onAdded, defaultKind }: { testId: string; onAdded:
     onAdded();
   }
   return (
-    <div className="row-form">
+    <div className="card sub editor-add-resource">
+      <div className="row-form">
       <select value={kind} onChange={(e) => setKind(e.target.value as "reading" | "audio")}>
         <option value="reading">Đoạn đọc</option>
         <option value="audio">Audio</option>
       </select>
       <button className="btn small" onClick={add}>+ Thêm tư liệu</button>
+      </div>
     </div>
   );
 }

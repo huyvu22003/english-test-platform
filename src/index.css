@@ -611,6 +611,25 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 .guide-steps h3 { margin: 0 0 6px; font-size: 16px; }
 .guide-steps ol { margin: 0; padding-left: 20px; color: var(--muted); line-height: 1.65; }
 .guide-note { margin-top: 12px; border-left: 4px solid var(--accent); background: #fffbeb; border-radius: 10px; padding: 10px 12px; color: var(--ink); }
+.import-guide-card { border-color: #fed7aa; background: linear-gradient(145deg, #fff, #fff8f3); }
+.import-guide-card ol { margin: 8px 0; padding-left: 20px; color: var(--muted); line-height: 1.7; }
+.import-mode-card { padding: 16px; }
+.import-mode-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.import-run-card { padding: 16px; }
+.import-upload-row { display: grid; grid-template-columns: minmax(220px, 320px) 1fr; gap: 14px; align-items: center; }
+.file-pick { display: grid; gap: 6px; padding: 14px; border: 1px dashed rgba(122,43,143,.35); border-radius: 14px; background: #fafafe; cursor: pointer; }
+.file-pick span { font-size: 13px; font-weight: 800; color: var(--plum); }
+.file-pick input { padding: 0; border: 0; background: transparent; min-height: auto; }
+.import-preview-card { padding: 0; overflow: hidden; border-color: rgba(122,43,143,.12); }
+.import-preview-card .table-wrap, .import-preview-card table { margin-bottom: 0; }
+.import-preview-more { padding: 10px 14px; border-top: 1px solid var(--line); background: #fafafe; }
+.import-submit { margin-bottom: 14px; }
+.test-editor-page > .link { display: inline-block; margin-bottom: 12px; }
+.test-editor-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.editor-checklist-card { border-color: rgba(22,163,74,.18); background: linear-gradient(145deg, #fff, #f0fdf4); }
+.editor-meta-card, .editor-resource-card, .editor-add-resource { border-color: rgba(122,43,143,.12); }
+.editor-resource-card { background: rgba(255,255,255,.94); }
+.editor-add-resource { padding: 14px; }
 @media (max-width: 560px) { .grading-guide-backdrop { padding: 10px; align-items: stretch; } .grading-guide-modal { max-height: calc(100vh - 20px); } }
 
 /* ============================================================
@@ -756,6 +775,9 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 
   /* Import/session/roster forms */
   .import-guide ol { padding-left: 18px; }
+  .import-mode-tabs, .import-upload-row { grid-template-columns: 1fr; }
+  .import-run-card .card-title-row .btn { width: 100%; }
+  .test-editor-badges { justify-content: flex-start; }
   .chip-list { gap: 6px; }
   .auth-box { padding: 22px; }
 }
