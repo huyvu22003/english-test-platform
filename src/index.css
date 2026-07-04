@@ -453,6 +453,12 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 }
 .auth-logo { display: flex; justify-content: center; }
 .auth-box h1 { text-align: center; }
+.auth-box-premium { position: relative; overflow: hidden; }
+.auth-box-premium::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--grad); }
+.auth-box-premium .eyebrow { display: block; text-align: center; }
+.auth-subtitle { text-align: center; margin: 0 0 18px; }
+.auth-submit { margin-top: 4px; }
+.auth-footer-link { margin-top: 14px; text-align: center; }
 
 /* Đề bài nổi bật khi GV chấm (SubmissionsPage) — viền trái cam, nền vàng nhạt */
 .prompt-quote {
@@ -630,6 +636,14 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 .editor-meta-card, .editor-resource-card, .editor-add-resource { border-color: rgba(122,43,143,.12); }
 .editor-resource-card { background: rgba(255,255,255,.94); }
 .editor-add-resource { padding: 14px; }
+.diagnostics-filter-card { padding: 16px; }
+.diagnostics-filter-card .field { max-width: 360px; margin-bottom: 0; }
+.diagnostics-summary-card, .diagnostics-table-card { border-color: rgba(122,43,143,.12); }
+.diagnostics-summary-card .crit-card { border-radius: 16px; background: linear-gradient(145deg, #fff, #fafafe); }
+.diagnostics-summary-card .crit-card.weak { border-color: #fecaca; background: linear-gradient(145deg, #fff, #fff1f2); box-shadow: 0 8px 22px rgba(220,38,38,.08); }
+.diagnostics-table-card { padding: 0; overflow: hidden; }
+.diagnostics-table-card th:nth-child(n+2), .diagnostics-table-card td:nth-child(n+2) { text-align: center; }
+.diagnostics-table-card th:last-child, .diagnostics-table-card td:last-child { text-align: left; }
 @media (max-width: 560px) { .grading-guide-backdrop { padding: 10px; align-items: stretch; } .grading-guide-modal { max-height: calc(100vh - 20px); } }
 
 /* ============================================================

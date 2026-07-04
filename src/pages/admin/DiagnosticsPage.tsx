@@ -48,6 +48,7 @@ export default function DiagnosticsPage() {
   const weakest = classAvg
     .filter((c) => c.value != null)
     .sort((a, b) => (a.value as number) - (b.value as number))[0];
+  const selectedClassName = classes.data?.find((c) => c.id === classId)?.name;
 
   // Gom theo học viên (email)
   const perStudent = useMemo(() => {
@@ -71,22 +72,48 @@ export default function DiagnosticsPage() {
   const loading = subs.loading || students.loading || classes.loading;
 
   return (
-    <div>
-      <div className="title-row">
-        <h1>Chẩn đoán điểm yếu</h1>
-        <select value={classId} onChange={(e) => setClassId(e.target.value)}>
-          <option value="">Tất cả học viên</option>
-          {classes.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+    <div className="admin-page diagnostics-page">
+      <header className="admin-page-head">
+        <div>
+          <span className="eyebrow dark">Learning diagnostics</span>
+          <h1>Chẩn đoán điểm yếu</h1>
+          <p className="muted small">Phân tích trung bình 4 tiêu chí IELTS theo lớp và theo từng học viên từ các bài đã chấm.</p>
+        </div>
+      </header>
+
+      <section className="admin-stat-grid" aria-label="Tổng quan chẩn đoán">
+        <div className="admin-stat-card"><span>Bài đã chấm</span><strong>{filtered.length}</strong></div>
+        <div className="admin-stat-card"><span>Học viên</span><strong>{perStudent.length}</strong></div>
+        <div className="admin-stat-card"><span>Phạm vi</span><strong>{classId ? "Lớp" : "Tất cả"}</strong></div>
+        <div className="admin-stat-card urgent"><span>Điểm yếu</span><strong>{weakest?.short ?? "—"}</strong></div>
+      </section>
+
+      <div className="card admin-form-card diagnostics-filter-card">
+        <div className="card-title-row compact">
+          <div>
+            <h3>Phạm vi phân tích</h3>
+            <p className="muted small">{selectedClassName ? `Đang xem lớp ${selectedClassName}.` : "Đang xem toàn bộ học viên."} Cột đỏ là tiêu chí yếu nhất cần ưu tiên ôn.</p>
+          </div>
+        </div>
+        <label className="field inline"><span>Lọc theo lớp</span>
+          <select value={classId} onChange={(e) => setClassId(e.target.value)}>
+            <option value="">Tất cả học viên</option>
+            {classes.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </label>
       </div>
-      <p className="muted small">Tính từ {filtered.length} bài đã chấm. Cột tô đỏ = tiêu chí yếu nhất (cần ưu tiên ôn).</p>
 
       {loading && <Spinner />}
       {subs.error && <ErrorBox msg={subs.error} />}
 
       {/* Tổng quan lớp */}
-      <div className="card">
-        <h3>Trung bình {classId ? "lớp" : "toàn bộ"}</h3>
+      <div className="card diagnostics-summary-card">
+        <div className="card-title-row compact">
+          <div>
+            <h3>Trung bình {classId ? "lớp" : "toàn bộ"}</h3>
+            <p className="muted small">Tính trên {filtered.length} bài Writing đã được chấm đủ tiêu chí.</p>
+          </div>
+        </div>
         {filtered.length === 0 ? (
           <p className="muted">Chưa có bài đã chấm trong phạm vi này.</p>
         ) : (
@@ -106,7 +133,7 @@ export default function DiagnosticsPage() {
 
       {/* Theo học viên */}
       {perStudent.length > 0 && (
-        <div className="card table-wrap">
+        <div className="card table-wrap diagnostics-table-card">
           <table className="table">
             <thead>
               <tr><th>Học viên</th><th>Bài</th><th>Overall</th><th>CEFR</th>
@@ -128,6 +155,9 @@ export default function DiagnosticsPage() {
             </tbody>
           </table>
         </div>
+      )}
+      {perStudent.length === 0 && !loading && (
+        <div className="empty-state">Chưa có học viên/bài đã chấm trong phạm vi này để phân tích.</div>
       )}
     </div>
   );
