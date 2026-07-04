@@ -78,6 +78,12 @@ export default function TopicsPage() {
     cta: "+ Thêm chủ đề",
   };
 
+  const allTopics = topics.data ?? [];
+  const writingCount = allTopics.filter((t) => t.skill === "writing" && !isIntensiveTopic(t)).length;
+  const readingCount = allTopics.filter((t) => t.skill === "reading").length;
+  const listeningCount = allTopics.filter((t) => t.skill === "listening").length;
+  const intensiveCount = allTopics.filter((t) => t.skill === "writing" && isIntensiveTopic(t)).length;
+
   async function addTopic() {
     setErr(null);
     const topicName = isIntensive && !name.trim() ? INTENSIVE_TOPIC_NAME : name.trim();
@@ -100,40 +106,59 @@ export default function TopicsPage() {
   }
 
   return (
-    <div>
-      <div className="title-row">
+    <div className="admin-page topics-page">
+      <header className="admin-page-head">
         <div>
+          <span className="eyebrow dark">Question bank</span>
           <h1>{page.title}</h1>
-          <p className="muted small sub">{page.desc}</p>
+          <p className="muted small">{page.desc}</p>
         </div>
-        {isBank && <Link className="link" to="/admin/topics/reading">Vào khu soạn đề →</Link>}
+        {isBank && <Link className="btn primary" to="/admin/topics/reading">Vào khu soạn đề →</Link>}
+      </header>
+
+      <section className="admin-stat-grid" aria-label="Tổng quan ngân hàng đề">
+        <div className="admin-stat-card"><span>Đề Viết</span><strong>{writingCount}</strong></div>
+        <div className="admin-stat-card"><span>Đề Đọc</span><strong>{readingCount}</strong></div>
+        <div className="admin-stat-card"><span>Đề Nghe</span><strong>{listeningCount}</strong></div>
+        <div className="admin-stat-card"><span>Tăng cường</span><strong>{intensiveCount}</strong></div>
+      </section>
+
+      <div className="authoring-tabs card sub topic-tabs">
+        <Link to="/admin/topics/writing" className={fixedSkill === "writing" ? "active" : ""}>Đề Viết</Link>
+        <Link to="/admin/topics/reading" className={fixedSkill === "reading" ? "active" : ""}>Đề Đọc</Link>
+        <Link to="/admin/topics/listening" className={fixedSkill === "listening" ? "active" : ""}>Đề Nghe</Link>
+        <Link to="/admin/topics/intensive" className={isIntensive ? "active" : ""}>Học tăng cường 2026</Link>
+        <Link to="/admin/topics" className={isBank ? "active" : ""}>Ngân hàng đề</Link>
       </div>
 
-      {!isBank && (
-        <div className="authoring-tabs card sub">
-          <Link to="/admin/topics/writing" className={fixedSkill === "writing" ? "active" : ""}>Đề Viết</Link>
-          <Link to="/admin/topics/reading" className={fixedSkill === "reading" ? "active" : ""}>Đề Đọc</Link>
-          <Link to="/admin/topics/listening" className={fixedSkill === "listening" ? "active" : ""}>Đề Nghe</Link>
-          <Link to="/admin/topics/intensive" className={isIntensive ? "active" : ""}>Học tăng cường 2026</Link>
-          <Link to="/admin/topics">Ngân hàng đề</Link>
+      <div className="card admin-form-card topic-create-card">
+        <div className="card-title-row compact">
+          <div>
+            <h3>Tạo chủ đề mới</h3>
+            <p className="muted small">Chủ đề là nhóm chứa các đề A/B/C cho từng kỹ năng.</p>
+          </div>
+          <span className="muted small">{visibleTopics.length} chủ đề trong mục này</span>
         </div>
-      )}
-
-      <div className="card topic-create-bar">
-        <input placeholder={isIntensive ? INTENSIVE_TOPIC_NAME : "Tên chủ đề mới…"} value={name} onChange={(e) => setName(e.target.value)} />
-        {isBank ? (
-          <select value={skill} onChange={(e) => setSkill(e.target.value as Skill)}>
-            <option value="reading">Đọc</option>
-            <option value="listening">Nghe</option>
-            <option value="use_of_english">Use of English</option>
-            <option value="writing">Viết</option>
-          </select>
-        ) : isIntensive ? (
-          <span className="pill skill-writing">Tăng cường</span>
-        ) : (
-          <span className={`pill skill-${fixedSkill}`}>{fixedSkill ? SKILL_META[fixedSkill].label : "Chủ đề"}</span>
-        )}
-        <button className="btn primary" onClick={addTopic}>{page.cta}</button>
+        <div className="topic-create-bar">
+          <label className="field inline"><span>Tên chủ đề</span>
+            <input placeholder={isIntensive ? INTENSIVE_TOPIC_NAME : "Tên chủ đề mới…"} value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+          {isBank ? (
+            <label className="field inline"><span>Kỹ năng</span>
+              <select value={skill} onChange={(e) => setSkill(e.target.value as Skill)}>
+                <option value="reading">Đọc</option>
+                <option value="listening">Nghe</option>
+                <option value="use_of_english">Use of English</option>
+                <option value="writing">Viết</option>
+              </select>
+            </label>
+          ) : isIntensive ? (
+            <span className="pill skill-writing topic-create-pill">Tăng cường</span>
+          ) : (
+            <span className={`pill skill-${fixedSkill} topic-create-pill`}>{fixedSkill ? SKILL_META[fixedSkill].label : "Chủ đề"}</span>
+          )}
+          <button className="btn primary" onClick={addTopic}>{page.cta}</button>
+        </div>
       </div>
       {err && <ErrorBox msg={err} />}
 
@@ -142,7 +167,7 @@ export default function TopicsPage() {
       {visibleTopics.map((t) => (
         <TopicCard key={t.id} topic={t} onChanged={topics.reload} />
       ))}
-      {topics.data && visibleTopics.length === 0 && <p className="muted">Chưa có chủ đề nào trong mục này.</p>}
+      {topics.data && visibleTopics.length === 0 && <div className="empty-state">Chưa có chủ đề nào trong mục này.</div>}
     </div>
   );
 }

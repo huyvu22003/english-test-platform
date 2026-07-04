@@ -142,6 +142,10 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .test-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 10px; background: #fafafe; border: 1px solid var(--line); border-radius: 8px; }
 .ver { font-weight: 700; }
 .topic-create-bar { display: grid; grid-template-columns: minmax(260px, 1fr) auto auto; gap: 10px; align-items: center; padding: 12px; }
+.topic-create-card .topic-create-bar { padding: 0; grid-template-columns: minmax(260px, 1fr) minmax(170px, auto) auto; align-items: end; }
+.topic-create-card .field { margin-bottom: 0; }
+.topic-create-pill { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; padding-inline: 14px; }
+.topic-tabs { margin-bottom: 14px; }
 .compact-topic { padding: 0; overflow: hidden; }
 .compact-topic-head { margin: 0; padding: 12px 14px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, #fff, #fffaf7); justify-content: space-between; }
 .topic-title-block { display: flex; flex-direction: column; gap: 4px; min-width: 220px; }
@@ -710,7 +714,8 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   .session-actions { width: 100%; }
   .authoring-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
   .authoring-tabs a { flex: 0 0 auto; white-space: nowrap; }
-  .topic-create-bar { grid-template-columns: 1fr; }
+  .topic-create-bar, .topic-create-card .topic-create-bar { grid-template-columns: 1fr; }
+  .topic-create-pill { width: 100%; }
   .topic-title-block { min-width: 0; width: 100%; }
   .topic-head, .compact-topic-head { align-items: stretch; flex-direction: column; }
   .topic-actions, .test-actions { width: 100%; }
