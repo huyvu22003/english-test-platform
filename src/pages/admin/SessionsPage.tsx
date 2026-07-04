@@ -23,10 +23,30 @@ export default function SessionsPage() {
   const classes = useAsync<ClassRow[]>(listClasses, []);
   const [err, setErr] = useState<string | null>(null);
 
+  const sessionRows = sessions.data ?? [];
+  const submissionRows = submissions.data ?? [];
+  const openSessions = sessionRows.filter((s) => {
+    const now = Date.now();
+    return (!s.open_at || now >= new Date(s.open_at).getTime()) && (!s.close_at || now <= new Date(s.close_at).getTime());
+  }).length;
+
   return (
-    <div>
-      <h1>Buổi thi &amp; Mã thi</h1>
-      <p className="muted small">Tạo buổi thi gắn 1 đề; học sinh vào bằng <strong>mã thi</strong> tại trang chủ → "Vào phòng thi".</p>
+    <div className="admin-page sessions-page">
+      <header className="admin-page-head">
+        <div>
+          <span className="eyebrow dark">Vận hành kiểm tra</span>
+          <h1>Buổi thi &amp; Mã thi</h1>
+          <p className="muted small">Tạo buổi thi gắn 1 đề; học sinh vào bằng <strong>mã thi</strong> tại trang chủ → "Vào phòng thi".</p>
+        </div>
+      </header>
+
+      <section className="admin-stat-grid" aria-label="Tổng quan buổi thi">
+        <div className="admin-stat-card"><span>Tổng buổi thi</span><strong>{sessionRows.length}</strong></div>
+        <div className="admin-stat-card"><span>Đang trong thời gian mở</span><strong>{openSessions}</strong></div>
+        <div className="admin-stat-card"><span>Bài nộp</span><strong>{submissionRows.length}</strong></div>
+        <div className="admin-stat-card"><span>Lớp trong roster</span><strong>{classes.data?.length ?? 0}</strong></div>
+      </section>
+
       {err && <ErrorBox msg={err} />}
 
       <NewSession tests={tests.data ?? []} classes={classes.data ?? []} onAdded={() => { sessions.reload(); submissions.reload(); }} onErr={setErr} />
@@ -81,9 +101,15 @@ function NewSession({ tests, classes, onAdded, onErr }: { tests: TestWithTopic[]
     } catch (e) { onErr(e instanceof Error ? e.message : String(e)); }
   }
   return (
-    <div className="card">
-      <h3>Tạo buổi thi</h3>
-      <div className="grid2">
+    <div className="card admin-form-card session-create-card">
+      <div className="card-title-row">
+        <div>
+          <h3>Tạo buổi thi</h3>
+          <p className="muted small">Chọn đề, thời gian, lớp được phép vào và quy định nộp bài.</p>
+        </div>
+        <span className="pill">Mã: {f.access_code}</span>
+      </div>
+      <div className="grid2 admin-form-grid">
         <label className="field"><span>Tên buổi thi</span>
           <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="vd: Thi cuối khóa IELTS 6.0 - T6" />
         </label>
@@ -117,9 +143,13 @@ function NewSession({ tests, classes, onAdded, onErr }: { tests: TestWithTopic[]
           <input type="datetime-local" value={f.close_at} onChange={(e) => setF({ ...f, close_at: e.target.value })} />
         </label>
       </div>
-      <label className="check"><input type="checkbox" checked={f.one_submission} onChange={(e) => setF({ ...f, one_submission: e.target.checked })} /> <span>Chỉ cho nộp 1 lần / học sinh</span></label>
-      <label className="check"><input type="checkbox" checked={f.show_result} onChange={(e) => setF({ ...f, show_result: e.target.checked })} /> <span>Hiện điểm cho học sinh ngay sau nộp (trắc nghiệm)</span></label>
-      <button className="btn primary" onClick={add}>+ Tạo buổi thi</button>
+      <div className="settings-strip">
+        <label className="check"><input type="checkbox" checked={f.one_submission} onChange={(e) => setF({ ...f, one_submission: e.target.checked })} /> <span>Chỉ cho nộp 1 lần / học sinh</span></label>
+        <label className="check"><input type="checkbox" checked={f.show_result} onChange={(e) => setF({ ...f, show_result: e.target.checked })} /> <span>Hiện điểm cho học sinh ngay sau nộp (trắc nghiệm)</span></label>
+      </div>
+      <div className="form-actions">
+        <button className="btn primary" onClick={add}>+ Tạo buổi thi</button>
+      </div>
     </div>
   );
 }
@@ -162,24 +192,27 @@ function SessionRow({ s, tests, submissions, classes, onChanged, onErr }: {
   const open = (!s.open_at || now >= new Date(s.open_at).getTime()) && (!s.close_at || now <= new Date(s.close_at).getTime());
   const canUse = open && test?.active !== false;
   return (
-    <div className="card sub">
-      <div className="q-row-head">
-        <div>
-          <strong>{s.name}</strong>{" "}
-          <span className="pill">{s.access_code}</span>{" "}
-          {canUse ? <span className="ok-text small">đang mở</span> : <span className="pill off small">đóng/chưa mở</span>}
-          {test?.active === false && <span className="pill off small">đề đang khóa</span>}
-          <div className="muted small">{test ? testLabel(test) : "(đề đã xóa?)"}</div>
-          <div className="muted small">
-            {s.open_at ? `Mở: ${new Date(s.open_at).toLocaleString("vi-VN")}` : "Mở: ngay"} ·{" "}
-            {s.close_at ? `Đóng: ${new Date(s.close_at).toLocaleString("vi-VN")}` : "Đóng: không giới hạn"}
-            {className ? ` · lớp: ${className}` : " · mọi lớp"}
-            {s.one_submission ? " · 1 lần/HS" : ""}{s.max_violations ? ` · tự nộp khi vi phạm ≥ ${s.max_violations}` : ""}
-            {s.show_result ? " · hiện điểm" : ""}
+    <div className={`card sub session-card ${canUse ? "is-open" : "is-closed"}`}>
+      <div className="q-row-head session-card-head">
+        <div className="session-main">
+          <div className="session-title-line">
+            <strong>{s.name}</strong>
+            <span className="pill code-pill">{s.access_code}</span>
+            {canUse ? <span className="status-badge open">Đang mở</span> : <span className="status-badge closed">Đóng/chưa mở</span>}
+            {test?.active === false && <span className="status-badge locked">Đề đang khóa</span>}
           </div>
-          <div className="muted small">{sessionSubs.length} bài nộp</div>
+          <div className="muted small session-test-name">{test ? testLabel(test) : "(đề đã xóa?)"}</div>
+          <div className="session-meta-grid">
+            <span><b>Mở</b>{s.open_at ? new Date(s.open_at).toLocaleString("vi-VN") : "Ngay"}</span>
+            <span><b>Đóng</b>{s.close_at ? new Date(s.close_at).toLocaleString("vi-VN") : "Không giới hạn"}</span>
+            <span><b>Lớp</b>{className ?? "Mọi lớp"}</span>
+            <span><b>Bài nộp</b>{sessionSubs.length}</span>
+          </div>
+          <div className="session-rules muted small">
+            {s.one_submission ? "1 lần/HS" : "Cho phép nộp nhiều lần"}{s.max_violations ? ` · tự nộp khi vi phạm ≥ ${s.max_violations}` : ""}{s.show_result ? " · hiện điểm sau nộp" : ""}
+          </div>
         </div>
-        <div className="actions">
+        <div className="actions session-actions">
           <button className="btn small" onClick={exportScores} disabled={sessionSubs.length === 0}>⬇ Xuất bảng điểm</button>
           <button className="btn ghost small danger" onClick={remove}>Xóa</button>
         </div>
