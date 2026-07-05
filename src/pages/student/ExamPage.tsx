@@ -113,22 +113,28 @@ export default function ExamPage() {
   if (!data.data) return null;
 
   const { test, topic, passages, questions } = data.data;
+  const answeredCount = questions.filter((q) => isAnswered(answers[q.id])).length;
 
   // Màn hướng dẫn + bắt đầu (cần cử chỉ người dùng để vào fullscreen).
   if (!started) {
     return (
-      <div className="wrap">
-        <div className="card">
+      <div className="wrap exam-start-wrap">
+        <div className="card exam-start-card">
+          <span className="eyebrow dark">Ready check</span>
           <h1>{topic.name} — Đề {test.version_label}</h1>
           {test.title && <p className="muted">{test.title}</p>}
-          <ul className="steps">
-            <li>Thời gian: <strong>{test.time_limit_min} phút</strong>{isWriting && test.min_words ? ` · tối thiểu ${test.min_words} từ` : ""}</li>
-            <li>Bài thi chạy ở chế độ <strong>toàn màn hình</strong>. Rời tab, thoát fullscreen, sao chép/dán… đều bị <strong>ghi nhận vi phạm</strong>.</li>
+          <div className="exam-start-meta">
+            <span><b>{test.time_limit_min}′</b> thời gian</span>
+            <span><b>{isWriting ? test.min_words || 0 : questions.length}</b> {isWriting ? "từ tối thiểu" : "câu hỏi"}</span>
+            <span><b>{MAX_ALLOWED_VIOLATIONS}</b> lần vi phạm tối đa</span>
+          </div>
+          <ul className="steps exam-start-steps">
+            <li>Bài thi chạy ở chế độ <strong>toàn màn hình</strong>. Rời tab, thoát fullscreen, sao chép/dán đều bị <strong>ghi nhận vi phạm</strong>.</li>
             <li>Nếu vi phạm <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.</li>
             <li>Hết giờ hệ thống <strong>tự nộp</strong>.</li>
           </ul>
           <button
-            className="btn primary"
+            className="btn primary big exam-start-button"
             onClick={async () => {
               await ac.enterFullscreen();
               startedAtRef.current = new Date().toISOString();
@@ -160,9 +166,19 @@ export default function ExamPage() {
 
       {ac.warning && <div className="warn-banner">{ac.warning}</div>}
 
+      <div className="exam-progress-strip">
+        {isWriting ? (
+          <span><strong>{wordCount}</strong>{test.min_words ? `/${test.min_words}` : ""} từ</span>
+        ) : (
+          <span><strong>{answeredCount}</strong>/{questions.length} câu đã làm</span>
+        )}
+        <span>{passages.length} tư liệu</span>
+        <span>{ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm</span>
+      </div>
+
       {/* Tư liệu: đoạn đọc / audio */}
       {passages.map((p) => (
-        <div className="card passage" key={p.id}>
+        <div className="card passage exam-material-card" key={p.id}>
           {p.kind === "audio" && p.media_url && (
             <audio
               controls
@@ -184,7 +200,7 @@ export default function ExamPage() {
 
       {/* Bài Viết */}
       {isWriting && (
-        <div className="card">
+        <div className="card exam-workspace-card">
           <h3>Bài viết</h3>
           <textarea
             className="essay"
@@ -215,9 +231,13 @@ export default function ExamPage() {
       {isWriting && test.min_words > 0 && wordCount < test.min_words && (
         <p className="warn-text">Bài chưa đạt tối thiểu {test.min_words} từ — vẫn có thể nộp nhưng nên viết thêm.</p>
       )}
-      <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
-        {submitting ? "Đang nộp…" : "Nộp bài"}
-      </button>
+      <div className="exam-submit-panel">
+        {!isWriting && <span className="muted small">Đã làm {answeredCount}/{questions.length} câu.</span>}
+        {isWriting && <span className="muted small">Số từ hiện tại: {wordCount}{test.min_words ? `/${test.min_words}` : ""}.</span>}
+        <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
+          {submitting ? "Đang nộp…" : "Nộp bài"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -231,7 +251,7 @@ export function QuestionView({
   onChange: (v: string | string[]) => void;
 }) {
   return (
-    <div className="card question">
+    <div className="card question exam-question-card">
       <div className="q-prompt"><span className="q-no">{index}.</span> {q.prompt}</div>
 
       {q.qtype === "single" && (

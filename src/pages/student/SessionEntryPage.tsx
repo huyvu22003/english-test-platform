@@ -41,25 +41,32 @@ export default function SessionEntryPage() {
   }
 
   return (
-    <div className="wrap narrow">
-      <header className="topbar">
-        <h1>Vào phòng thi</h1>
+    <div className="wrap narrow session-entry-wrap">
+      <header className="session-entry-head">
+        <div>
+          <span className="eyebrow dark">Exam room</span>
+          <h1>Vào phòng thi</h1>
+          <p className="muted small">Nhập đúng mã thi và email đã đăng ký trong lớp để bắt đầu bài.</p>
+        </div>
         <Link className="link" to="/">← Trang chủ</Link>
       </header>
-      <div className="card">
-        <label className="field"><span>Mã thi</span>
-          <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="VD: AB12CD" />
+      <div className="card session-entry-card">
+        <label className="field session-code-field"><span>Mã thi</span>
+          <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="VD: AB12CD" autoFocus />
         </label>
         <div className="grid2">
           <label className="field"><span>Họ và tên</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nhập họ tên học viên" />
           </label>
           <label className="field"><span>Email</span>
-            <input value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="email đã đăng ký lớp" />
           </label>
         </div>
+        <div className="session-entry-note">
+          <strong>Lưu ý:</strong> nếu buổi thi giới hạn theo lớp, email phải trùng hồ sơ học viên giáo viên đã tạo.
+        </div>
         {err && <ErrorBox msg={err} />}
-        <button className="btn primary" disabled={busy} onClick={enter}>{busy ? "Đang vào…" : "Vào thi"}</button>
+        <button className="btn primary big" disabled={busy} onClick={enter}>{busy ? "Đang vào…" : "Vào thi"}</button>
       </div>
     </div>
   );

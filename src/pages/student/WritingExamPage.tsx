@@ -82,17 +82,22 @@ export default function WritingExamPage() {
 
   if (!started) {
     return (
-      <div className="wrap">
-        <div className="card">
+      <div className="wrap exam-start-wrap">
+        <div className="card exam-start-card">
+          <span className="eyebrow dark">Writing task</span>
           <h1>{p.topic_name}</h1>
-          <ul className="steps">
-            <li>Thời gian: <strong>{p.time_limit_min} phút</strong> · tối thiểu <strong>{p.min_words} từ</strong></li>
+          <div className="exam-start-meta">
+            <span><b>{p.time_limit_min}′</b> thời gian</span>
+            <span><b>{p.min_words}</b> từ tối thiểu</span>
+            <span><b>{MAX_ALLOWED_VIOLATIONS}</b> lần vi phạm tối đa</span>
+          </div>
+          <ul className="steps exam-start-steps">
             <li>Bài chạy ở chế độ <strong>toàn màn hình</strong>; rời tab/sao chép/dán đều bị <strong>ghi nhận</strong>.</li>
             <li>Nếu vi phạm <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.</li>
             <li>Hết giờ hệ thống <strong>tự nộp</strong>. Bài sẽ do <strong>giáo viên chấm tay</strong>.</li>
           </ul>
           <button
-            className="btn primary"
+            className="btn primary big exam-start-button"
             onClick={async () => {
               await ac.enterFullscreen();
               startedAtRef.current = new Date().toISOString();
@@ -121,12 +126,17 @@ export default function WritingExamPage() {
 
       {ac.warning && <div className="warn-banner">{ac.warning}</div>}
 
-      <div className="card passage">
+      <div className="exam-progress-strip">
+        <span><strong>{wordCount}</strong>/{p.min_words} từ</span>
+        <span>{ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm</span>
+      </div>
+
+      <div className="card passage exam-material-card">
         <div className="muted small">ĐỀ BÀI</div>
         <div className="passage-body">{p.prompt}</div>
       </div>
 
-      <div className="card">
+      <div className="card exam-workspace-card">
         <textarea
           className="essay"
           value={essay}
@@ -143,9 +153,12 @@ export default function WritingExamPage() {
       {wordCount < p.min_words && (
         <p className="warn-text">Bài chưa đạt tối thiểu {p.min_words} từ — vẫn có thể nộp nhưng nên viết thêm.</p>
       )}
-      <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
-        {submitting ? "Đang nộp…" : "Nộp bài"}
-      </button>
+      <div className="exam-submit-panel">
+        <span className="muted small">Số từ hiện tại: {wordCount}/{p.min_words}.</span>
+        <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
+          {submitting ? "Đang nộp…" : "Nộp bài"}
+        </button>
+      </div>
     </div>
   );
 }

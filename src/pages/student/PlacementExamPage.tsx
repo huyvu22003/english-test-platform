@@ -80,20 +80,26 @@ export default function PlacementExamPage() {
   if (data.error) return <div className="wrap"><ErrorBox msg={data.error} /></div>;
   if (!data.data) return null;
   const { test, topic, passages, questions } = data.data;
+  const answeredCount = questions.filter((q) => isAnswered(answers[q.id])).length;
 
   if (!started) {
     return (
-      <div className="wrap">
-        <div className="card">
+      <div className="wrap exam-start-wrap">
+        <div className="card exam-start-card">
+          <span className="eyebrow dark">Placement test</span>
           <h1>Kiểm tra xếp lớp</h1>
           <p className="muted">{test.title ?? topic.name}</p>
-          <ul className="steps">
-            <li>{questions.length} câu trắc nghiệm · {test.time_limit_min} phút.</li>
+          <div className="exam-start-meta">
+            <span><b>{questions.length}</b> câu hỏi</span>
+            <span><b>{test.time_limit_min}′</b> thời gian</span>
+            <span><b>CEFR</b> tự chấm</span>
+          </div>
+          <ul className="steps exam-start-steps">
             <li>Hệ thống <strong>tự chấm</strong> và xếp <strong>trình độ CEFR</strong> ngay sau khi nộp.</li>
             <li>Chế độ toàn màn hình; rời tab/sao chép bị ghi nhận. Vi phạm <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong> sẽ bị dừng bài.</li>
           </ul>
           <button
-            className="btn primary"
+            className="btn primary big exam-start-button"
             onClick={async () => {
               await ac.enterFullscreen();
               startedAtRef.current = new Date().toISOString();
@@ -120,8 +126,14 @@ export default function PlacementExamPage() {
 
       {ac.warning && <div className="warn-banner">{ac.warning}</div>}
 
+      <div className="exam-progress-strip">
+        <span><strong>{answeredCount}</strong>/{questions.length} câu đã làm</span>
+        <span>{passages.length} tư liệu</span>
+        <span>{ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm</span>
+      </div>
+
       {passages.map((p) => (
-        <div className="card passage" key={p.id}>
+        <div className="card passage exam-material-card" key={p.id}>
           {p.kind === "audio" && p.media_url && (
             <audio
               controls
@@ -145,9 +157,12 @@ export default function PlacementExamPage() {
       ))}
 
       {submitErr && <ErrorBox msg={submitErr} />}
-      <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
-        {submitting ? "Đang chấm…" : "Nộp & xem trình độ"}
-      </button>
+      <div className="exam-submit-panel">
+        <span className="muted small">Đã làm {answeredCount}/{questions.length} câu.</span>
+        <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
+          {submitting ? "Đang chấm…" : "Nộp & xem trình độ"}
+        </button>
+      </div>
     </div>
   );
 }

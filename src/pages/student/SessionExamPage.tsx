@@ -103,18 +103,24 @@ export default function SessionExamPage() {
   if (data.error) return <div className="wrap"><ErrorBox msg={data.error} /></div>;
   if (!data.data) return null;
   const { test, passages, questions } = data.data;
+  const answeredCount = questions.filter((q) => isAnswered(answers[q.id])).length;
 
   if (!started) {
     return (
-      <div className="wrap">
-        <div className="card">
+      <div className="wrap exam-start-wrap">
+        <div className="card exam-start-card">
+          <span className="eyebrow dark">Exam room</span>
           <h1>{meta.sessionName}</h1>
-          <ul className="steps">
-            <li>Thời gian: <strong>{test.time_limit_min} phút</strong>.</li>
+          <div className="exam-start-meta">
+            <span><b>{test.time_limit_min}′</b> thời gian</span>
+            <span><b>{isWriting ? test.min_words || 0 : questions.length}</b> {isWriting ? "từ tối thiểu" : "câu hỏi"}</span>
+            <span><b>{stopAtViolations}</b> lần vi phạm tối đa</span>
+          </div>
+          <ul className="steps exam-start-steps">
             <li>Chế độ <strong>toàn màn hình</strong>, ghi nhật ký vi phạm. <strong>Tự dừng khi vi phạm ≥ {stopAtViolations} lần.</strong></li>
             <li>Chỉ được nộp theo quy định của buổi thi.</li>
           </ul>
-          <button className="btn primary" onClick={async () => {
+          <button className="btn primary big exam-start-button" onClick={async () => {
             await ac.enterFullscreen();
             startedAtRef.current = new Date().toISOString();
             const serverNowMs = Date.now() + serverOffsetMs;
@@ -144,8 +150,18 @@ export default function SessionExamPage() {
 
       {ac.warning && <div className="warn-banner">{ac.warning}</div>}
 
+      <div className="exam-progress-strip">
+        {isWriting ? (
+          <span><strong>{wordCount}</strong>{test.min_words ? `/${test.min_words}` : ""} từ</span>
+        ) : (
+          <span><strong>{answeredCount}</strong>/{questions.length} câu đã làm</span>
+        )}
+        <span>{passages.length} tư liệu</span>
+        <span>{ac.violations}/{stopAtViolations} vi phạm</span>
+      </div>
+
       {passages.map((p) => (
-        <div className="card passage" key={p.id}>
+        <div className="card passage exam-material-card" key={p.id}>
           {p.kind === "audio" && p.media_url && (
             <audio
               controls
@@ -164,7 +180,7 @@ export default function SessionExamPage() {
       ))}
 
       {isWriting ? (
-        <div className="card">
+        <div className="card exam-workspace-card">
           {test.prompt && <div className="passage-body" style={{ marginBottom: 12 }}><strong>Đề bài: </strong>{test.prompt}</div>}
           <textarea className="essay" rows={18} value={essay} onChange={(e) => setEssay(e.target.value)} placeholder="Viết bài của bạn…" />
           <div className="muted wc">Số từ: <strong>{wordCount}</strong>{test.min_words ? ` / tối thiểu ${test.min_words}` : ""}</div>
@@ -180,9 +196,13 @@ export default function SessionExamPage() {
       {isWriting && test.min_words > 0 && wordCount < test.min_words && (
         <p className="warn-text">Bài chưa đạt tối thiểu {test.min_words} từ — vẫn có thể nộp nhưng nên viết thêm.</p>
       )}
-      <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
-        {submitting ? "Đang nộp…" : "Nộp bài"}
-      </button>
+      <div className="exam-submit-panel">
+        {!isWriting && <span className="muted small">Đã làm {answeredCount}/{questions.length} câu.</span>}
+        {isWriting && <span className="muted small">Số từ hiện tại: {wordCount}{test.min_words ? `/${test.min_words}` : ""}.</span>}
+        <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
+          {submitting ? "Đang nộp…" : "Nộp bài"}
+        </button>
+      </div>
     </div>
   );
 }

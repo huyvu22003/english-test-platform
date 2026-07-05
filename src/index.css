@@ -179,6 +179,54 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .opt:hover { background: #f7f7fb; }
 .fill { max-width: 320px; }
 
+
+
+.session-entry-wrap { max-width: 620px; }
+.session-entry-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+.session-entry-card { padding: 22px; border-color: rgba(122,43,143,.14); background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(255,247,237,.82)); }
+.session-code-field input { font-size: 22px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; text-align: center; }
+.session-entry-note { margin: 2px 0 12px; padding: 10px 12px; border-left: 4px solid var(--accent); border-radius: 10px; background: #fffbeb; color: var(--muted); font-size: 13px; }
+
+/* Exam experience — rõ trạng thái, tiến độ và vùng thao tác cho học viên. */
+.exam-start-wrap { max-width: 760px; }
+.exam-start-card {
+  position: relative; overflow: hidden; padding: 26px;
+  border-color: rgba(122,43,143,.14);
+  background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(255,247,237,.88));
+}
+.exam-start-card::after {
+  content: ""; position: absolute; right: -64px; top: -72px; width: 210px; height: 210px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(247,148,29,.18), transparent 66%);
+  pointer-events: none;
+}
+.exam-start-card > * { position: relative; z-index: 1; }
+.exam-start-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 16px 0 14px; }
+.exam-start-meta span { padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.86); color: var(--muted); font-size: 13px; font-weight: 700; }
+.exam-start-meta b { display: block; color: var(--plum); font-size: 22px; line-height: 1.1; }
+.exam-start-steps { margin-top: 10px; }
+.exam-start-button { max-width: 320px; }
+.exam-progress-strip {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: -2px 0 12px;
+  position: sticky; top: 82px; z-index: 4;
+}
+.exam-progress-strip span {
+  display: inline-flex; align-items: baseline; gap: 4px; padding: 7px 11px;
+  border-radius: 999px; border: 1px solid rgba(122,43,143,.12);
+  background: rgba(255,255,255,.92); box-shadow: var(--shadow); color: var(--muted); font-size: 13px; font-weight: 800;
+}
+.exam-progress-strip strong { color: var(--plum); font-size: 16px; }
+.exam-material-card, .exam-workspace-card, .exam-question-card { border-color: rgba(122,43,143,.12); }
+.exam-material-card { background: linear-gradient(145deg, #fff, #fffaf7); }
+.exam-workspace-card textarea.essay { min-height: 420px; line-height: 1.75; }
+.exam-question-card { transition: border-color .16s ease, box-shadow .16s ease; }
+.exam-question-card:focus-within { border-color: rgba(236,58,43,.35); box-shadow: 0 12px 30px rgba(42,15,61,.10); }
+.exam-submit-panel {
+  position: sticky; bottom: 12px; z-index: 5; display: grid; grid-template-columns: 1fr minmax(220px, 320px); gap: 12px; align-items: center;
+  padding: 12px; margin-top: 14px; border: 1px solid rgba(122,43,143,.14); border-radius: 18px;
+  background: rgba(255,255,255,.94); box-shadow: var(--shadow-lg); backdrop-filter: blur(12px);
+}
+.exam-submit-panel .btn.big { margin: 0; position: static; }
+
 /* result */
 .result { text-align: center; }
 .score-box { margin: 18px 0; }
@@ -701,6 +749,10 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   /* Taking exams on phones */
   .exam { padding-bottom: 88px; }
   .exam-bar { top: 0; border-radius: 0 0 16px 16px; margin: -14px -12px 12px; padding: 10px 12px; align-items: flex-start; flex-direction: column; gap: 8px; }
+  .session-entry-head { flex-direction: column; }
+  .exam-progress-strip { position: static; }
+  .exam-start-meta, .exam-submit-panel { grid-template-columns: 1fr; }
+  .exam-start-button { max-width: none; }
   .exam-bar-right { width: 100%; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
   .timer { font-size: 18px; }
   .passage-body { font-size: 15px; line-height: 1.72; }
