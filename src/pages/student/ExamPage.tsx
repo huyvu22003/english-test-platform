@@ -57,8 +57,8 @@ export default function ExamPage() {
 
   // Không có thông tin học sinh -> quay lại màn nhập.
   useEffect(() => {
-    if (!meta.name || !meta.email) nav("/", { replace: true });
-  }, [meta.name, meta.email, nav]);
+    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
+  }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {

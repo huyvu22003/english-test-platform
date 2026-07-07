@@ -35,7 +35,7 @@ export default function ProgressPage() {
     const cleanEmail = email.trim();
     const cleanName = studentName.trim();
     const cleanCode = studentCode.trim();
-    if (!cleanEmail && !cleanName && !cleanCode) { setErr("Nhập ít nhất email, họ tên hoặc mã học sinh."); return; }
+    if (!cleanCode) { setErr("Chỉ học viên có mã HV mới được xem tiến bộ. Guest chỉ được làm bài xếp lớp."); return; }
     if (cleanEmail && !/\S+@\S+\.\S+/.test(cleanEmail)) { setErr("Email chưa hợp lệ."); return; }
     setErr(null); setLoading(true); setItems(null); setSelected(null);
     try {

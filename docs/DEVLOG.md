@@ -9,8 +9,8 @@
 ## 2026-07-07 — Đăng nhập học viên bằng mã và chế độ khách
 - **Tác nhân:** APP IELTS BOT · **Nhánh/PR:** `main`
 - **Mục tiêu:** triển khai luồng nhận diện học sinh rõ hơn: mã học viên cho học viên có hồ sơ, guest cho học sinh làm thử/nhập tay.
-- **Đã làm:** thêm `studentSession` lưu localStorage; trang chủ nhận diện mã HV và lưu hồ sơ; thêm nút “Tiếp tục dạng khách”; phòng thi tự điền học viên đã lưu và cho tra mã HV tại chỗ; các trang làm bài đọc fallback từ session khi route state bị mất; trang tiến bộ tự điền mã/tên/email đã lưu.
-- **Quyết định:** giữ đây là “đăng nhập nhẹ” phía client, không đụng Supabase Auth của giáo viên; backend vẫn nhận bài theo tên/email hiện có để tránh migration lớn.
+- **Đã làm:** thêm `studentSession` lưu localStorage; trang chủ nhận diện mã HV và lưu hồ sơ; thêm nút “Tiếp tục dạng khách”; phòng thi tự điền học viên đã lưu và cho tra mã HV tại chỗ; các trang làm bài đọc fallback từ session khi route state bị mất; trang tiến bộ tự điền mã/tên/email đã lưu; siết guest chỉ được làm Placement, không vào Writing/Đọc-Nghe/Phòng thi/Tiến bộ.
+- **Quyết định:** giữ đây là “đăng nhập nhẹ” phía client, không đụng Supabase Auth của giáo viên; guest là luồng thử/xếp lớp, học viên chính thức phải dùng mã HV cho các mục còn lại.
 - **Kết quả:** `npm run build` PASS, còn warning bundle lớn `exceljs`.
 - **Bước tiếp:** smoke test thực tế 2 luồng: mã HV có email và guest nhập tay.
 

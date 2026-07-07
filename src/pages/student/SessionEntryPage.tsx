@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { sessionByCode, studentByCode } from "../../lib/api";
 import {
-  guestIdentity,
   identityFromStudentCode,
   isReadyIdentity,
   loadStudentIdentity,
@@ -68,9 +67,13 @@ export default function SessionEntryPage() {
     }
   }
 
-  function saveGuestIfNeeded() {
-    if (identity && identity.name === name.trim() && identity.email === email.trim().toLowerCase()) return identity;
-    const next = saveStudentIdentity(guestIdentity(name, email));
+  function saveCurrentStudent() {
+    if (!identity || identity.mode !== "student" || !identity.code) return null;
+    const next = saveStudentIdentity({
+      ...identity,
+      name: name.trim(),
+      email,
+    });
     setIdentity(next);
     return next;
   }
@@ -78,9 +81,13 @@ export default function SessionEntryPage() {
   async function enter() {
     setErr(null);
     if (!ready) { setErr("Nhập mã thi, họ tên và email hợp lệ."); return; }
+    const current = saveCurrentStudent();
+    if (!current) {
+      setErr("Chế độ khách không được vào phòng thi. Vui lòng nhận diện bằng mã học viên trước.");
+      return;
+    }
     setBusy(true);
     try {
-      const current = saveGuestIfNeeded();
       const s = await sessionByCode(code.trim(), email.trim());
       if (!s) { setErr("Mã thi không đúng."); return; }
       if (s.status === "no_test") { setErr("Buổi thi chưa gắn đề."); return; }

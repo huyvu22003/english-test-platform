@@ -38,8 +38,8 @@ export default function WritingExamPage() {
   const ac = useAntiCheat(started);
 
   useEffect(() => {
-    if (!meta.name || !meta.email) nav("/", { replace: true });
-  }, [meta.name, meta.email, nav]);
+    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
+  }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   const wordCount = useMemo(() => essay.trim().split(/\s+/).filter(Boolean).length, [essay]);
 

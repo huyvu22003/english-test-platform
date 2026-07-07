@@ -59,8 +59,8 @@ export default function SessionExamPage() {
   }, [meta.serverNow]);
 
   useEffect(() => {
-    if (!meta.name || !meta.email || !meta.testId) nav("/exam-room", { replace: true });
-  }, [meta.name, meta.email, meta.testId, nav]);
+    if (!meta.name || !meta.email || !meta.testId || meta.studentMode !== "student" || !meta.studentCode) nav("/exam-room", { replace: true });
+  }, [meta.name, meta.email, meta.studentCode, meta.studentMode, meta.testId, nav]);
 
   const wordCount = useMemo(() => essay.trim().split(/\s+/).filter(Boolean).length, [essay]);
 

@@ -42,6 +42,7 @@ export default function StudentHome() {
   const [codeMsg, setCodeMsg] = useState<string | null>(null);
   const [codeBusy, setCodeBusy] = useState(false);
   const [identity, setIdentity] = useState<StudentIdentity | null>(null);
+  const [accessMsg, setAccessMsg] = useState<string | null>(null);
   const [selectedIntensiveTopicId, setSelectedIntensiveTopicId] = useState("");
   const [selectedIntensiveTestId, setSelectedIntensiveTestId] = useState("");
   const [intensiveTouched, setIntensiveTouched] = useState(false);
@@ -86,6 +87,7 @@ export default function StudentHome() {
   }, []);
 
   const ready = isReadyIdentity({ name, email });
+  const isStudent = identity?.mode === "student" && Boolean(identity.code);
 
   function setManualName(nextName: string) {
     setName(nextName);
@@ -108,6 +110,7 @@ export default function StudentHome() {
 
   function startPlacement(testId: string) {
     setTouched(true);
+    setAccessMsg(null);
     if (!ready) return;
     saveStudentIdentity(identity ?? guestIdentity(name, email));
     nav(`/placement/${testId}`, { state: routeState() });
@@ -137,7 +140,12 @@ export default function StudentHome() {
 
   function start(topicId: string) {
     setTouched(true);
+    setAccessMsg(null);
     if (!ready) return;
+    if (!isStudent) {
+      setAccessMsg("Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để vào Writing.");
+      return;
+    }
     saveStudentIdentity(identity ?? guestIdentity(name, email));
     nav(`/writing/${topicId}`, { state: routeState() });
   }
@@ -145,7 +153,12 @@ export default function StudentHome() {
   function startIntensive() {
     setTouched(true);
     setIntensiveTouched(true);
+    setAccessMsg(null);
     if (!ready || !selectedIntensiveExamTopic || !selectedIntensiveTestId) return;
+    if (!isStudent) {
+      setAccessMsg("Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để vào Học tăng cường.");
+      return;
+    }
     saveStudentIdentity(identity ?? guestIdentity(name, email));
     nav(`/writing/${selectedIntensiveExamTopic.topic_id}?test=${selectedIntensiveTestId}`, {
       state: routeState(),
@@ -154,7 +167,12 @@ export default function StudentHome() {
 
   function startPractice(testId: string) {
     setTouched(true);
+    setAccessMsg(null);
     if (!ready) return;
+    if (!isStudent) {
+      setAccessMsg("Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để luyện Đọc/Nghe.");
+      return;
+    }
     saveStudentIdentity(identity ?? guestIdentity(name, email));
     nav(`/exam/${testId}`, { state: routeState() });
   }
@@ -165,6 +183,7 @@ export default function StudentHome() {
     const nextIdentity = saveStudentIdentity(guestIdentity(name, email));
     setIdentity(nextIdentity);
     setCode("");
+    setAccessMsg(null);
     setCodeMsg(`Đang dùng chế độ khách: ${nextIdentity.name}.`);
   }
 
@@ -260,6 +279,7 @@ export default function StudentHome() {
           {touched && !ready && (
             <p className="warn-text">Vui lòng nhập đúng họ tên và email (email dùng để theo dõi tiến bộ).</p>
           )}
+          {accessMsg && <p className="warn-text">{accessMsg}</p>}
         </div>
       </section>
 
