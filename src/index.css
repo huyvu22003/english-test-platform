@@ -583,7 +583,14 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   pointer-events: none;
 }
 .hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.45fr .75fr; gap: 24px; align-items: end; margin-top: 34px; }
-.hero-copy h1 { max-width: 760px; margin: 8px 0 0; font-size: clamp(34px, 5vw, 58px); line-height: .98; letter-spacing: -.055em; }
+.hero-copy h1 {
+  max-width: 760px;
+  margin: 8px 0 0;
+  font-size: clamp(34px, 5vw, 58px);
+  line-height: 1.06;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
 .eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; color: #ffd7c0; }
 .eyebrow.dark { color: var(--brand); }
 .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
@@ -818,7 +825,11 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   .hero-links .link { flex: 1 1 auto; text-align: center; padding: 9px 10px; border-radius: 999px; background: rgba(255,255,255,.12); }
   .hero-grid, .identity-card, .learning-block, .quick-guide-grid { grid-template-columns: 1fr; }
   .hero-grid { gap: 18px; margin-top: 24px; }
-  .hero-copy h1 { font-size: clamp(30px, 9vw, 44px); line-height: 1.02; }
+  .hero-copy h1 {
+    font-size: clamp(28px, 8.2vw, 38px);
+    line-height: 1.12;
+    letter-spacing: 0;
+  }
   .tagline { font-size: 14px; }
   .hero-cta .btn { flex: 1 1 100%; text-align: center; }
   .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
