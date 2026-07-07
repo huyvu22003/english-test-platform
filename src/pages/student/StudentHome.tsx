@@ -43,6 +43,7 @@ export default function StudentHome() {
   const [codeBusy, setCodeBusy] = useState(false);
   const [identity, setIdentity] = useState<StudentIdentity | null>(null);
   const [accessMsg, setAccessMsg] = useState<string | null>(null);
+  const [accessToast, setAccessToast] = useState<{ id: number; message: string } | null>(null);
   const [selectedIntensiveTopicId, setSelectedIntensiveTopicId] = useState("");
   const [selectedIntensiveTestId, setSelectedIntensiveTestId] = useState("");
   const [intensiveTouched, setIntensiveTouched] = useState(false);
@@ -88,6 +89,17 @@ export default function StudentHome() {
 
   const ready = isReadyIdentity({ name, email });
   const isStudent = identity?.mode === "student" && Boolean(identity.code);
+
+  useEffect(() => {
+    if (!accessToast) return;
+    const timer = window.setTimeout(() => setAccessToast(null), 3600);
+    return () => window.clearTimeout(timer);
+  }, [accessToast]);
+
+  function showAccessDenied(message: string) {
+    setAccessMsg(message);
+    setAccessToast({ id: Date.now(), message });
+  }
 
   function setManualName(nextName: string) {
     setName(nextName);
@@ -143,7 +155,7 @@ export default function StudentHome() {
     setAccessMsg(null);
     if (!ready) return;
     if (!isStudent) {
-      setAccessMsg("Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để vào Writing.");
+      showAccessDenied("Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để vào Writing.");
       return;
     }
     saveStudentIdentity(identity ?? guestIdentity(name, email));
@@ -154,11 +166,12 @@ export default function StudentHome() {
     setTouched(true);
     setIntensiveTouched(true);
     setAccessMsg(null);
-    if (!ready || !selectedIntensiveExamTopic || !selectedIntensiveTestId) return;
+    if (!ready) return;
     if (!isStudent) {
-      setAccessMsg("Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để vào Học tăng cường.");
+      showAccessDenied("Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để vào Học tăng cường.");
       return;
     }
+    if (!selectedIntensiveExamTopic || !selectedIntensiveTestId) return;
     saveStudentIdentity(identity ?? guestIdentity(name, email));
     nav(`/writing/${selectedIntensiveExamTopic.topic_id}?test=${selectedIntensiveTestId}`, {
       state: routeState(),
@@ -170,7 +183,7 @@ export default function StudentHome() {
     setAccessMsg(null);
     if (!ready) return;
     if (!isStudent) {
-      setAccessMsg("Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để luyện Đọc/Nghe.");
+      showAccessDenied("Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để luyện Đọc/Nghe.");
       return;
     }
     saveStudentIdentity(identity ?? guestIdentity(name, email));
@@ -198,6 +211,12 @@ export default function StudentHome() {
 
   return (
     <div className="wrap student-shell">
+      {accessToast && (
+        <div className="access-toast" role="status" aria-live="polite" key={accessToast.id}>
+          <span className="access-toast-icon">!</span>
+          <span>{accessToast.message}</span>
+        </div>
+      )}
       <header className="hero student-hero">
         <div className="hero-top">
           <Logo height={52} light />
