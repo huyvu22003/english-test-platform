@@ -2,8 +2,8 @@
 // để component không phải biết chi tiết. Đáp án học sinh luôn đi qua RPC.
 import { supabase } from "./supabase";
 import type {
-  AnswerMap, ClassRow, ExamListItem, ExamSession, Level, Passage, PickedPrompt,
-  PlacementItem, PlacementResult, ProgressItem, PublicTest, Question, SessionByCode,
+  AnswerMap, ClassRow, ClassTeacher, ExamListItem, ExamSession, Level, Passage, PickedPrompt,
+  PlacementItem, PlacementResult, Profile, ProgressItem, PublicTest, Question, SessionByCode,
   SessionSubmitResult, Skill, Student, StudentByCode, Submission, SubmitResult, Test,
   TestWithTopic, Topic, WritingCorrection, WritingScores, WritingTopic,
 } from "./types";
@@ -224,6 +224,44 @@ export async function saveStudent(s: Partial<Student>): Promise<Student> {
 }
 export async function deleteStudent(id: string): Promise<void> {
   const { error } = await db().from("students").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+// ---------- Vận hành: giáo viên, phân quyền, lớp phụ trách ----------
+export async function listProfiles(): Promise<Profile[]> {
+  return unwrap(await db().from("profiles").select("id,email,full_name,role,active,created_at").order("email")) as Profile[];
+}
+
+export async function updateProfile(id: string, patch: Partial<Profile>): Promise<Profile> {
+  return unwrap(await db().from("profiles").update(patch).eq("id", id).select().single()) as Profile;
+}
+
+export async function createStaffAccount(args: {
+  email: string;
+  password: string;
+  full_name: string | null;
+  role: Profile["role"];
+  active: boolean;
+}): Promise<Profile> {
+  const res = await db().functions.invoke("create-staff-account", { body: args });
+  if (res.error) throw new Error(res.error.message);
+  const data = res.data as { profile?: Profile; error?: string } | null;
+  if (data?.error) throw new Error(data.error);
+  if (!data?.profile) throw new Error("Không nhận được hồ sơ tài khoản mới.");
+  return data.profile;
+}
+
+export async function listClassTeachers(): Promise<ClassTeacher[]> {
+  return unwrap(await db().from("class_teachers").select("*").order("created_at")) as ClassTeacher[];
+}
+
+export async function assignTeacherToClass(classId: string, teacherId: string): Promise<void> {
+  const { error } = await db().from("class_teachers").upsert({ class_id: classId, teacher_id: teacherId });
+  if (error) throw new Error(error.message);
+}
+
+export async function removeTeacherFromClass(classId: string, teacherId: string): Promise<void> {
+  const { error } = await db().from("class_teachers").delete().eq("class_id", classId).eq("teacher_id", teacherId);
   if (error) throw new Error(error.message);
 }
 

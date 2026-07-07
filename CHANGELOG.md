@@ -7,6 +7,12 @@ Phân loại: **Thêm · Đổi · Sửa · Bỏ · Bảo mật · Tài liệu**
 
 ## [Chưa phát hành]
 
+### Thêm — Panel vận hành giáo viên & phân quyền
+- Thêm role `owner/admin/teacher/grader/content_editor`, trạng thái khóa/mở tài khoản, bảng `class_teachers` để gán giáo viên phụ trách lớp, và `submissions.assigned_to` để giao bài chấm.
+- Thêm trang **Giáo viên & phân quyền**: tạo tài khoản giáo viên qua Supabase Edge Function, sửa tên/role/trạng thái, gán lớp phụ trách.
+- Thêm trang **Tổng quan vận hành**: tồn bài, bài quá hạn 36 giờ, workload giáo viên, thống kê theo lớp và cảnh báo học viên chưa xếp lớp/chưa có mã.
+- Hàng đợi chấm có bộ lọc theo giáo viên/trạng thái/chủ đề, admin giao bài cho giáo viên, teacher/grader chỉ thấy bài được giao hoặc lớp phụ trách theo RLS.
+
 ### Thêm — Xuất bảng điểm buổi thi
 - Trang **Buổi thi & Mã thi** hiển thị số bài nộp theo từng buổi và có nút **Xuất bảng điểm** dạng CSV. File gồm thông tin học sinh, mã/buổi thi, đề/kỹ năng, điểm tự chấm, band/CEFR, trạng thái chấm Writing, 4 tiêu chí IELTS, số từ, vi phạm và nhận xét. VÌ SAO: trung tâm cần bảng điểm vận hành sau mỗi buổi thi để gửi/đối soát nhanh bằng Excel.
 

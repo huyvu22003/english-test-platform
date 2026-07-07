@@ -18,12 +18,33 @@ import RosterPage from "./pages/admin/RosterPage";
 import DiagnosticsPage from "./pages/admin/DiagnosticsPage";
 import ImportPage from "./pages/admin/ImportPage";
 import SessionsPage from "./pages/admin/SessionsPage";
+import OperationsPage from "./pages/admin/OperationsPage";
+import StaffPage from "./pages/admin/StaffPage";
 
 // Chặn vào trang quản trị khi chưa đăng nhập.
 function RequireAuth({ children }: { children: ReactNode }) {
-  const { session, loading } = useAuth();
-  if (loading) return <div className="center muted">Đang kiểm tra đăng nhập…</div>;
+  const { session, loading, profileLoading, profile } = useAuth();
+  if (loading || profileLoading) return <div className="center muted">Đang kiểm tra đăng nhập…</div>;
   if (!session) return <Navigate to="/admin/login" replace />;
+  if (profile?.active === false) return <div className="center muted">Tài khoản giáo viên này đang bị khóa. Liên hệ admin để mở lại.</div>;
+  return <>{children}</>;
+}
+
+function RequireAdmin({ children }: { children: ReactNode }) {
+  const { isAdmin } = useAuth();
+  if (!isAdmin) return <Navigate to="/admin/operations" replace />;
+  return <>{children}</>;
+}
+
+function RequireContent({ children }: { children: ReactNode }) {
+  const { canManageContent } = useAuth();
+  if (!canManageContent) return <Navigate to="/admin/operations" replace />;
+  return <>{children}</>;
+}
+
+function RequireGrading({ children }: { children: ReactNode }) {
+  const { canGrade, isAdmin } = useAuth();
+  if (!canGrade && !isAdmin) return <Navigate to="/admin/operations" replace />;
   return <>{children}</>;
 }
 
@@ -52,15 +73,17 @@ export default function App() {
               </RequireAuth>
             }
           >
-            <Route index element={<Navigate to="topics/reading" replace />} />
-            <Route path="topics" element={<TopicsPage />} />
-            <Route path="topics/:skill" element={<TopicsPage />} />
-            <Route path="tests/:testId" element={<TestEditorPage />} />
-            <Route path="submissions" element={<SubmissionsPage />} />
-            <Route path="roster" element={<RosterPage />} />
-            <Route path="diagnostics" element={<DiagnosticsPage />} />
-            <Route path="import" element={<ImportPage />} />
-            <Route path="sessions" element={<SessionsPage />} />
+            <Route index element={<Navigate to="operations" replace />} />
+            <Route path="operations" element={<OperationsPage />} />
+            <Route path="staff" element={<RequireAdmin><StaffPage /></RequireAdmin>} />
+            <Route path="topics" element={<RequireContent><TopicsPage /></RequireContent>} />
+            <Route path="topics/:skill" element={<RequireContent><TopicsPage /></RequireContent>} />
+            <Route path="tests/:testId" element={<RequireContent><TestEditorPage /></RequireContent>} />
+            <Route path="submissions" element={<RequireGrading><SubmissionsPage /></RequireGrading>} />
+            <Route path="roster" element={<RequireAdmin><RosterPage /></RequireAdmin>} />
+            <Route path="diagnostics" element={<RequireGrading><DiagnosticsPage /></RequireGrading>} />
+            <Route path="import" element={<RequireContent><ImportPage /></RequireContent>} />
+            <Route path="sessions" element={<RequireAdmin><SessionsPage /></RequireAdmin>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

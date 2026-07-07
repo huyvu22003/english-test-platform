@@ -4,6 +4,16 @@
 export type Skill = "writing" | "reading" | "listening" | "use_of_english";
 export type QType = "single" | "multi" | "tfng" | "fill";
 export type Cefr = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+export type AdminRole = "owner" | "admin" | "teacher" | "grader" | "content_editor";
+
+export interface Profile {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  role: AdminRole;
+  active?: boolean | null;
+  created_at?: string;
+}
 
 export interface Topic {
   id: string;
@@ -117,8 +127,9 @@ export interface Submission {
   started_at: string | null;
   submitted_at: string;
   // Phase A+B — chấm tay Writing
-  status: "submitted" | "graded";
+  status: "submitted" | "assigned" | "in_review" | "graded";
   student_id: string | null;
+  assigned_to?: string | null;
   score_tr: number | null;
   score_cc: number | null;
   score_lr: number | null;
@@ -196,6 +207,13 @@ export interface Level {
 export interface ClassRow {
   id: string;
   name: string;
+  created_at?: string;
+}
+
+export interface ClassTeacher {
+  id: string;
+  class_id: string;
+  teacher_id: string;
   created_at?: string;
 }
 

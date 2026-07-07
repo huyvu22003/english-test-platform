@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-07-07 — Panel vận hành giáo viên, phân quyền và dashboard
+- **Tác nhân:** APP IELTS BOT · **Nhánh/PR:** `main`
+- **Mục tiêu:** hoàn thiện nền vận hành trước khi tích hợp bot chấm bài: tạo tài khoản giáo viên, chia lớp phụ trách, giao bài chấm, dashboard quản lý.
+- **Đã làm:** thêm migration `supabase/2026-07-07-teacher-operations-panel.sql`; mở rộng role `owner/admin/teacher/grader/content_editor`; thêm `profiles.active`, `class_teachers`, `submissions.assigned_to`; bổ sung RLS theo admin/lớp phụ trách/bài được giao; thêm trang `StaffPage` và `OperationsPage`; cập nhật sidebar/route theo quyền; hàng đợi chấm có lọc/giao giáo viên; thêm Edge Function `create-staff-account` để admin tạo Supabase Auth user mà không đưa service role vào frontend.
+- **Quyết định:** tạo tài khoản login phải đi qua Supabase Edge Function/service role, không làm bằng browser client; teacher/grader được xem bài theo lớp phụ trách hoặc bài được giao, admin/owner vẫn xem toàn hệ thống.
+- **Kết quả:** `npm run build` PASS, còn warning bundle lớn `exceljs`.
+- **Bước tiếp:** deploy migration + Edge Function lên Supabase production, push `main` để Cloudflare Pages build frontend mới.
+
 ## 2026-07-07 — Đăng nhập học viên bằng mã và chế độ khách
 - **Tác nhân:** APP IELTS BOT · **Nhánh/PR:** `main`
 - **Mục tiêu:** triển khai luồng nhận diện học sinh rõ hơn: mã học viên cho học viên có hồ sơ, guest cho học sinh làm thử/nhập tay.

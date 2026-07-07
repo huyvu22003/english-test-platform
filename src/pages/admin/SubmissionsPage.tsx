@@ -1,18 +1,26 @@
 // Hàng đợi chấm: danh sách bài nộp, lọc (tên/chủ đề/trạng thái), xem bài viết +
 // nhật ký vi phạm, CHẤM TAY 4 tiêu chí IELTS (tự tính overall + CEFR), xuất Excel đẹp, xóa.
 import { useMemo, useRef, useState } from "react";
-import { deleteSubmission, gradeWriting, listSubmissions, bandToCefr } from "../../lib/api";
+import {
+  deleteSubmission, gradeWriting, listClassTeachers, listProfiles, listStudents, listSubmissions, bandToCefr, updateSubmission,
+} from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { EmptyState, ErrorBox, Spinner } from "../../components/common";
-import type { Submission, WritingCorrection, WritingScores } from "../../lib/types";
+import { useAuth } from "../../lib/auth";
+import type { ClassTeacher, Profile, Student, Submission, WritingCorrection, WritingScores } from "../../lib/types";
 
-type StatusFilter = "all" | "submitted" | "graded";
+type StatusFilter = "all" | "submitted" | "assigned" | "in_review" | "graded";
 
 export default function SubmissionsPage() {
+  const { profile, isAdmin } = useAuth();
   const subs = useAsync<Submission[]>(listSubmissions, []);
+  const profiles = useAsync<Profile[]>(listProfiles, []);
+  const students = useAsync<Student[]>(listStudents, []);
+  const classTeachers = useAsync<ClassTeacher[]>(listClassTeachers, []);
   const [q, setQ] = useState("");
   const [topic, setTopic] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
+  const [teacherId, setTeacherId] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
 
   const topics = useMemo(() => {
@@ -21,20 +29,36 @@ export default function SubmissionsPage() {
     return [...s].sort();
   }, [subs.data]);
 
+  const allowedClassIds = useMemo(() => new Set((classTeachers.data ?? []).filter((x) => x.teacher_id === profile?.id).map((x) => x.class_id)), [classTeachers.data, profile?.id]);
+  const studentClassByKey = useMemo(() => {
+    const m = new Map<string, string | null>();
+    students.data?.forEach((s) => {
+      m.set(s.id, s.class_id);
+      if (s.email) m.set(s.email.toLowerCase(), s.class_id);
+    });
+    return m;
+  }, [students.data]);
+  const teacherOptions = useMemo(() => (profiles.data ?? []).filter((p) => p.active !== false && ["owner", "admin", "teacher", "grader"].includes(p.role)), [profiles.data]);
+
   const rows = useMemo(() => {
     return (subs.data ?? []).filter((s) => {
+      if (!isAdmin) {
+        const classId = (s.student_id && studentClassByKey.get(s.student_id)) || (s.student_email && studentClassByKey.get(s.student_email.toLowerCase())) || null;
+        if (s.assigned_to !== profile?.id && (!classId || !allowedClassIds.has(classId))) return false;
+      }
       if (topic && s.topic_name !== topic) return false;
       if (status !== "all" && s.status !== status) return false;
+      if (teacherId && s.assigned_to !== teacherId) return false;
       if (q) {
         const hay = `${s.student_name ?? ""} ${s.student_email ?? ""}`.toLowerCase();
         if (!hay.includes(q.toLowerCase())) return false;
       }
       return true;
     });
-  }, [subs.data, q, topic, status]);
+  }, [subs.data, isAdmin, studentClassByKey, profile?.id, allowedClassIds, topic, status, teacherId, q]);
 
   const allRows = subs.data ?? [];
-  const pending = allRows.filter((s) => s.status === "submitted").length;
+  const pending = allRows.filter((s) => s.status === "submitted" || s.status === "assigned" || s.status === "in_review").length;
   const graded = allRows.filter((s) => s.status === "graded").length;
   const violationCount = allRows.filter((s) => (s.violations ?? 0) > 0).length;
   const avgBand = average(allRows.map((s) => s.overall_band ?? s.band));
@@ -42,11 +66,21 @@ export default function SubmissionsPage() {
   function exportExcel() {
     downloadGradingExcel(rows, {
       topic: topic || "Tất cả chủ đề",
-      status: status === "all" ? "Mọi trạng thái" : status === "submitted" ? "Chờ chấm" : "Đã chấm",
+      status: status === "all" ? "Mọi trạng thái" : status === "submitted" ? "Chờ chấm" : status === "assigned" ? "Đã giao" : status === "in_review" ? "Cần review" : "Đã chấm",
       query: q.trim() || "Không lọc",
       total: rows.length,
       pending,
     });
+  }
+
+  async function assignSubmission(id: string, assignedTo: string) {
+    await updateSubmission(id, { assigned_to: assignedTo || null, status: assignedTo ? "assigned" : "submitted" });
+    subs.reload();
+  }
+
+  function teacherName(id?: string | null): string {
+    const hit = teacherOptions.find((p) => p.id === id);
+    return hit?.full_name || hit?.email || "Chưa giao";
   }
 
   return (
@@ -93,14 +127,24 @@ export default function SubmissionsPage() {
             <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}>
               <option value="all">Mọi trạng thái</option>
               <option value="submitted">Chờ chấm</option>
+              <option value="assigned">Đã giao</option>
+              <option value="in_review">Cần review</option>
               <option value="graded">Đã chấm</option>
             </select>
           </label>
+          {isAdmin && (
+            <label className="field inline"><span>Giáo viên</span>
+              <select value={teacherId} onChange={(e) => setTeacherId(e.target.value)}>
+                <option value="">Tất cả giáo viên</option>
+                {teacherOptions.map((p) => <option key={p.id} value={p.id}>{p.full_name || p.email}</option>)}
+              </select>
+            </label>
+          )}
         </div>
       </div>
 
-      {subs.loading && <Spinner />}
-      {subs.error && <ErrorBox msg={subs.error} />}
+      {(subs.loading || profiles.loading || students.loading || classTeachers.loading) && <Spinner />}
+      {[subs.error, profiles.error, students.error, classTeachers.error].filter(Boolean).map((e) => <ErrorBox key={e} msg={e as string} />)}
 
       {rows.length === 0 && !subs.loading ? (
         <EmptyState
@@ -111,10 +155,20 @@ export default function SubmissionsPage() {
         <div className="card table-wrap grading-table-card">
           <table className="table">
             <thead>
-              <tr><th>Nộp lúc</th><th>Học sinh</th><th>Chủ đề</th><th>Band</th><th>CEFR</th><th>Trạng thái</th><th>Vi phạm</th><th></th></tr>
+              <tr><th>Nộp lúc</th><th>Học sinh</th><th>Chủ đề</th><th>Phụ trách</th><th>Band</th><th>CEFR</th><th>Trạng thái</th><th>Vi phạm</th><th></th></tr>
             </thead>
             <tbody>
-              {rows.map((s) => <Row key={s.id} s={s} onChanged={subs.reload} />)}
+              {rows.map((s) => (
+                <Row
+                  key={s.id}
+                  s={s}
+                  isAdmin={isAdmin}
+                  teacherOptions={teacherOptions}
+                  teacherName={teacherName}
+                  onAssign={assignSubmission}
+                  onChanged={subs.reload}
+                />
+              ))}
             </tbody>
           </table>
         </div>
@@ -200,7 +254,14 @@ const CRITERIA: { key: keyof WritingScores; label: string }[] = [
   { key: "gra", label: "Grammar" },
 ];
 
-function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
+function Row({ s, isAdmin, teacherOptions, teacherName, onAssign, onChanged }: {
+  s: Submission;
+  isAdmin: boolean;
+  teacherOptions: Profile[];
+  teacherName: (id?: string | null) => string;
+  onAssign: (id: string, assignedTo: string) => Promise<void>;
+  onChanged: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [sc, setSc] = useState<WritingScores>({
     tr: s.score_tr ?? 6, cc: s.score_cc ?? 6, lr: s.score_lr ?? 6, gra: s.score_gra ?? 6,
@@ -291,21 +352,38 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
     onChanged();
   }
 
+  function statusLabel(): string {
+    if (s.status === "graded") return "Đã chấm";
+    if (s.status === "assigned") return "Đã giao";
+    if (s.status === "in_review") return "Cần review";
+    return "Chờ chấm";
+  }
+
   return (
     <>
       <tr className={s.violations ? "has-viol" : ""}>
         <td className="small">{new Date(s.submitted_at).toLocaleString("vi-VN")}</td>
         <td>{s.student_name}<div className="muted small">{s.student_email}</div></td>
         <td>{s.topic_name}</td>
+        <td>
+          {isAdmin ? (
+            <select className="compact-select" value={s.assigned_to ?? ""} onChange={(e) => onAssign(s.id, e.target.value)}>
+              <option value="">Chưa giao</option>
+              {teacherOptions.map((p) => <option key={p.id} value={p.id}>{p.full_name || p.email}</option>)}
+            </select>
+          ) : (
+            <span className="small">{teacherName(s.assigned_to)}</span>
+          )}
+        </td>
         <td>{s.overall_band ?? "—"}</td>
         <td>{s.cefr ?? "—"}</td>
-        <td>{s.status === "graded" ? <span className="ok-text">Đã chấm</span> : <span className="pill off small">Chờ chấm</span>}</td>
+        <td>{s.status === "graded" ? <span className="ok-text">{statusLabel()}</span> : <span className="pill off small">{statusLabel()}</span>}</td>
         <td>{s.violations ? <span className="viol">{s.violations}</span> : "0"}</td>
         <td><button className="btn ghost small" onClick={() => setOpen((o) => !o)}>{open ? "Đóng" : "Chấm"}</button></td>
       </tr>
       {open && (
         <tr className="detail-row">
-          <td colSpan={8}>
+          <td colSpan={9}>
             <div className="grading-workspace">
               <div className="grading-main-column">
                 {/* Đề bài (join từ tests) — nổi bật để GV vừa đọc đề vừa chấm */}
@@ -450,11 +528,11 @@ interface GradingExportMeta {
 function downloadGradingExcel(rows: Submission[], meta: GradingExportMeta) {
   const today = new Date();
   const graded = rows.filter((s) => s.status === "graded").length;
-  const pendingRows = rows.filter((s) => s.status === "submitted").length;
+  const pendingRows = rows.filter((s) => s.status === "submitted" || s.status === "assigned" || s.status === "in_review").length;
   const violationRows = rows.filter((s) => (s.violations ?? 0) > 0).length;
   const avgBand = average(rows.map((s) => s.overall_band ?? s.band));
   const bodyRows = rows.map((s, idx) => {
-    const statusText = s.status === "graded" ? "Đã chấm" : "Chờ chấm";
+    const statusText = s.status === "graded" ? "Đã chấm" : s.status === "assigned" ? "Đã giao" : s.status === "in_review" ? "Cần review" : "Chờ chấm";
     const statusClass = s.status === "graded" ? "ok" : "pending";
     const viol = s.violations ?? 0;
     return `<tr>

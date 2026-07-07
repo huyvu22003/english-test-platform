@@ -19,12 +19,13 @@ Chú thích: ✅ xong · 🔄 đang làm · 🔜 sắp tới · 💤 hoãn · �
 - **Phase E (Import Excel/CSV):** ✅ đã merge (PR #6).
 - **Phase F (Buổi thi + mã thi + một-lần-nộp):** ✅ code xong (PR này) — **hết lộ trình A–F**.
 - **Student login nhẹ:** ✅ mã học viên + guest session phía client; guest chỉ được làm Placement, các mục khác yêu cầu mã HV.
+- **Panel vận hành giáo viên:** ✅ tài khoản/role/khóa tài khoản, gán lớp phụ trách, giao bài chấm, dashboard vận hành; cần chạy migration `2026-07-07-teacher-operations-panel.sql` và deploy Edge Function `create-staff-account` trên Supabase production.
 - **Chạy thật:** ⬜ cần tạo Supabase + chạy `schema.sql` + **`seed.sql`** + tạo GV + `.env` (xem `docs/SETUP.md`).
 
 ## Việc TIẾP THEO nên làm (ưu tiên từ trên xuống)
 1. 🔄 **Smoke test production end-to-end** theo `docs/OPERATIONS.md`: mã thi → làm bài → nộp → giáo viên chấm → học sinh xem tiến bộ.
 2. 🔄 **Smoke test đăng nhập học viên**: mã HV có email, mã HV thiếu email, guest chỉ vào Placement, guest bị chặn Writing/Đọc-Nghe/Phòng thi/Tiến bộ.
-3. 🔄 **Chạy migration hardening production** nếu Supabase chưa có: `supabase/2026-07-06-public-route-rls-hardening.sql`.
+3. 🔄 **Chạy migration vận hành production** nếu Supabase chưa có: `supabase/2026-07-06-public-route-rls-hardening.sql` rồi `supabase/2026-07-07-teacher-operations-panel.sql`.
 4. 🔜 **Tối ưu bundle lớn ExcelJS** bằng dynamic import cho export Excel.
 5. 🔜 **Polish trang Kết quả & Tiến bộ học viên** theo mobile-first.
 6. 🔜 **Khảo sát chủ trung tâm bằng phiếu nâng cấp**: gửi `public/forms/Phieu-khao-sat-nang-cap-English-Test-Platform.html`, thu câu trả lời, chốt Must/Should/Could cho trung tâm 3 chi nhánh.
