@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getTest, submitPlacement } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
+import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
 import { ErrorBox, Spinner } from "../../components/common";
 import { QuestionView } from "./ExamPage";
@@ -23,7 +24,14 @@ export default function PlacementExamPage() {
   const { testId = "" } = useParams();
   const nav = useNavigate();
   const loc = useLocation();
-  const meta = (loc.state ?? {}) as { name?: string; email?: string };
+  const savedIdentity = loadStudentIdentity();
+  const routeMeta = (loc.state ?? {}) as { name?: string; email?: string; studentCode?: string | null; studentMode?: string };
+  const meta = {
+    name: routeMeta.name ?? savedIdentity?.name,
+    email: routeMeta.email ?? savedIdentity?.email,
+    studentCode: routeMeta.studentCode ?? savedIdentity?.code ?? null,
+    studentMode: routeMeta.studentMode ?? savedIdentity?.mode,
+  };
 
   const data = useAsync<PublicTest>(() => getTest(testId), [testId]);
   const [started, setStarted] = useState(false);

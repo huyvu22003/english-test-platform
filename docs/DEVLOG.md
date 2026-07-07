@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-07-07 — Đăng nhập học viên bằng mã và chế độ khách
+- **Tác nhân:** APP IELTS BOT · **Nhánh/PR:** `main`
+- **Mục tiêu:** triển khai luồng nhận diện học sinh rõ hơn: mã học viên cho học viên có hồ sơ, guest cho học sinh làm thử/nhập tay.
+- **Đã làm:** thêm `studentSession` lưu localStorage; trang chủ nhận diện mã HV và lưu hồ sơ; thêm nút “Tiếp tục dạng khách”; phòng thi tự điền học viên đã lưu và cho tra mã HV tại chỗ; các trang làm bài đọc fallback từ session khi route state bị mất; trang tiến bộ tự điền mã/tên/email đã lưu.
+- **Quyết định:** giữ đây là “đăng nhập nhẹ” phía client, không đụng Supabase Auth của giáo viên; backend vẫn nhận bài theo tên/email hiện có để tránh migration lớn.
+- **Kết quả:** `npm run build` PASS, còn warning bundle lớn `exceljs`.
+- **Bước tiếp:** smoke test thực tế 2 luồng: mã HV có email và guest nhập tay.
+
+## 2026-07-06 — Chấm bài, hardening public route và docs vận hành
+- **Tác nhân:** APP IELTS BOT · **Nhánh/PR:** `main`
+- **Mục tiêu:** làm trước các mục 4, 6, 7, 8 trong checklist: nâng trải nghiệm chấm bài chi tiết, rà quyền/RLS/route public, bổ sung empty/loading/error states, chuẩn hóa docs vận hành.
+- **Đã làm:** nâng `SubmissionsPage` thành workspace 2 cột có đề/bài/sửa câu bên trái và panel điểm/nhận xét sticky bên phải; thêm `EmptyState`/loading state dùng lại; bổ sung state rỗng rõ hơn cho hàng đợi chấm, buổi thi, chẩn đoán và trình soạn đề; tạo migration `supabase/2026-07-06-public-route-rls-hardening.sql`; cập nhật `rpc_get_progress` chỉ trả bài đã chấm; thêm `docs/OPERATIONS.md`.
+- **Quyết định:** hardening DB để migration riêng, không tự động giả định production đã chạy SQL; frontend admin vẫn dựa trên `RequireAuth` và RLS authenticated hiện có.
+- **Kết quả:** cần chạy `npm run build` trước khi báo hoàn tất.
+- **Bước tiếp:** smoke test production theo `docs/OPERATIONS.md`, rồi tối ưu bundle `exceljs`.
+
 ## 2026-06-26 — Trang chủ học sinh premium hơn
 - **Tác nhân:** Eagle AI · **Nhánh/PR:** `style/student-home-premium-ui`
 - **Mục tiêu:** Huy đánh giá UI hiện tại hơi đơn điệu, chưa thể hiện đủ sự chuyên nghiệp, trẻ trung và năng động; cần nâng cấp điểm chạm đầu tiên của học sinh mà không đụng backend/schema.

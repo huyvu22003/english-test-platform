@@ -129,6 +129,21 @@ textarea { resize: vertical; }
 .skill-listening { background: #fdf0e3; color: #b45309; }
 
 /* messages */
+.loading-state {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 16px; margin: 8px 0;
+  border: 1px solid var(--line); border-radius: 14px;
+  background: rgba(255,255,255,.82); color: var(--muted); font-weight: 700;
+}
+.loading-dot {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--brand);
+  box-shadow: 0 0 0 0 rgba(236,58,43,.34); animation: loadingPulse 1.3s infinite;
+}
+@keyframes loadingPulse {
+  0% { box-shadow: 0 0 0 0 rgba(236,58,43,.34); }
+  70% { box-shadow: 0 0 0 9px rgba(236,58,43,0); }
+  100% { box-shadow: 0 0 0 0 rgba(236,58,43,0); }
+}
 .errbox { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
 .warn-text { color: #b45309; font-size: 14px; margin: 6px 0; }
 .ok-text { color: var(--ok); font-size: 14px; }
@@ -337,6 +352,25 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .detail-row td { background: #fafafe; }
 .essay-box p { white-space: pre-wrap; }
 .viol-box pre { white-space: pre-wrap; font-size: 12px; color: var(--muted); }
+.grading-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+.grading-main-column { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.grading-score-panel { position: sticky; top: 18px; }
+.grading-score-card {
+  border: 1px solid rgba(122,43,143,.14); border-radius: 18px;
+  padding: 14px; background: rgba(255,255,255,.96); box-shadow: var(--shadow);
+}
+.grading-score-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 12px; margin-bottom: 12px; border-radius: 14px;
+  background: linear-gradient(135deg, #fff7ed, #faf5ff); border: 1px solid #fed7aa;
+}
+.grading-score-head strong { display: block; color: var(--brand); font-size: 36px; line-height: .95; }
+.grading-score-card .grade-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 12px; }
+.grading-score-card .grade-grid .field.inline { width: auto; }
+.grading-score-card .quick-feedback-row { margin: -2px 0 12px; }
+.grading-save-actions { position: sticky; bottom: 0; padding-top: 10px; background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.98) 28%); }
+.grading-essay-box { padding: 14px; border: 1px solid rgba(122,43,143,.12); border-radius: 14px; background: #fff; }
+.grading-essay-box p { line-height: 1.78; margin: 10px 0 0; }
 
 /* Phase A+B — chọn chủ đề / chấm 4 tiêu chí / biểu đồ tiến bộ */
 .topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
@@ -564,6 +598,13 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 .premium-code { gap: 10px; }
 .premium-code input { min-height: 44px; }
 .code-msg { margin: 8px 0 0; font-weight: 700; color: var(--plum); }
+.student-session-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; margin-bottom: 12px;
+  border: 1px solid rgba(122,43,143,.16); border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,.95), rgba(244,232,255,.7));
+}
+.student-session-card p { margin: 3px 0 0; }
 
 .section-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin: 12px 0 14px; }
 .section-head h2 { margin: 3px 0 0; font-size: 28px; letter-spacing: -.035em; }
@@ -614,6 +655,14 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 .premium-topic-card:hover { transform: translateY(-3px); border-color: rgba(122,43,143,.25); box-shadow: 0 16px 36px rgba(42,15,61,.12); }
 .topic-spark { font-size: 22px; color: var(--accent); }
 .empty-state { border: 1px dashed var(--line); border-radius: 16px; padding: 18px; color: var(--muted); background: rgba(255,255,255,.7); }
+.empty-state.rich {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  border-color: rgba(122,43,143,.18);
+  background: linear-gradient(145deg, rgba(255,255,255,.92), rgba(255,247,237,.72));
+}
+.empty-state.rich strong { display: block; color: var(--ink); margin-bottom: 3px; }
+.empty-state.rich p { margin: 0; }
+.empty-state-action { flex: none; }
 
 @media (max-width: 860px) {
   .hero-grid, .identity-card, .learning-block, .quick-guide-grid { grid-template-columns: 1fr; }
@@ -818,6 +867,8 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   .detail-row > td { min-width: 720px; }
 
   /* Writing grading */
+  .grading-workspace { grid-template-columns: 1fr; }
+  .grading-score-panel { position: static; }
   .grading-essay-head { align-items: stretch; flex-direction: column; }
   .grading-essay-head .btn { width: 100%; }
   .grade-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -867,6 +918,7 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   .admin-stat-card { padding: 12px 14px; }
   .title-row .actions .btn, .actions .btn, .topic-actions .btn, .test-actions .btn { flex: 1 1 100%; }
   .grade-grid { grid-template-columns: 1fr; }
+  .grading-score-card .grade-grid { grid-template-columns: 1fr; }
   .crit-cards.compact { grid-template-columns: 1fr 1fr; }
   .table { min-width: 700px; font-size: 13px; }
   .detail-row > td { min-width: 680px; }

@@ -472,7 +472,8 @@ returns jsonb language sql security definer set search_path = public as $$
     limit 1
   ) st on true
   left join classes c on c.id = st.class_id
-  where (coalesce(btrim(p_email), '') <> '' or coalesce(btrim(p_name), '') <> '' or coalesce(btrim(p_code), '') <> '')
+  where s.status = 'graded'
+    and (coalesce(btrim(p_email), '') <> '' or coalesce(btrim(p_name), '') <> '' or coalesce(btrim(p_code), '') <> '')
     and (coalesce(btrim(p_email), '') = '' or lower(s.student_email) = lower(btrim(p_email)))
     and (coalesce(btrim(p_name), '') = '' or lower(coalesce(st.full_name, s.student_name)) = lower(btrim(p_name)))
     and (coalesce(btrim(p_code), '') = '' or lower(st.code) = lower(btrim(p_code)));
@@ -731,5 +732,38 @@ begin
 end;
 $$;
 
+grant execute on function rpc_session_by_code(text) to anon, authenticated;
+grant execute on function rpc_submit_session(uuid, text, text, jsonb, text, int, text, timestamptz) to anon, authenticated;
+
+
+-- =====================================================================
+-- PUBLIC ACCESS HARDENING
+-- =====================================================================
+-- Học sinh chỉ đi qua RPC public. Không cấp anon đọc trực tiếp bảng nội bộ
+-- như tests/questions/submissions/students; đáp án và roster nằm sau RLS/RPC.
+revoke all on table
+  profiles, topics, tests, passages, questions, exam_sessions, assignments,
+  submissions, classes, students
+from anon;
+revoke all on table
+  profiles, topics, tests, passages, questions, exam_sessions, assignments,
+  submissions, classes, students
+from public;
+
+grant select on table levels to anon, authenticated;
+
+revoke execute on all functions in schema public from anon;
+revoke execute on all functions in schema public from public;
+
+grant execute on function rpc_list_exams() to anon, authenticated;
+grant execute on function rpc_get_test(uuid) to anon, authenticated;
+grant execute on function rpc_submit(uuid, text, text, jsonb, int, text, timestamptz, text) to anon, authenticated;
+grant execute on function rpc_list_writing_topics() to anon, authenticated;
+grant execute on function rpc_pick_prompt(uuid) to anon, authenticated;
+grant execute on function rpc_submit_writing(uuid, text, text, text, int, text, timestamptz) to anon, authenticated;
+grant execute on function rpc_get_progress(text, text, text) to anon, authenticated;
+grant execute on function rpc_student_by_code(text) to anon, authenticated;
+grant execute on function rpc_list_placements() to anon, authenticated;
+grant execute on function rpc_submit_placement(uuid, text, text, jsonb, int, text, timestamptz) to anon, authenticated;
 grant execute on function rpc_session_by_code(text) to anon, authenticated;
 grant execute on function rpc_submit_session(uuid, text, text, jsonb, text, int, text, timestamptz) to anon, authenticated;

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getTest, submitSession } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
+import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
 import { ErrorBox, Spinner } from "../../components/common";
 import { QuestionView } from "./ExamPage";
@@ -21,13 +22,22 @@ function isAnswered(value: string | string[] | undefined): boolean {
 
 interface St {
   name?: string; email?: string; testId?: string; skill?: Skill;
+  studentCode?: string | null; studentMode?: string;
   sessionName?: string; maxViolations?: number; closeAt?: string | null; serverNow?: string | null;
 }
 
 export default function SessionExamPage() {
   const { sessionId = "" } = useParams();
   const nav = useNavigate();
-  const meta = (useLocation().state ?? {}) as St;
+  const savedIdentity = loadStudentIdentity();
+  const routeMeta = (useLocation().state ?? {}) as St;
+  const meta: St = {
+    ...routeMeta,
+    name: routeMeta.name ?? savedIdentity?.name,
+    email: routeMeta.email ?? savedIdentity?.email,
+    studentCode: routeMeta.studentCode ?? savedIdentity?.code ?? null,
+    studentMode: routeMeta.studentMode ?? savedIdentity?.mode,
+  };
 
   const data = useAsync<PublicTest>(() => getTest(meta.testId ?? ""), [meta.testId]);
   const [started, setStarted] = useState(false);

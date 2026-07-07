@@ -1,7 +1,8 @@
 // Tra cứu tiến bộ theo email: biểu đồ theo kỹ năng + lịch sử bài + chi tiết bài đã chọn.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getProgress } from "../../lib/api";
+import { loadStudentIdentity } from "../../lib/studentSession";
 import { ErrorBox, Spinner } from "../../components/common";
 import type { ProgressItem, Skill } from "../../lib/types";
 
@@ -21,6 +22,14 @@ export default function ProgressPage() {
   const [selected, setSelected] = useState<ProgressItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    const saved = loadStudentIdentity();
+    if (!saved) return;
+    setEmail(saved.email);
+    setStudentName(saved.name);
+    if (saved.code) setStudentCode(saved.code);
+  }, []);
 
   async function lookup() {
     const cleanEmail = email.trim();

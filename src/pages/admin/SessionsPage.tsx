@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { deleteSession, listAllTests, listClasses, listSessions, listSubmissions, saveSession } from "../../lib/api";
 import { downloadGradeReportWorkbook } from "../../lib/gradeReport";
 import { useAsync } from "../../lib/useAsync";
-import { ErrorBox, Spinner } from "../../components/common";
+import { EmptyState, ErrorBox, Spinner } from "../../components/common";
 import type { ClassRow, ExamSession, Submission, TestWithTopic } from "../../lib/types";
 
 function genCode(): string {
@@ -66,7 +66,12 @@ export default function SessionsPage() {
           onErr={setErr}
         />
       ))}
-      {sessions.data && sessions.data.length === 0 && <p className="muted">Chưa có buổi thi nào.</p>}
+      {sessions.data && sessions.data.length === 0 && (
+        <EmptyState
+          title="Chưa có buổi thi nào"
+          body="Tạo buổi thi đầu tiên ở form phía trên, sau đó gửi mã thi cho học sinh vào phòng thi."
+        />
+      )}
     </div>
   );
 }

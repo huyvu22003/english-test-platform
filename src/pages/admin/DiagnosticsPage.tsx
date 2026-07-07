@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { listClasses, listStudents, listSubmissions } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
-import { ErrorBox, Spinner } from "../../components/common";
+import { EmptyState, ErrorBox, Spinner } from "../../components/common";
 import type { ClassRow, Student, Submission } from "../../lib/types";
 
 const CRIT = [
@@ -115,7 +115,10 @@ export default function DiagnosticsPage() {
           </div>
         </div>
         {filtered.length === 0 ? (
-          <p className="muted">Chưa có bài đã chấm trong phạm vi này.</p>
+          <EmptyState
+            title="Chưa có dữ liệu chẩn đoán"
+            body="Cần có bài Writing đã chấm đủ 4 tiêu chí trong phạm vi đang chọn."
+          />
         ) : (
           <div className="crit-cards">
             {classAvg.map((c) => (
@@ -157,7 +160,10 @@ export default function DiagnosticsPage() {
         </div>
       )}
       {perStudent.length === 0 && !loading && (
-        <div className="empty-state">Chưa có học viên/bài đã chấm trong phạm vi này để phân tích.</div>
+        <EmptyState
+          title="Chưa có học viên để phân tích"
+          body="Khi có bài đã chấm, bảng theo học viên sẽ tự xuất hiện tại đây."
+        />
       )}
     </div>
   );

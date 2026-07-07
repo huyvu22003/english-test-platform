@@ -2,7 +2,7 @@
 
 > **ĐANG Ở ĐÂU, đã xong gì, còn gì.** Cập nhật mỗi khi hoàn thành/đổi trạng thái một hạng mục. Đây là nơi đầu tiên dev mới nhìn để biết "giờ làm gì tiếp".
 >
-> Cập nhật lần cuối: **2026-06-25**.
+> Cập nhật lần cuối: **2026-07-07**.
 
 Chú thích: ✅ xong · 🔄 đang làm · 🔜 sắp tới · 💤 hoãn · ⬜ chưa bắt đầu
 
@@ -18,16 +18,18 @@ Chú thích: ✅ xong · 🔄 đang làm · 🔜 sắp tới · 💤 hoãn · �
 - **Phase D (Placement tự chấm ra CEFR — engine threshold):** ✅ đã merge (PR #5).
 - **Phase E (Import Excel/CSV):** ✅ đã merge (PR #6).
 - **Phase F (Buổi thi + mã thi + một-lần-nộp):** ✅ code xong (PR này) — **hết lộ trình A–F**.
+- **Student login nhẹ:** ✅ mã học viên + guest session phía client, dùng chung cho trang chủ/phòng thi/tiến bộ.
 - **Chạy thật:** ⬜ cần tạo Supabase + chạy `schema.sql` + **`seed.sql`** + tạo GV + `.env` (xem `docs/SETUP.md`).
 
 ## Việc TIẾP THEO nên làm (ưu tiên từ trên xuống)
-1. 🔄 **Khảo sát chủ trung tâm bằng phiếu nâng cấp**: gửi `public/forms/Phieu-khao-sat-nang-cap-English-Test-Platform.html`, thu câu trả lời, chốt Must/Should/Could cho trung tâm 3 chi nhánh.
-2. 🔄 **Smoke test production phần Đọc/Nghe**: sau khi merge lối vào **Luyện Đọc & Nghe**, kiểm tra học sinh chọn đề Reading/Listening → làm bài → nộp → thấy điểm.
-3. ⬜ **Kết nối Supabase + smoke test toàn hệ**: `schema.sql` + `seed.sql` + `seed_placement.sql` → xếp lớp (CEFR) + luyện viết + buổi thi (mã) → GV chấm/chẩn đoán/tiến bộ.
-4. 🔜 **Phase G1: vận hành thật cho trung tâm nhiều chi nhánh** — export bảng điểm buổi thi, chuẩn hóa chi nhánh/lớp/học viên, tài liệu vận hành.
-5. 🔜 **Combine CEFR nhiều kỹ năng** → 1 trình độ tổng (placement gồm reading+listening+UoE).
-6. 🔜 **Tách ngân hàng `items`** khỏi đề để tái dùng câu (refactor lớn).
-7. 🔜 **Nội dung thật** Reading/Listening; xuất bảng điểm buổi thi; upload .xlsx trực tiếp.
+1. 🔄 **Smoke test production end-to-end** theo `docs/OPERATIONS.md`: mã thi → làm bài → nộp → giáo viên chấm → học sinh xem tiến bộ.
+2. 🔄 **Smoke test đăng nhập học viên**: mã HV có email, mã HV thiếu email, guest nhập tay, reload trang làm bài.
+3. 🔄 **Chạy migration hardening production** nếu Supabase chưa có: `supabase/2026-07-06-public-route-rls-hardening.sql`.
+4. 🔜 **Tối ưu bundle lớn ExcelJS** bằng dynamic import cho export Excel.
+5. 🔜 **Polish trang Kết quả & Tiến bộ học viên** theo mobile-first.
+6. 🔜 **Khảo sát chủ trung tâm bằng phiếu nâng cấp**: gửi `public/forms/Phieu-khao-sat-nang-cap-English-Test-Platform.html`, thu câu trả lời, chốt Must/Should/Could cho trung tâm 3 chi nhánh.
+7. 🔜 **Combine CEFR nhiều kỹ năng** → 1 trình độ tổng (placement gồm reading+listening+UoE).
+8. 🔜 **Tách ngân hàng `items`** khỏi đề để tái dùng câu (refactor lớn).
 
 ---
 

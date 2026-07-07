@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { deleteSubmission, gradeWriting, listSubmissions, bandToCefr } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
-import { ErrorBox, Spinner } from "../../components/common";
+import { EmptyState, ErrorBox, Spinner } from "../../components/common";
 import type { Submission, WritingCorrection, WritingScores } from "../../lib/types";
 
 type StatusFilter = "all" | "submitted" | "graded";
@@ -102,19 +102,23 @@ export default function SubmissionsPage() {
       {subs.loading && <Spinner />}
       {subs.error && <ErrorBox msg={subs.error} />}
 
-      <div className="card table-wrap grading-table-card">
-        <table className="table">
-          <thead>
-            <tr><th>Nộp lúc</th><th>Học sinh</th><th>Chủ đề</th><th>Band</th><th>CEFR</th><th>Trạng thái</th><th>Vi phạm</th><th></th></tr>
-          </thead>
-          <tbody>
-            {rows.map((s) => <Row key={s.id} s={s} onChanged={subs.reload} />)}
-            {rows.length === 0 && !subs.loading && (
-              <tr><td colSpan={8} className="muted">Không có bài nào.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {rows.length === 0 && !subs.loading ? (
+        <EmptyState
+          title={allRows.length === 0 ? "Chưa có bài nộp nào" : "Không có bài khớp bộ lọc"}
+          body={allRows.length === 0 ? "Khi học sinh nộp bài, bài sẽ xuất hiện tại đây để giáo viên chấm." : "Thử đổi tên học sinh, chủ đề hoặc trạng thái để mở rộng danh sách."}
+        />
+      ) : (
+        <div className="card table-wrap grading-table-card">
+          <table className="table">
+            <thead>
+              <tr><th>Nộp lúc</th><th>Học sinh</th><th>Chủ đề</th><th>Band</th><th>CEFR</th><th>Trạng thái</th><th>Vi phạm</th><th></th></tr>
+            </thead>
+            <tbody>
+              {rows.map((s) => <Row key={s.id} s={s} onChanged={subs.reload} />)}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -302,39 +306,99 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
       {open && (
         <tr className="detail-row">
           <td colSpan={8}>
-            {/* Đề bài (join từ tests) — nổi bật để GV vừa đọc đề vừa chấm */}
-            <div className="prompt-quote">
-              <strong>📝 Đề bài{s.tests?.title ? ` — ${s.tests.title}` : ""}</strong>
-              {s.tests?.prompt ? (
-                <p>{s.tests.prompt}</p>
-              ) : (
-                <p className="muted small">(đề không còn nội dung — chủ đề: {s.topic_name ?? "—"})</p>
-              )}
-            </div>
-            {s.essay && (
-              <div className="essay-box grading-essay-box">
-                <div className="grading-essay-head">
-                  <strong>Bài viết ({wc(s.essay)} từ):</strong>
-                  <button className="btn small" type="button" onClick={captureSelection}>+ Sửa câu đã chọn</button>
+            <div className="grading-workspace">
+              <div className="grading-main-column">
+                {/* Đề bài (join từ tests) — nổi bật để GV vừa đọc đề vừa chấm */}
+                <div className="prompt-quote">
+                  <strong>Đề bài{s.tests?.title ? ` — ${s.tests.title}` : ""}</strong>
+                  {s.tests?.prompt ? (
+                    <p>{s.tests.prompt}</p>
+                  ) : (
+                    <p className="muted small">(đề không còn nội dung — chủ đề: {s.topic_name ?? "—"})</p>
+                  )}
                 </div>
-                <p ref={essayRef}>{s.essay}</p>
-              </div>
-            )}
-            <div className="structured-corrections card sub">
-              <h3>Sửa câu có cấu trúc</h3>
-              <p className="muted small">Bôi chọn câu sai trong bài viết → bấm “+ Sửa câu đã chọn” → nhập câu sửa. Dữ liệu này dùng để highlight chính xác ở trang học sinh.</p>
-              <div className="correction-admin-list">
-                {corrections.map((c, idx) => (
-                  <div className="correction-admin-item" key={c.id}>
-                    <div className="correction-label">Lỗi #{idx + 1}</div>
-                    <div className="correction-original">{c.original}</div>
-                    {c.note && <div className="muted small">Lỗi: {c.note}</div>}
-                    <div className="correction-fixed">{c.corrected}</div>
-                    <button className="btn ghost small danger" type="button" onClick={() => removeCorrection(c.id)}>Xóa sửa câu</button>
+                {s.essay ? (
+                  <div className="essay-box grading-essay-box">
+                    <div className="grading-essay-head">
+                      <div>
+                        <strong>Bài viết của học viên</strong>
+                        <p className="muted small">{wc(s.essay)} từ · bôi chọn đoạn sai rồi bấm sửa câu</p>
+                      </div>
+                      <button className="btn small" type="button" onClick={captureSelection}>+ Sửa câu đã chọn</button>
+                    </div>
+                    <p ref={essayRef}>{s.essay}</p>
                   </div>
-                ))}
-                {corrections.length === 0 && <div className="muted small">Chưa có câu sửa có cấu trúc.</div>}
+                ) : (
+                  <EmptyState title="Bài nộp này chưa có nội dung viết" body="Có thể đây là bài trắc nghiệm hoặc dữ liệu cũ không lưu essay." />
+                )}
+                <div className="structured-corrections card sub">
+                  <div className="card-title-row compact">
+                    <div>
+                      <h3>Sửa câu chi tiết</h3>
+                      <p className="muted small">Các lỗi này sẽ được highlight ở trang tiến bộ của học sinh.</p>
+                    </div>
+                    <span className="pill">{corrections.length} lỗi</span>
+                  </div>
+                  <div className="correction-admin-list">
+                    {corrections.map((c, idx) => (
+                      <div className="correction-admin-item" key={c.id}>
+                        <div className="correction-label">Lỗi #{idx + 1}</div>
+                        <div className="correction-original">{c.original}</div>
+                        {c.note && <div className="muted small">Lỗi: {c.note}</div>}
+                        <div className="correction-arrow">Sửa thành</div>
+                        <div className="correction-fixed">{c.corrected}</div>
+                        <button className="btn ghost small danger" type="button" onClick={() => removeCorrection(c.id)}>Xóa sửa câu</button>
+                      </div>
+                    ))}
+                    {corrections.length === 0 && (
+                      <EmptyState title="Chưa có câu sửa" body="Bôi chọn trực tiếp trong bài viết để thêm lỗi/câu sửa cho học sinh." />
+                    )}
+                  </div>
+                </div>
               </div>
+
+              <aside className="grading-score-panel">
+                <div className="grading-score-card">
+                  <div className="grading-score-head">
+                    <div>
+                      <span className="eyebrow dark">Band</span>
+                      <strong>{overall}</strong>
+                    </div>
+                    <span className="pill">{bandToCefr(overall)}</span>
+                  </div>
+                  <div className="grade-grid">
+                    {CRITERIA.map((c) => (
+                      <label className="field inline" key={c.key}><span>{c.label}</span>
+                        <input type="number" min={0} max={9} step="0.5" value={sc[c.key]}
+                          onChange={(e) => setSc((p) => ({ ...p, [c.key]: Number(e.target.value) }))} />
+                      </label>
+                    ))}
+                  </div>
+                  <label className="field"><span>Nhận xét cho học sinh</span>
+                    <textarea rows={7} value={feedback} onChange={(e) => setFeedback(e.target.value)}
+                      placeholder="Điểm mạnh, điểm cần cải thiện theo từng tiêu chí…" />
+                  </label>
+                  <div className="quick-feedback-row">
+                    <button className="btn ghost small" type="button" onClick={() => appendFeedback("Điểm mạnh: bài có ý tưởng rõ và bám đề tốt.")}>+ Điểm mạnh</button>
+                    <button className="btn ghost small" type="button" onClick={() => appendFeedback("Cần cải thiện: phát triển luận điểm cụ thể hơn, thêm ví dụ và giải thích rõ hơn.")}>+ Cần cải thiện</button>
+                    <button className="btn ghost small" type="button" onClick={() => appendFeedback("Gợi ý luyện tập: viết lại các câu đã sửa và rà soát lỗi ngữ pháp/từ vựng lặp lại.")}>+ Gợi ý luyện</button>
+                  </div>
+                  {s.violation_log && (
+                    <details className="viol-box">
+                      <summary>Nhật ký vi phạm ({s.violations})</summary>
+                      <pre>{s.violation_log}</pre>
+                    </details>
+                  )}
+                  {err && <ErrorBox msg={err} />}
+                  {msg && <span className="ok-text">{msg}</span>}
+                  <div className="actions grading-save-actions">
+                    <button className="btn small primary" disabled={busy} onClick={save}>
+                      {busy ? "Đang lưu…" : s.status === "graded" ? "Cập nhật điểm" : "Lưu điểm & chấm xong"}
+                    </button>
+                    <button className="btn ghost small danger" onClick={remove}>Xóa bài</button>
+                  </div>
+                </div>
+              </aside>
             </div>
             {composeOpen && (
               <div className="correction-compose-backdrop" role="dialog" aria-modal="true" onClick={clearCompose}>
@@ -357,41 +421,6 @@ function Row({ s, onChanged }: { s: Submission; onChanged: () => void }) {
                 </div>
               </div>
             )}
-            {s.violation_log && (
-              <details className="viol-box">
-                <summary>Nhật ký vi phạm ({s.violations})</summary>
-                <pre>{s.violation_log}</pre>
-              </details>
-            )}
-
-            <div className="grade-grid">
-              {CRITERIA.map((c) => (
-                <label className="field inline" key={c.key}><span>{c.label}</span>
-                  <input type="number" min={0} max={9} step="0.5" value={sc[c.key]}
-                    onChange={(e) => setSc((p) => ({ ...p, [c.key]: Number(e.target.value) }))} />
-                </label>
-              ))}
-              <div className="overall-box">
-                Overall: <strong>{overall}</strong> <span className="pill">{bandToCefr(overall)}</span>
-              </div>
-            </div>
-            <label className="field"><span>Nhận xét cho học sinh</span>
-              <textarea rows={4} value={feedback} onChange={(e) => setFeedback(e.target.value)}
-                placeholder="Điểm mạnh, điểm cần cải thiện theo từng tiêu chí…" />
-            </label>
-            <div className="quick-feedback-row">
-              <button className="btn ghost small" type="button" onClick={() => appendFeedback("Điểm mạnh: bài có ý tưởng rõ và bám đề tốt.")}>+ Điểm mạnh</button>
-              <button className="btn ghost small" type="button" onClick={() => appendFeedback("Cần cải thiện: phát triển luận điểm cụ thể hơn, thêm ví dụ và giải thích rõ hơn.")}>+ Cần cải thiện</button>
-              <button className="btn ghost small" type="button" onClick={() => appendFeedback("Gợi ý luyện tập: viết lại các câu đã sửa và rà soát lỗi ngữ pháp/từ vựng lặp lại.")}>+ Gợi ý luyện</button>
-            </div>
-            {err && <ErrorBox msg={err} />}
-            {msg && <span className="ok-text">{msg}</span>}
-            <div className="actions">
-              <button className="btn small primary" disabled={busy} onClick={save}>
-                {busy ? "Đang lưu…" : s.status === "graded" ? "Cập nhật điểm" : "Lưu điểm & chấm xong"}
-              </button>
-              <button className="btn ghost small danger" onClick={remove}>Xóa bài</button>
-            </div>
           </td>
         </tr>
       )}

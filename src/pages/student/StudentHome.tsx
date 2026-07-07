@@ -1,8 +1,17 @@
 // Màn đầu của học sinh: nhập tên + email, chọn Placement / Đọc-Nghe / Writing.
 // Đọc-Nghe dùng lại rpc_list_exams + ExamPage để chấm trắc nghiệm ở server, không lộ đáp án.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listExams, listPlacements, listWritingTopics, studentByCode } from "../../lib/api";
+import {
+  clearStudentIdentity,
+  guestIdentity,
+  identityFromStudentCode,
+  isReadyIdentity,
+  loadStudentIdentity,
+  saveStudentIdentity,
+  type StudentIdentity,
+} from "../../lib/studentSession";
 import { useAsync } from "../../lib/useAsync";
 import { isConfigured } from "../../lib/supabase";
 import { ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/common";
@@ -32,6 +41,7 @@ export default function StudentHome() {
   const [code, setCode] = useState("");
   const [codeMsg, setCodeMsg] = useState<string | null>(null);
   const [codeBusy, setCodeBusy] = useState(false);
+  const [identity, setIdentity] = useState<StudentIdentity | null>(null);
   const [selectedIntensiveTopicId, setSelectedIntensiveTopicId] = useState("");
   const [selectedIntensiveTestId, setSelectedIntensiveTestId] = useState("");
   const [intensiveTouched, setIntensiveTouched] = useState(false);
@@ -62,12 +72,45 @@ export default function StudentHome() {
   const totalWritingPrompts = normalWritingTopics.reduce((sum, topic) => sum + topic.num_prompts, 0);
   const firstPlacement = placements.data?.[0];
 
-  const ready = name.trim().length > 1 && /\S+@\S+\.\S+/.test(email);
+  useEffect(() => {
+    const saved = loadStudentIdentity();
+    if (!saved) return;
+    setIdentity(saved);
+    setName(saved.name);
+    setEmail(saved.email);
+    if (saved.code) setCode(saved.code);
+    setCodeMsg(saved.mode === "student"
+      ? `Đang dùng hồ sơ ${saved.name}${saved.className ? ` · ${saved.className}` : ""}.`
+      : `Đang dùng chế độ khách: ${saved.name}.`
+    );
+  }, []);
+
+  const ready = isReadyIdentity({ name, email });
+
+  function setManualName(nextName: string) {
+    setName(nextName);
+    setIdentity((cur) => cur ? { ...cur, name: nextName } : null);
+  }
+
+  function setManualEmail(nextEmail: string) {
+    setEmail(nextEmail);
+    setIdentity((cur) => cur ? { ...cur, email: nextEmail } : null);
+  }
+
+  function routeState() {
+    return {
+      name: name.trim(),
+      email: email.trim(),
+      studentCode: identity?.code ?? null,
+      studentMode: identity?.mode ?? "guest",
+    };
+  }
 
   function startPlacement(testId: string) {
     setTouched(true);
     if (!ready) return;
-    nav(`/placement/${testId}`, { state: { name: name.trim(), email: email.trim() } });
+    saveStudentIdentity(identity ?? guestIdentity(name, email));
+    nav(`/placement/${testId}`, { state: routeState() });
   }
 
   async function loginByCode() {
@@ -76,9 +119,15 @@ export default function StudentHome() {
     try {
       const s = await studentByCode(code.trim());
       if (!s) { setCodeMsg("Không tìm thấy mã học viên này."); return; }
+      const nextIdentity = identityFromStudentCode(s, code);
+      saveStudentIdentity(nextIdentity);
+      setIdentity(nextIdentity);
       setName(s.full_name);
       if (s.email) setEmail(s.email);
-      setCodeMsg(`Xin chào ${s.full_name}${s.class_name ? ` · ${s.class_name}` : ""}!`);
+      setCodeMsg(s.email
+        ? `Xin chào ${s.full_name}${s.class_name ? ` · ${s.class_name}` : ""}!`
+        : `Đã nhận diện ${s.full_name}, nhưng hồ sơ chưa có email. Vui lòng nhập email để làm bài.`
+      );
     } catch (e) {
       setCodeMsg(e instanceof Error ? e.message : String(e));
     } finally {
@@ -89,22 +138,43 @@ export default function StudentHome() {
   function start(topicId: string) {
     setTouched(true);
     if (!ready) return;
-    nav(`/writing/${topicId}`, { state: { name: name.trim(), email: email.trim() } });
+    saveStudentIdentity(identity ?? guestIdentity(name, email));
+    nav(`/writing/${topicId}`, { state: routeState() });
   }
 
   function startIntensive() {
     setTouched(true);
     setIntensiveTouched(true);
     if (!ready || !selectedIntensiveExamTopic || !selectedIntensiveTestId) return;
+    saveStudentIdentity(identity ?? guestIdentity(name, email));
     nav(`/writing/${selectedIntensiveExamTopic.topic_id}?test=${selectedIntensiveTestId}`, {
-      state: { name: name.trim(), email: email.trim() },
+      state: routeState(),
     });
   }
 
   function startPractice(testId: string) {
     setTouched(true);
     if (!ready) return;
-    nav(`/exam/${testId}`, { state: { name: name.trim(), email: email.trim() } });
+    saveStudentIdentity(identity ?? guestIdentity(name, email));
+    nav(`/exam/${testId}`, { state: routeState() });
+  }
+
+  function continueAsGuest() {
+    setTouched(true);
+    if (!ready) return;
+    const nextIdentity = saveStudentIdentity(guestIdentity(name, email));
+    setIdentity(nextIdentity);
+    setCode("");
+    setCodeMsg(`Đang dùng chế độ khách: ${nextIdentity.name}.`);
+  }
+
+  function logoutStudent() {
+    clearStudentIdentity();
+    setIdentity(null);
+    setName("");
+    setEmail("");
+    setCode("");
+    setCodeMsg(null);
   }
 
   return (
@@ -154,6 +224,18 @@ export default function StudentHome() {
           <p className="muted">Nhập mã học viên hoặc điền tên/email để hệ thống lưu kết quả và vẽ tiến bộ theo thời gian.</p>
         </div>
         <div className="identity-form">
+          {identity && (
+            <div className="student-session-card">
+              <div>
+                <strong>{identity.name}</strong>
+                <p className="muted small">
+                  {identity.mode === "student" ? `Mã HV ${identity.code ?? "—"}` : "Khách"}
+                  {identity.className ? ` · ${identity.className}` : ""} · {identity.email}
+                </p>
+              </div>
+              <button className="btn ghost small" type="button" onClick={logoutStudent}>Đổi người</button>
+            </div>
+          )}
           <div className="row-form code-login premium-code">
             <input placeholder="Có mã học viên? Nhập tại đây…" value={code}
               onChange={(e) => setCode(e.target.value)}
@@ -167,13 +249,14 @@ export default function StudentHome() {
           <div className="grid2">
             <label className="field">
               <span>Họ và tên</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nguyễn Văn A" />
+              <input value={name} onChange={(e) => setManualName(e.target.value)} placeholder="Nguyễn Văn A" />
             </label>
             <label className="field">
               <span>Email</span>
-              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
+              <input value={email} onChange={(e) => setManualEmail(e.target.value)} placeholder="email@example.com" />
             </label>
           </div>
+          <button className="btn ghost" type="button" onClick={continueAsGuest}>Tiếp tục dạng khách</button>
           {touched && !ready && (
             <p className="warn-text">Vui lòng nhập đúng họ tên và email (email dùng để theo dõi tiến bộ).</p>
           )}

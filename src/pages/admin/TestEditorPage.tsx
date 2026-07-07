@@ -8,7 +8,7 @@ import {
 } from "../../lib/api";
 import { uploadMedia } from "../../lib/storage";
 import { useAsync } from "../../lib/useAsync";
-import { ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/common";
+import { EmptyState, ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/common";
 import type { Passage, Question, QType, Skill, Test, Topic } from "../../lib/types";
 
 export default function TestEditorPage() {
@@ -17,7 +17,7 @@ export default function TestEditorPage() {
 
   if (test.loading) return <Spinner />;
   if (test.error) return <ErrorBox msg={test.error} />;
-  if (!test.data) return null;
+  if (!test.data) return <EmptyState title="Không tìm thấy đề" body="Đề có thể đã bị xóa hoặc bạn không còn quyền truy cập." />;
   return <Editor test={test.data} reloadTest={test.reload} />;
 }
 
@@ -81,6 +81,9 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
       {passages.data?.map((p) => (
         <PassageRow key={p.id} passage={p} onChanged={passages.reload} />
       ))}
+      {passages.data && passages.data.length === 0 && !isWriting && (
+        <EmptyState title="Chưa có tư liệu" body="Thêm đoạn đọc hoặc audio trước khi mở đề Đọc/Nghe cho học sinh." />
+      )}
       <NewPassage testId={test.id} onAdded={passages.reload} defaultKind={skill === "listening" ? "audio" : "reading"} />
 
       {skill === "writing" ? (
@@ -93,6 +96,9 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
           {questions.data?.map((q, i) => (
             <QuestionRow key={q.id} index={i + 1} q={q} passages={passages.data ?? []} onChanged={questions.reload} />
           ))}
+          {questions.data && questions.data.length === 0 && (
+            <EmptyState title="Chưa có câu hỏi" body="Thêm câu hỏi đầu tiên để đề có thể tự chấm khi học sinh nộp bài." />
+          )}
           <NewQuestion
             testId={test.id}
             passages={passages.data ?? []}
