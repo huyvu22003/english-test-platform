@@ -1,6 +1,6 @@
 // Hàng đợi chấm: danh sách bài nộp, lọc (tên/chủ đề/trạng thái), xem bài viết +
 // nhật ký vi phạm, CHẤM TAY 4 tiêu chí IELTS (tự tính overall + CEFR), xuất Excel đẹp, xóa.
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   deleteSubmission, gradeWriting, listClassTeachers, listProfiles, listStudents, listSubmissions, bandToCefr, updateSubmission,
 } from "../../lib/api";
@@ -10,6 +10,15 @@ import { useAuth } from "../../lib/auth";
 import type { ClassTeacher, Profile, Student, Submission, WritingCorrection, WritingScores } from "../../lib/types";
 
 type StatusFilter = "all" | "submitted" | "assigned" | "in_review" | "graded";
+type GradingDraft = {
+  scores: WritingScores;
+  feedback: string;
+  corrections: WritingCorrection[];
+  updatedAt: string;
+};
+
+const OPEN_GRADING_KEY = "etp:admin:open-grading-submission";
+const GRADING_DRAFT_PREFIX = "etp:admin:grading-draft:";
 
 export default function SubmissionsPage() {
   const { profile, isAdmin } = useAuth();
@@ -22,6 +31,12 @@ export default function SubmissionsPage() {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [teacherId, setTeacherId] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
+  const [openSubmissionId, setOpenSubmissionId] = useState(() => getStoredOpenSubmissionId());
+
+  useEffect(() => {
+    if (openSubmissionId) writeStorage(OPEN_GRADING_KEY, openSubmissionId);
+    else removeStorage(OPEN_GRADING_KEY);
+  }, [openSubmissionId]);
 
   const topics = useMemo(() => {
     const s = new Set<string>();
@@ -167,6 +182,8 @@ export default function SubmissionsPage() {
                   teacherName={teacherName}
                   onAssign={assignSubmission}
                   onChanged={subs.reload}
+                  open={openSubmissionId === s.id}
+                  onToggle={() => setOpenSubmissionId((current) => (current === s.id ? null : s.id))}
                 />
               ))}
             </tbody>
@@ -254,20 +271,22 @@ const CRITERIA: { key: keyof WritingScores; label: string }[] = [
   { key: "gra", label: "Grammar" },
 ];
 
-function Row({ s, isAdmin, teacherOptions, teacherName, onAssign, onChanged }: {
+function Row({ s, isAdmin, teacherOptions, teacherName, onAssign, onChanged, open, onToggle }: {
   s: Submission;
   isAdmin: boolean;
   teacherOptions: Profile[];
   teacherName: (id?: string | null) => string;
   onAssign: (id: string, assignedTo: string) => Promise<void>;
   onChanged: () => void;
+  open: boolean;
+  onToggle: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [sc, setSc] = useState<WritingScores>({
+  const initialDraft = useMemo(() => readGradingDraft(s.id), [s.id]);
+  const [sc, setSc] = useState<WritingScores>(() => initialDraft?.scores ?? {
     tr: s.score_tr ?? 6, cc: s.score_cc ?? 6, lr: s.score_lr ?? 6, gra: s.score_gra ?? 6,
   });
-  const [feedback, setFeedback] = useState(s.feedback ?? "");
-  const [corrections, setCorrections] = useState<WritingCorrection[]>(s.writing_corrections ?? []);
+  const [feedback, setFeedback] = useState(() => initialDraft?.feedback ?? s.feedback ?? "");
+  const [corrections, setCorrections] = useState<WritingCorrection[]>(() => initialDraft?.corrections ?? s.writing_corrections ?? []);
   const [selectedText, setSelectedText] = useState("");
   const [fixedText, setFixedText] = useState("");
   const [fixNote, setFixNote] = useState("");
@@ -281,6 +300,11 @@ function Row({ s, isAdmin, teacherOptions, teacherName, onAssign, onChanged }: {
 
   const overall = Math.round(((sc.tr + sc.cc + sc.lr + sc.gra) / 4) * 2) / 2;
 
+  useEffect(() => {
+    if (!open) return;
+    writeGradingDraft(s.id, { scores: sc, feedback, corrections, updatedAt: new Date().toISOString() });
+  }, [s.id, open, sc, feedback, corrections]);
+
   async function save() {
     setErr(null); setMsg(null);
     const invalid = CRITERIA.find((c) => !isValidBandScore(sc[c.key]));
@@ -289,6 +313,7 @@ function Row({ s, isAdmin, teacherOptions, teacherName, onAssign, onChanged }: {
     setBusy(true);
     try {
       await gradeWriting(s.id, sc, feedback.trim(), corrections);
+      clearGradingDraft(s.id);
       setMsg("Đã lưu điểm và phản hồi.");
       onChanged();
     } catch (e) {
@@ -349,6 +374,8 @@ function Row({ s, isAdmin, teacherOptions, teacherName, onAssign, onChanged }: {
   async function remove() {
     if (!confirm("Xóa bài nộp này?")) return;
     await deleteSubmission(s.id);
+    clearGradingDraft(s.id);
+    removeStorage(OPEN_GRADING_KEY);
     onChanged();
   }
 
@@ -379,7 +406,7 @@ function Row({ s, isAdmin, teacherOptions, teacherName, onAssign, onChanged }: {
         <td>{s.cefr ?? "—"}</td>
         <td>{s.status === "graded" ? <span className="ok-text">{statusLabel()}</span> : <span className="pill off small">{statusLabel()}</span>}</td>
         <td>{s.violations ? <span className="viol">{s.violations}</span> : "0"}</td>
-        <td><button className="btn ghost small" onClick={() => setOpen((o) => !o)}>{open ? "Đóng" : "Chấm"}</button></td>
+        <td><button className="btn ghost small" onClick={onToggle}>{open ? "Đóng" : "Chấm"}</button></td>
       </tr>
       {open && (
         <tr className="detail-row">
@@ -469,6 +496,7 @@ function Row({ s, isAdmin, teacherOptions, teacherName, onAssign, onChanged }: {
                   )}
                   {err && <ErrorBox msg={err} />}
                   {msg && <span className="ok-text">{msg}</span>}
+                  {initialDraft && !msg && <span className="muted small">Đã khôi phục nháp chấm chưa lưu trên máy này.</span>}
                   <div className="actions grading-save-actions">
                     <button className="btn small primary" disabled={busy} onClick={save}>
                       {busy ? "Đang lưu…" : s.status === "graded" ? "Cập nhật điểm" : "Lưu điểm & chấm xong"}
@@ -508,6 +536,66 @@ function Row({ s, isAdmin, teacherOptions, teacherName, onAssign, onChanged }: {
 
 function isValidBandScore(v: number): boolean {
   return Number.isFinite(v) && v >= 0 && v <= 9 && Math.abs(v * 2 - Math.round(v * 2)) < 0.001;
+}
+function canUseStorage(): boolean {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+function readStorage(key: string): string | null {
+  try {
+    return canUseStorage() ? window.localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
+function writeStorage(key: string, value: string) {
+  try {
+    if (canUseStorage()) window.localStorage.setItem(key, value);
+  } catch {
+    // Storage can be blocked in private modes; grading still works without draft restore.
+  }
+}
+function removeStorage(key: string) {
+  try {
+    if (canUseStorage()) window.localStorage.removeItem(key);
+  } catch {
+    // Ignore storage cleanup failures.
+  }
+}
+function getStoredOpenSubmissionId(): string | null {
+  const value = readStorage(OPEN_GRADING_KEY);
+  return value?.trim() || null;
+}
+function gradingDraftKey(submissionId: string): string {
+  return `${GRADING_DRAFT_PREFIX}${submissionId}`;
+}
+function readGradingDraft(submissionId: string): GradingDraft | null {
+  const raw = readStorage(gradingDraftKey(submissionId));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<GradingDraft>;
+    if (!parsed.scores || !Array.isArray(parsed.corrections)) return null;
+    const scores = parsed.scores as Partial<WritingScores>;
+    if (!["tr", "cc", "lr", "gra"].every((key) => typeof scores[key as keyof WritingScores] === "number")) return null;
+    return {
+      scores: {
+        tr: scores.tr as number,
+        cc: scores.cc as number,
+        lr: scores.lr as number,
+        gra: scores.gra as number,
+      },
+      feedback: typeof parsed.feedback === "string" ? parsed.feedback : "",
+      corrections: parsed.corrections,
+      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : "",
+    };
+  } catch {
+    return null;
+  }
+}
+function writeGradingDraft(submissionId: string, draft: GradingDraft) {
+  writeStorage(gradingDraftKey(submissionId), JSON.stringify(draft));
+}
+function clearGradingDraft(submissionId: string) {
+  removeStorage(gradingDraftKey(submissionId));
 }
 function num(v: number | null | undefined): string {
   return v == null ? "" : String(v);
