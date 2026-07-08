@@ -231,7 +231,7 @@ export default function StudentHome() {
             <span className="eyebrow">Assessment Platform · CEFR / IELTS</span>
             <h1>
               <span>IELTS Ms. TRÀ MY</span>
-              <span>HỆ THỐNG ĐÁNH GIÁ NĂNG LỰC TIẾNG ANH VÀ THEO DÕI TIẾN ĐỘ</span>
+              <span>HỆ THỐNG ĐÁNH GIÁ NĂNG LỰC TIẾNG ANH VÀ THEO DÕI TIẾN BỘ</span>
             </h1>
             <p className="tagline">
               Làm bài xếp lớp, luyện Đọc/Nghe, viết IELTS và xem hành trình tiến bộ — tất cả trong một nền tảng dành cho học viên IELTS Ms. Trà My.

@@ -604,8 +604,8 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 .hero-copy h1 {
   max-width: 840px;
   margin: 8px 0 0;
-  font-size: clamp(32px, 4.1vw, 52px);
-  line-height: 1.1;
+  font-size: clamp(29px, 3.7vw, 47px);
+  line-height: 1.14;
   font-weight: 650;
   letter-spacing: 0;
   text-wrap: balance;
@@ -846,8 +846,8 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   .hero-grid, .identity-card, .learning-block, .quick-guide-grid { grid-template-columns: 1fr; }
   .hero-grid { gap: 18px; margin-top: 24px; }
   .hero-copy h1 {
-    font-size: clamp(28px, 8.2vw, 38px);
-    line-height: 1.12;
+    font-size: clamp(26px, 7.4vw, 34px);
+    line-height: 1.16;
     letter-spacing: 0;
   }
   .tagline { font-size: 14px; }
