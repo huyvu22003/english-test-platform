@@ -1,8 +1,8 @@
-// Tra cứu tiến bộ theo email: biểu đồ theo kỹ năng + lịch sử bài + chi tiết bài đã chọn.
+// Tra cứu tiến bộ theo mã học sinh: biểu đồ theo kỹ năng + lịch sử bài + chi tiết bài đã chọn.
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getProgress } from "../../lib/api";
-import { loadStudentIdentity } from "../../lib/studentSession";
+import { getProgress, studentByCode } from "../../lib/api";
+import { clearStudentIdentity, identityFromStudentCode, loadStudentIdentity, saveStudentIdentity } from "../../lib/studentSession";
 import { ErrorBox, Spinner } from "../../components/common";
 import type { ProgressItem, Skill } from "../../lib/types";
 
@@ -18,6 +18,7 @@ export default function ProgressPage() {
   const [email, setEmail] = useState("");
   const [studentName, setStudentName] = useState("");
   const [studentCode, setStudentCode] = useState("");
+  const [className, setClassName] = useState("");
   const [items, setItems] = useState<ProgressItem[] | null>(null);
   const [selected, setSelected] = useState<ProgressItem | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,17 +30,28 @@ export default function ProgressPage() {
     setEmail(saved.email);
     setStudentName(saved.name);
     if (saved.code) setStudentCode(saved.code);
+    if (saved.className) setClassName(saved.className);
   }, []);
 
   async function lookup() {
-    const cleanEmail = email.trim();
-    const cleanName = studentName.trim();
     const cleanCode = studentCode.trim();
     if (!cleanCode) { setErr("Chỉ học viên có mã HV mới được xem tiến bộ. Guest chỉ được làm bài xếp lớp."); return; }
-    if (cleanEmail && !/\S+@\S+\.\S+/.test(cleanEmail)) { setErr("Email chưa hợp lệ."); return; }
     setErr(null); setLoading(true); setItems(null); setSelected(null);
     try {
-      const next = await getProgress({ email: cleanEmail, name: cleanName, code: cleanCode });
+      const student = await studentByCode(cleanCode);
+      if (!student) {
+        setEmail("");
+        setStudentName("");
+        setClassName("");
+        setItems([]);
+        setErr("Không tìm thấy mã học sinh này. Vui lòng kiểm tra lại mã.");
+        return;
+      }
+      const identity = saveStudentIdentity(identityFromStudentCode(student, cleanCode));
+      setStudentName(identity.name);
+      setEmail(identity.email);
+      setClassName(identity.className ?? "");
+      const next = await getProgress({ code: cleanCode });
       setItems(next);
       setSelected(null);
     } catch (e) {
@@ -53,9 +65,11 @@ export default function ProgressPage() {
     setEmail("");
     setStudentName("");
     setStudentCode("");
+    setClassName("");
     setItems(null);
     setSelected(null);
     setErr(null);
+    clearStudentIdentity();
   }
 
   const ordered = useMemo(() => [...(items ?? [])].sort(bySubmittedDesc), [items]);
@@ -66,35 +80,41 @@ export default function ProgressPage() {
       <header className="topbar">
         <div>
           <h1>Tiến bộ của bạn</h1>
-          <p className="muted small sub">Nhập email, họ tên hoặc mã học sinh để xem biểu đồ Nghe · Đọc · Viết và lịch sử bài đã làm.</p>
+          <p className="muted small sub">Nhập mã học sinh để hệ thống tự điền hồ sơ và xem biểu đồ Nghe · Đọc · Viết cùng lịch sử bài đã làm.</p>
         </div>
         <Link className="link" to="/">← Trang chủ</Link>
       </header>
 
       <div className="card progress-lookup">
-        <div className="progress-lookup-grid">
-          <input
-            placeholder="Email đã dùng khi thi…"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && lookup()}
-          />
-          <input
-            placeholder="Họ tên học sinh…"
-            value={studentName}
-            onChange={(e) => setStudentName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && lookup()}
-          />
+        <div className="progress-code-row">
           <input
             placeholder="Mã học sinh…"
             value={studentCode}
             onChange={(e) => setStudentCode(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && lookup()}
+            autoFocus
           />
           <button className="btn primary" onClick={lookup}>Xem</button>
           <button className="btn ghost danger" type="button" onClick={clearLookup}>Xóa</button>
         </div>
-        <div className="muted small progress-lookup-hint">Có thể nhập 1 ô. Nếu nhập nhiều ô, hệ thống sẽ lọc chặt hơn để tránh nhầm học viên.</div>
+        <div className="progress-student-grid">
+          <input
+            placeholder="Họ tên học sinh…"
+            value={studentName}
+            readOnly
+          />
+          <input
+            placeholder="Email đã dùng khi thi…"
+            value={email}
+            readOnly
+          />
+          <input
+            placeholder="Lớp…"
+            value={className}
+            readOnly
+          />
+        </div>
+        <div className="muted small progress-lookup-hint">Quy tắc tra cứu: dùng mã học sinh làm khóa chính; họ tên, email và lớp được tự điền từ hồ sơ học sinh.</div>
       </div>
 
       {loading && <Spinner />}

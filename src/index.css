@@ -419,7 +419,9 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 
 /* Progress dashboard */
 .progress-wrap { max-width: 1100px; }
-.progress-lookup-grid { display: grid; grid-template-columns: 1fr 1fr 180px auto auto; gap: 10px; align-items: center; }
+.progress-code-row { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto; gap: 10px; align-items: center; }
+.progress-student-grid { display: grid; grid-template-columns: minmax(190px, 1fr) minmax(220px, 1.1fr) minmax(150px, .7fr); gap: 10px; align-items: center; margin-top: 10px; }
+.progress-student-grid input[readonly] { background: #fafafe; color: var(--ink); }
 .progress-lookup-hint { margin-top: 8px; }
 .progress-summary-grid, .progress-chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
 .progress-skill-card { margin-bottom: 0; }
@@ -478,7 +480,7 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .crit-cards.compact .crit-card { padding: 10px 6px; }
 .crit-cards.compact .crit-val { font-size: 20px; }
 @media (max-width: 860px) {
-  .progress-lookup-grid { grid-template-columns: 1fr; }
+  .progress-code-row, .progress-student-grid { grid-template-columns: 1fr; }
   .progress-modal-backdrop { padding: 10px; align-items: stretch; }
   .progress-modal { max-height: calc(100vh - 20px); }
   .progress-detail-grid { grid-template-columns: 1fr; }
@@ -829,7 +831,7 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
   .title-row .actions .btn { flex: 1 1 160px; }
   h1 { font-size: 23px; line-height: 1.18; }
   h2 { font-size: 19px; }
-  .grid2, .progress-lookup-grid { grid-template-columns: 1fr; }
+  .grid2, .progress-code-row, .progress-student-grid { grid-template-columns: 1fr; }
   .row-form { align-items: stretch; }
   .row-form > input, .row-form > select, .row-form > .btn, .row-form > button { flex: 1 1 100%; }
   .actions { flex-wrap: wrap; align-items: stretch; }
