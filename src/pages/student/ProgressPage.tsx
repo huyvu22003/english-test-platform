@@ -49,6 +49,15 @@ export default function ProgressPage() {
     }
   }
 
+  function clearLookup() {
+    setEmail("");
+    setStudentName("");
+    setStudentCode("");
+    setItems(null);
+    setSelected(null);
+    setErr(null);
+  }
+
   const ordered = useMemo(() => [...(items ?? [])].sort(bySubmittedDesc), [items]);
   const grouped = useMemo(() => groupBySkill(items ?? []), [items]);
 
@@ -83,6 +92,7 @@ export default function ProgressPage() {
             onKeyDown={(e) => e.key === "Enter" && lookup()}
           />
           <button className="btn primary" onClick={lookup}>Xem</button>
+          <button className="btn ghost danger" type="button" onClick={clearLookup}>Xóa</button>
         </div>
         <div className="muted small progress-lookup-hint">Có thể nhập 1 ô. Nếu nhập nhiều ô, hệ thống sẽ lọc chặt hơn để tránh nhầm học viên.</div>
       </div>
