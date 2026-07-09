@@ -27,13 +27,15 @@ export default function DiagnosticsPage() {
   // email -> class_id (nối bài làm vào lớp qua hồ sơ học viên)
   const emailClass = useMemo(() => {
     const m = new Map<string, string | null>();
-    students.data?.forEach((s) => { if (s.email) m.set(s.email.toLowerCase(), s.class_id); });
+    students.data?.forEach((s) => {
+      if (s.email) m.set(s.email.toLowerCase(), s.class_id);
+    });
     return m;
   }, [students.data]);
 
   const graded = useMemo(
     () => (subs.data ?? []).filter((s) => s.status === "graded" && s.score_tr != null),
-    [subs.data]
+    [subs.data],
   );
 
   const filtered = useMemo(() => {
@@ -43,11 +45,10 @@ export default function DiagnosticsPage() {
 
   // Trung bình toàn lớp theo từng tiêu chí
   const classAvg = CRIT.map((c) => ({
-    ...c, value: avg(filtered.map((s) => s[c.key] as number).filter((n): n is number => n != null)),
+    ...c,
+    value: avg(filtered.map((s) => s[c.key] as number).filter((n): n is number => n != null)),
   }));
-  const weakest = classAvg
-    .filter((c) => c.value != null)
-    .sort((a, b) => (a.value as number) - (b.value as number))[0];
+  const weakest = classAvg.filter((c) => c.value != null).sort((a, b) => (a.value as number) - (b.value as number))[0];
   const selectedClassName = classes.data?.find((c) => c.id === classId)?.name;
 
   // Gom theo học viên (email)
@@ -58,15 +59,18 @@ export default function DiagnosticsPage() {
       if (!map.has(key)) map.set(key, { name: s.student_name ?? key, subs: [] });
       map.get(key)!.subs.push(s);
     });
-    return [...map.values()].map((v) => {
-      const crit = CRIT.map((c) => ({
-        ...c, value: avg(v.subs.map((s) => s[c.key] as number).filter((n): n is number => n != null)),
-      }));
-      const weak = crit.filter((c) => c.value != null).sort((a, b) => (a.value as number) - (b.value as number))[0];
-      const overall = avg(v.subs.map((s) => s.overall_band as number).filter((n): n is number => n != null));
-      const latest = v.subs[0];
-      return { name: v.name, count: v.subs.length, crit, weak, overall, cefr: latest?.cefr ?? null };
-    }).sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+    return [...map.values()]
+      .map((v) => {
+        const crit = CRIT.map((c) => ({
+          ...c,
+          value: avg(v.subs.map((s) => s[c.key] as number).filter((n): n is number => n != null)),
+        }));
+        const weak = crit.filter((c) => c.value != null).sort((a, b) => (a.value as number) - (b.value as number))[0];
+        const overall = avg(v.subs.map((s) => s.overall_band as number).filter((n): n is number => n != null));
+        const latest = v.subs[0];
+        return { name: v.name, count: v.subs.length, crit, weak, overall, cefr: latest?.cefr ?? null };
+      })
+      .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
   }, [filtered]);
 
   const loading = subs.loading || students.loading || classes.loading;
@@ -77,28 +81,50 @@ export default function DiagnosticsPage() {
         <div>
           <span className="eyebrow dark">Learning diagnostics</span>
           <h1>Chẩn đoán điểm yếu</h1>
-          <p className="muted small">Phân tích trung bình 4 tiêu chí IELTS theo lớp và theo từng học viên từ các bài đã chấm.</p>
+          <p className="muted small">
+            Phân tích trung bình 4 tiêu chí IELTS theo lớp và theo từng học viên từ các bài đã chấm.
+          </p>
         </div>
       </header>
 
       <section className="admin-stat-grid" aria-label="Tổng quan chẩn đoán">
-        <div className="admin-stat-card"><span>Bài đã chấm</span><strong>{filtered.length}</strong></div>
-        <div className="admin-stat-card"><span>Học viên</span><strong>{perStudent.length}</strong></div>
-        <div className="admin-stat-card"><span>Phạm vi</span><strong>{classId ? "Lớp" : "Tất cả"}</strong></div>
-        <div className="admin-stat-card urgent"><span>Điểm yếu</span><strong>{weakest?.short ?? "—"}</strong></div>
+        <div className="admin-stat-card">
+          <span>Bài đã chấm</span>
+          <strong>{filtered.length}</strong>
+        </div>
+        <div className="admin-stat-card">
+          <span>Học viên</span>
+          <strong>{perStudent.length}</strong>
+        </div>
+        <div className="admin-stat-card">
+          <span>Phạm vi</span>
+          <strong>{classId ? "Lớp" : "Tất cả"}</strong>
+        </div>
+        <div className="admin-stat-card urgent">
+          <span>Điểm yếu</span>
+          <strong>{weakest?.short ?? "—"}</strong>
+        </div>
       </section>
 
       <div className="card admin-form-card diagnostics-filter-card">
         <div className="card-title-row compact">
           <div>
             <h3>Phạm vi phân tích</h3>
-            <p className="muted small">{selectedClassName ? `Đang xem lớp ${selectedClassName}.` : "Đang xem toàn bộ học viên."} Cột đỏ là tiêu chí yếu nhất cần ưu tiên ôn.</p>
+            <p className="muted small">
+              {selectedClassName ? `Đang xem lớp ${selectedClassName}.` : "Đang xem toàn bộ học viên."} Cột đỏ là tiêu
+              chí yếu nhất cần ưu tiên ôn.
+            </p>
           </div>
         </div>
-        <label className="field inline"><span>Lọc theo lớp</span>
+        <label className="field inline">
+          <span>Lọc theo lớp</span>
           <select value={classId} onChange={(e) => setClassId(e.target.value)}>
             <option value="">Tất cả học viên</option>
-            {classes.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {classes.data?.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
           </select>
         </label>
       </div>
@@ -130,7 +156,9 @@ export default function DiagnosticsPage() {
           </div>
         )}
         {weakest && weakest.value != null && (
-          <p className="warn-text">→ Điểm yếu chung: <strong>{weakest.label}</strong> (trung bình {weakest.value}).</p>
+          <p className="warn-text">
+            → Điểm yếu chung: <strong>{weakest.label}</strong> (trung bình {weakest.value}).
+          </p>
         )}
       </div>
 
@@ -139,18 +167,30 @@ export default function DiagnosticsPage() {
         <div className="card table-wrap diagnostics-table-card">
           <table className="table">
             <thead>
-              <tr><th>Học viên</th><th>Bài</th><th>Overall</th><th>CEFR</th>
-                {CRIT.map((c) => <th key={c.key}>{c.short}</th>)}<th>Điểm yếu</th></tr>
+              <tr>
+                <th>Học viên</th>
+                <th>Bài</th>
+                <th>Overall</th>
+                <th>CEFR</th>
+                {CRIT.map((c) => (
+                  <th key={c.key}>{c.short}</th>
+                ))}
+                <th>Điểm yếu</th>
+              </tr>
             </thead>
             <tbody>
               {perStudent.map((p, i) => (
                 <tr key={i}>
                   <td>{p.name}</td>
                   <td>{p.count}</td>
-                  <td><strong>{p.overall ?? "—"}</strong></td>
+                  <td>
+                    <strong>{p.overall ?? "—"}</strong>
+                  </td>
                   <td>{p.cefr ?? "—"}</td>
                   {p.crit.map((c) => (
-                    <td key={c.key} className={p.weak && c.short === p.weak.short ? "cell-weak" : ""}>{c.value ?? "—"}</td>
+                    <td key={c.key} className={p.weak && c.short === p.weak.short ? "cell-weak" : ""}>
+                      {c.value ?? "—"}
+                    </td>
                   ))}
                   <td className="small">{p.weak?.label ?? "—"}</td>
                 </tr>

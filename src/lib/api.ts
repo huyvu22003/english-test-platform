@@ -2,10 +2,33 @@
 // để component không phải biết chi tiết. Đáp án học sinh luôn đi qua RPC.
 import { supabase } from "./supabase";
 import type {
-  AnswerMap, ClassRow, ClassTeacher, ExamListItem, ExamSession, Level, Passage, PickedPrompt,
-  PlacementItem, PlacementResult, Profile, ProgressItem, PublicTest, Question, SessionByCode,
-  SessionSubmitResult, Skill, Student, StudentByCode, Submission, SubmitResult, Test,
-  TestWithTopic, Topic, WritingCorrection, WritingScores, WritingTopic,
+  AnswerMap,
+  ClassRow,
+  ClassTeacher,
+  ExamListItem,
+  ExamSession,
+  Level,
+  Passage,
+  PickedPrompt,
+  PlacementItem,
+  PlacementResult,
+  Profile,
+  ProgressItem,
+  PublicTest,
+  Question,
+  SessionByCode,
+  SessionSubmitResult,
+  Skill,
+  Student,
+  StudentByCode,
+  Submission,
+  SubmitResult,
+  Test,
+  TestWithTopic,
+  Topic,
+  WritingCorrection,
+  WritingScores,
+  WritingTopic,
 } from "./types";
 
 // Trả client hoặc báo lỗi rõ ràng khi chưa cấu hình .env (tránh crash khó hiểu).
@@ -37,8 +60,14 @@ export async function getTest(testId: string): Promise<PublicTest> {
 }
 
 export async function submitExam(args: {
-  testId: string; name: string; email: string; answers: AnswerMap;
-  violations: number; log: string; startedAt: string; essay?: string | null;
+  testId: string;
+  name: string;
+  email: string;
+  answers: AnswerMap;
+  violations: number;
+  log: string;
+  startedAt: string;
+  essay?: string | null;
 }): Promise<SubmitResult> {
   const res = await db().rpc("rpc_submit", {
     p_test_id: args.testId,
@@ -81,12 +110,21 @@ export async function pickPrompt(topicId: string, testId?: string | null): Promi
 }
 
 export async function submitWriting(args: {
-  testId: string; name: string; email: string; essay: string;
-  violations: number; log: string; startedAt: string;
+  testId: string;
+  name: string;
+  email: string;
+  essay: string;
+  violations: number;
+  log: string;
+  startedAt: string;
 }): Promise<{ submission_id: string }> {
   const res = await db().rpc("rpc_submit_writing", {
-    p_test_id: args.testId, p_name: args.name, p_email: args.email,
-    p_essay: args.essay, p_violations: args.violations, p_log: args.log,
+    p_test_id: args.testId,
+    p_name: args.name,
+    p_email: args.email,
+    p_essay: args.essay,
+    p_violations: args.violations,
+    p_log: args.log,
     p_started_at: args.startedAt,
   });
   return unwrap(res) as { submission_id: string };
@@ -116,15 +154,30 @@ export function bandToCefr(band: number): string {
 }
 
 // Chấm tay bài Viết: 4 tiêu chí -> overall (trung bình, làm tròn 0.5) + CEFR.
-export async function gradeWriting(id: string, s: WritingScores, feedback: string, corrections: WritingCorrection[] = [], graderId?: string): Promise<void> {
+export async function gradeWriting(
+  id: string,
+  s: WritingScores,
+  feedback: string,
+  corrections: WritingCorrection[] = [],
+  graderId?: string,
+): Promise<void> {
   const overall = Math.round(((s.tr + s.cc + s.lr + s.gra) / 4) * 2) / 2;
-  const { error } = await db().from("submissions").update({
-    score_tr: s.tr, score_cc: s.cc, score_lr: s.lr, score_gra: s.gra,
-    overall_band: overall, cefr: bandToCefr(overall), feedback,
-    writing_corrections: corrections,
-    status: "graded", graded_at: new Date().toISOString(),
-    graded_by: graderId ?? null,
-  }).eq("id", id);
+  const { error } = await db()
+    .from("submissions")
+    .update({
+      score_tr: s.tr,
+      score_cc: s.cc,
+      score_lr: s.lr,
+      score_gra: s.gra,
+      overall_band: overall,
+      cefr: bandToCefr(overall),
+      feedback,
+      writing_corrections: corrections,
+      status: "graded",
+      graded_at: new Date().toISOString(),
+      graded_by: graderId ?? null,
+    })
+    .eq("id", id);
   if (error) throw new Error(error.message);
 }
 
@@ -135,12 +188,21 @@ export async function listPlacements(): Promise<PlacementItem[]> {
 }
 
 export async function submitPlacement(args: {
-  testId: string; name: string; email: string; answers: AnswerMap;
-  violations: number; log: string; startedAt: string;
+  testId: string;
+  name: string;
+  email: string;
+  answers: AnswerMap;
+  violations: number;
+  log: string;
+  startedAt: string;
 }): Promise<PlacementResult> {
   const res = await db().rpc("rpc_submit_placement", {
-    p_test_id: args.testId, p_name: args.name, p_email: args.email,
-    p_answers: args.answers, p_violations: args.violations, p_log: args.log,
+    p_test_id: args.testId,
+    p_name: args.name,
+    p_email: args.email,
+    p_answers: args.answers,
+    p_violations: args.violations,
+    p_log: args.log,
     p_started_at: args.startedAt,
   });
   return unwrap(res) as PlacementResult;
@@ -164,27 +226,54 @@ export async function sessionByCode(code: string, email?: string): Promise<Sessi
 }
 
 export async function submitSession(args: {
-  sessionId: string; name: string; email: string;
-  answers: AnswerMap; essay: string | null;
-  violations: number; log: string; startedAt: string;
+  sessionId: string;
+  name: string;
+  email: string;
+  answers: AnswerMap;
+  essay: string | null;
+  violations: number;
+  log: string;
+  startedAt: string;
 }): Promise<SessionSubmitResult> {
   const res = await db().rpc("rpc_submit_session", {
-    p_session_id: args.sessionId, p_name: args.name, p_email: args.email,
-    p_answers: args.answers, p_essay: args.essay, p_violations: args.violations,
-    p_log: args.log, p_started_at: args.startedAt,
+    p_session_id: args.sessionId,
+    p_name: args.name,
+    p_email: args.email,
+    p_answers: args.answers,
+    p_essay: args.essay,
+    p_violations: args.violations,
+    p_log: args.log,
+    p_started_at: args.startedAt,
   });
   return unwrap(res) as SessionSubmitResult;
 }
 
 // Giáo viên: danh sách đề (kèm tên chủ đề + kỹ năng) để chọn khi tạo buổi thi.
 export async function listAllTests(): Promise<TestWithTopic[]> {
-  const rows = unwrap<{
-    id: string; title: string | null; version_label: string; purpose: string; active: boolean;
-    topics: { name: string; skill: Skill; category?: "regular" | "intensive_2026" | null } | null;
-  }[]>(await db().from("tests").select("id,title,version_label,purpose,active,topics(name,skill,category)").order("created_at"));
+  const rows = unwrap<
+    {
+      id: string;
+      title: string | null;
+      version_label: string;
+      purpose: string;
+      active: boolean;
+      topics: { name: string; skill: Skill; category?: "regular" | "intensive_2026" | null } | null;
+    }[]
+  >(
+    await db()
+      .from("tests")
+      .select("id,title,version_label,purpose,active,topics(name,skill,category)")
+      .order("created_at"),
+  );
   return rows.map((r) => ({
-    id: r.id, title: r.title, version_label: r.version_label, purpose: r.purpose, active: r.active,
-    topic_name: r.topics?.name ?? "?", topic_category: r.topics?.category ?? "regular", skill: (r.topics?.skill ?? "reading") as Skill,
+    id: r.id,
+    title: r.title,
+    version_label: r.version_label,
+    purpose: r.purpose,
+    active: r.active,
+    topic_name: r.topics?.name ?? "?",
+    topic_category: r.topics?.category ?? "regular",
+    skill: (r.topics?.skill ?? "reading") as Skill,
   }));
 }
 
@@ -230,7 +319,9 @@ export async function deleteStudent(id: string): Promise<void> {
 
 // ---------- Vận hành: giáo viên, phân quyền, lớp phụ trách ----------
 export async function listProfiles(): Promise<Profile[]> {
-  return unwrap(await db().from("profiles").select("id,email,full_name,role,active,created_at").order("email")) as Profile[];
+  return unwrap(
+    await db().from("profiles").select("id,email,full_name,role,active,created_at").order("email"),
+  ) as Profile[];
 }
 
 export async function updateProfile(id: string, patch: Partial<Profile>): Promise<Profile> {
@@ -286,9 +377,7 @@ export async function deleteTopic(id: string): Promise<void> {
 }
 
 export async function listTests(topicId: string): Promise<Test[]> {
-  return unwrap(
-    await db().from("tests").select("*").eq("topic_id", topicId).order("version_label")
-  );
+  return unwrap(await db().from("tests").select("*").eq("topic_id", topicId).order("version_label"));
 }
 
 export async function getTopic(id: string): Promise<Topic> {
@@ -309,9 +398,7 @@ export async function deleteTest(id: string): Promise<void> {
 }
 
 export async function listPassages(testId: string): Promise<Passage[]> {
-  return unwrap(
-    await db().from("passages").select("*").eq("test_id", testId).order("sort_order")
-  );
+  return unwrap(await db().from("passages").select("*").eq("test_id", testId).order("sort_order"));
 }
 
 export async function savePassage(p: Partial<Passage>): Promise<Passage> {
@@ -324,9 +411,7 @@ export async function deletePassage(id: string): Promise<void> {
 }
 
 export async function listQuestions(testId: string): Promise<Question[]> {
-  return unwrap(
-    await db().from("questions").select("*").eq("test_id", testId).order("sort_order")
-  );
+  return unwrap(await db().from("questions").select("*").eq("test_id", testId).order("sort_order"));
 }
 
 export async function saveQuestion(q: Partial<Question>): Promise<Question> {
@@ -342,7 +427,7 @@ export async function deleteQuestion(id: string): Promise<void> {
 export async function listSubmissions(): Promise<Submission[]> {
   // Kèm đề bài (join tests) để GV thấy ĐỀ ngay khi chấm — khỏi mở đề riêng.
   return unwrap(
-    await db().from("submissions").select("*, tests(prompt, title)").order("submitted_at", { ascending: false })
+    await db().from("submissions").select("*, tests(prompt, title)").order("submitted_at", { ascending: false }),
   );
 }
 

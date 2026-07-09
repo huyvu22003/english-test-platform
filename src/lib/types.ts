@@ -30,9 +30,9 @@ export interface Test {
   topic_id: string;
   version_label: string;
   title: string | null;
-  prompt: string | null;          // đề bài Task 2 (writing)
+  prompt: string | null; // đề bài Task 2 (writing)
   purpose: "placement" | "progress" | "exit";
-  pass_threshold: number;         // ngưỡng đạt mỗi mức (placement)
+  pass_threshold: number; // ngưỡng đạt mỗi mức (placement)
   time_limit_min: number;
   min_words: number;
   active: boolean;
@@ -59,7 +59,7 @@ export interface Question {
   options: string[];
   correct: string | string[]; // theo GIÁ TRỊ lựa chọn (xem schema)
   points: number;
-  cefr_level: Cefr | null;     // gắn mức cho placement
+  cefr_level: Cefr | null; // gắn mức cho placement
 }
 
 // Câu hỏi phía HỌC SINH (KHÔNG có `correct` — do rpc_get_test loại bỏ).
@@ -190,10 +190,10 @@ export interface ProgressItem {
 
 // 4 tiêu chí IELTS Writing
 export interface WritingScores {
-  tr: number;   // Task Response
-  cc: number;   // Coherence & Cohesion
-  lr: number;   // Lexical Resource
-  gra: number;  // Grammatical Range & Accuracy
+  tr: number; // Task Response
+  cc: number; // Coherence & Cohesion
+  lr: number; // Lexical Resource
+  gra: number; // Grammatical Range & Accuracy
 }
 
 export interface Level {
@@ -251,7 +251,7 @@ export interface PlacementLevelStat {
 
 export interface PlacementResult {
   submission_id: string;
-  cefr: Cefr | null;        // null = chưa đạt A1
+  cefr: Cefr | null; // null = chưa đạt A1
   detail: PlacementLevelStat[];
 }
 

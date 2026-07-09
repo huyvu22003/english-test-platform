@@ -19,7 +19,12 @@ export default function WritingExamPage() {
   const nav = useNavigate();
   const loc = useLocation();
   const savedIdentity = loadStudentIdentity();
-  const routeMeta = (loc.state ?? {}) as { name?: string; email?: string; studentCode?: string | null; studentMode?: string };
+  const routeMeta = (loc.state ?? {}) as {
+    name?: string;
+    email?: string;
+    studentCode?: string | null;
+    studentMode?: string;
+  };
   const meta = {
     name: routeMeta.name ?? savedIdentity?.name,
     email: routeMeta.email ?? savedIdentity?.email,
@@ -46,7 +51,13 @@ export default function WritingExamPage() {
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
       if (submitting || !data.data) return;
-      if (reason === "manual" && data.data.min_words > 0 && wordCount < data.data.min_words && !confirm(`Bài chưa đủ ${data.data.min_words} từ. Vẫn nộp bài?`)) return;
+      if (
+        reason === "manual" &&
+        data.data.min_words > 0 &&
+        wordCount < data.data.min_words &&
+        !confirm(`Bài chưa đủ ${data.data.min_words} từ. Vẫn nộp bài?`)
+      )
+        return;
       setSubmitting(true);
       setSubmitErr(null);
       try {
@@ -61,7 +72,13 @@ export default function WritingExamPage() {
         });
         if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
         nav("/result", {
-          state: { writing: true, name: meta.name, topic: data.data.topic_name, auto: reason !== "manual", stoppedForViolations: reason === "violations" },
+          state: {
+            writing: true,
+            name: meta.name,
+            topic: data.data.topic_name,
+            auto: reason !== "manual",
+            stoppedForViolations: reason === "violations",
+          },
           replace: true,
         });
       } catch (e) {
@@ -69,12 +86,15 @@ export default function WritingExamPage() {
         setSubmitting(false);
       }
     },
-    [submitting, data.data, wordCount, meta, essay, ac.violations, ac.log, nav]
+    [submitting, data.data, wordCount, meta, essay, ac.violations, ac.log, nav],
   );
 
   useEffect(() => {
     if (!started || secondsLeft === null) return;
-    if (secondsLeft <= 0) { void doSubmit("timeout"); return; }
+    if (secondsLeft <= 0) {
+      void doSubmit("timeout");
+      return;
+    }
     const id = window.setTimeout(() => setSecondsLeft((s) => (s === null ? null : s - 1)), 1000);
     return () => window.clearTimeout(id);
   }, [started, secondsLeft, doSubmit]);
@@ -83,8 +103,18 @@ export default function WritingExamPage() {
     if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
   }, [started, ac.violations, doSubmit]);
 
-  if (data.loading) return <div className="wrap"><Spinner label={selectedTestId ? "Đang mở đề đã chọn…" : "Đang bốc đề…"} /></div>;
-  if (data.error) return <div className="wrap"><ErrorBox msg={data.error} /></div>;
+  if (data.loading)
+    return (
+      <div className="wrap">
+        <Spinner label={selectedTestId ? "Đang mở đề đã chọn…" : "Đang bốc đề…"} />
+      </div>
+    );
+  if (data.error)
+    return (
+      <div className="wrap">
+        <ErrorBox msg={data.error} />
+      </div>
+    );
   if (!data.data) return null;
   const p = data.data;
 
@@ -95,14 +125,26 @@ export default function WritingExamPage() {
           <span className="eyebrow dark">Writing task</span>
           <h1>{p.topic_name}</h1>
           <div className="exam-start-meta">
-            <span><b>{p.time_limit_min}′</b> thời gian</span>
-            <span><b>{p.min_words}</b> từ tối thiểu</span>
-            <span><b>{MAX_ALLOWED_VIOLATIONS}</b> lần vi phạm tối đa</span>
+            <span>
+              <b>{p.time_limit_min}′</b> thời gian
+            </span>
+            <span>
+              <b>{p.min_words}</b> từ tối thiểu
+            </span>
+            <span>
+              <b>{MAX_ALLOWED_VIOLATIONS}</b> lần vi phạm tối đa
+            </span>
           </div>
           <ul className="steps exam-start-steps">
-            <li>Bài chạy ở chế độ <strong>toàn màn hình</strong>; rời tab/sao chép/dán đều bị <strong>ghi nhận</strong>.</li>
-            <li>Nếu vi phạm <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.</li>
-            <li>Hết giờ hệ thống <strong>tự nộp</strong>. Bài sẽ do <strong>giáo viên chấm tay</strong>.</li>
+            <li>
+              Bài chạy ở chế độ <strong>toàn màn hình</strong>; rời tab/sao chép/dán đều bị <strong>ghi nhận</strong>.
+            </li>
+            <li>
+              Nếu vi phạm <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.
+            </li>
+            <li>
+              Hết giờ hệ thống <strong>tự nộp</strong>. Bài sẽ do <strong>giáo viên chấm tay</strong>.
+            </li>
           </ul>
           <button
             className="btn primary big exam-start-button"
@@ -123,9 +165,15 @@ export default function WritingExamPage() {
   return (
     <div className="wrap exam">
       <div className="exam-bar">
-        <div><strong>{p.topic_name}</strong> <span className="muted">— {meta.name}</span></div>
+        <div>
+          <strong>{p.topic_name}</strong> <span className="muted">— {meta.name}</span>
+        </div>
         <div className="exam-bar-right">
-          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}</span>}
+          {ac.violations > 0 && (
+            <span className="viol">
+              Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}
+            </span>
+          )}
           <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
             ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
           </span>
@@ -135,8 +183,12 @@ export default function WritingExamPage() {
       {ac.warning && <div className="warn-banner">{ac.warning}</div>}
 
       <div className="exam-progress-strip">
-        <span><strong>{wordCount}</strong>/{p.min_words} từ</span>
-        <span>{ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm</span>
+        <span>
+          <strong>{wordCount}</strong>/{p.min_words} từ
+        </span>
+        <span>
+          {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
+        </span>
       </div>
 
       <div className="card passage exam-material-card">
@@ -162,7 +214,9 @@ export default function WritingExamPage() {
         <p className="warn-text">Bài chưa đạt tối thiểu {p.min_words} từ — vẫn có thể nộp nhưng nên viết thêm.</p>
       )}
       <div className="exam-submit-panel">
-        <span className="muted small">Số từ hiện tại: {wordCount}/{p.min_words}.</span>
+        <span className="muted small">
+          Số từ hiện tại: {wordCount}/{p.min_words}.
+        </span>
         <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
           {submitting ? "Đang nộp…" : "Nộp bài"}
         </button>

@@ -3,8 +3,15 @@
 import { useState, type ChangeEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  deletePassage, deleteQuestion, getTestAdmin, getTopic, listPassages,
-  listQuestions, savePassage, saveQuestion, saveTest,
+  deletePassage,
+  deleteQuestion,
+  getTestAdmin,
+  getTopic,
+  listPassages,
+  listQuestions,
+  savePassage,
+  saveQuestion,
+  saveTest,
 } from "../../lib/api";
 import { uploadMedia } from "../../lib/storage";
 import { useAsync } from "../../lib/useAsync";
@@ -17,7 +24,8 @@ export default function TestEditorPage() {
 
   if (test.loading) return <Spinner />;
   if (test.error) return <ErrorBox msg={test.error} />;
-  if (!test.data) return <EmptyState title="Không tìm thấy đề" body="Đề có thể đã bị xóa hoặc bạn không còn quyền truy cập." />;
+  if (!test.data)
+    return <EmptyState title="Không tìm thấy đề" body="Đề có thể đã bị xóa hoặc bạn không còn quyền truy cập." />;
   return <Editor test={test.data} reloadTest={test.reload} />;
 }
 
@@ -32,16 +40,33 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
   const hasQuestions = (questions.data?.length ?? 0) > 0;
   const hasPassage = (passages.data?.length ?? 0) > 0;
 
-  const backTo = isIntensive ? "/admin/topics/intensive" : skill && ["writing", "reading", "listening"].includes(skill) ? `/admin/topics/${skill}` : "/admin/topics";
-  const backLabel = isIntensive ? "Học tăng cường 2026" : skill === "writing" ? "Đề Viết" : skill === "reading" ? "Đề Đọc" : skill === "listening" ? "Đề Nghe" : "Ngân hàng đề";
+  const backTo = isIntensive
+    ? "/admin/topics/intensive"
+    : skill && ["writing", "reading", "listening"].includes(skill)
+      ? `/admin/topics/${skill}`
+      : "/admin/topics";
+  const backLabel = isIntensive
+    ? "Học tăng cường 2026"
+    : skill === "writing"
+      ? "Đề Viết"
+      : skill === "reading"
+        ? "Đề Đọc"
+        : skill === "listening"
+          ? "Đề Nghe"
+          : "Ngân hàng đề";
 
   return (
     <div className="admin-page test-editor-page">
-      <Link className="link" to={backTo}>← {backLabel}</Link>
+      <Link className="link" to={backTo}>
+        ← {backLabel}
+      </Link>
       <header className="admin-page-head test-editor-head">
         <div>
           <span className="eyebrow dark">Test editor</span>
-          <h1>Soạn đề {test.version_label}{test.title ? ` — ${test.title}` : ""}</h1>
+          <h1>
+            Soạn đề {test.version_label}
+            {test.title ? ` — ${test.title}` : ""}
+          </h1>
           <p className="muted small">{topic.data?.name ?? "Đang tải chủ đề…"}</p>
         </div>
         <div className="test-editor-badges">
@@ -52,22 +77,42 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
       </header>
 
       <section className="admin-stat-grid" aria-label="Tổng quan đề thi">
-        <div className={`admin-stat-card ${test.active ? "" : "urgent"}`}><span>Trạng thái</span><strong>{test.active ? "Mở" : "Khóa"}</strong></div>
-        <div className="admin-stat-card"><span>Thời gian</span><strong>{test.time_limit_min}′</strong></div>
-        <div className="admin-stat-card"><span>Tư liệu</span><strong>{passages.data?.length ?? 0}</strong></div>
-        <div className="admin-stat-card"><span>Câu hỏi</span><strong>{questions.data?.length ?? 0}</strong></div>
+        <div className={`admin-stat-card ${test.active ? "" : "urgent"}`}>
+          <span>Trạng thái</span>
+          <strong>{test.active ? "Mở" : "Khóa"}</strong>
+        </div>
+        <div className="admin-stat-card">
+          <span>Thời gian</span>
+          <strong>{test.time_limit_min}′</strong>
+        </div>
+        <div className="admin-stat-card">
+          <span>Tư liệu</span>
+          <strong>{passages.data?.length ?? 0}</strong>
+        </div>
+        <div className="admin-stat-card">
+          <span>Câu hỏi</span>
+          <strong>{questions.data?.length ?? 0}</strong>
+        </div>
       </section>
 
       <div className="card sub editor-checklist-card">
         <strong>Checklist trước khi mở cho học sinh</strong>
         <ul className="compact-list">
-          <li className={test.active ? "ok-text" : "warn-text"}>{test.active ? "✓ Đề đang mở" : "• Đề đang khóa — học sinh chưa thấy"}</li>
+          <li className={test.active ? "ok-text" : "warn-text"}>
+            {test.active ? "✓ Đề đang mở" : "• Đề đang khóa — học sinh chưa thấy"}
+          </li>
           {isWriting ? (
-            <li className={hasPrompt ? "ok-text" : "warn-text"}>{hasPrompt ? "✓ Đã có prompt Writing" : "• Chưa có prompt Writing"}</li>
+            <li className={hasPrompt ? "ok-text" : "warn-text"}>
+              {hasPrompt ? "✓ Đã có prompt Writing" : "• Chưa có prompt Writing"}
+            </li>
           ) : (
             <>
-              <li className={hasPassage ? "ok-text" : "warn-text"}>{hasPassage ? "✓ Đã có tư liệu" : "• Chưa có đoạn đọc/audio"}</li>
-              <li className={hasQuestions ? "ok-text" : "warn-text"}>{hasQuestions ? `✓ Đã có ${questions.data?.length ?? 0} câu hỏi` : "• Chưa có câu hỏi"}</li>
+              <li className={hasPassage ? "ok-text" : "warn-text"}>
+                {hasPassage ? "✓ Đã có tư liệu" : "• Chưa có đoạn đọc/audio"}
+              </li>
+              <li className={hasQuestions ? "ok-text" : "warn-text"}>
+                {hasQuestions ? `✓ Đã có ${questions.data?.length ?? 0} câu hỏi` : "• Chưa có câu hỏi"}
+              </li>
             </>
           )}
         </ul>
@@ -84,7 +129,11 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
       {passages.data && passages.data.length === 0 && !isWriting && (
         <EmptyState title="Chưa có tư liệu" body="Thêm đoạn đọc hoặc audio trước khi mở đề Đọc/Nghe cho học sinh." />
       )}
-      <NewPassage testId={test.id} onAdded={passages.reload} defaultKind={skill === "listening" ? "audio" : "reading"} />
+      <NewPassage
+        testId={test.id}
+        onAdded={passages.reload}
+        defaultKind={skill === "listening" ? "audio" : "reading"}
+      />
 
       {skill === "writing" ? (
         <p className="muted section">Đề Viết: học sinh nhập bài luận, không cần câu hỏi trắc nghiệm.</p>
@@ -97,7 +146,10 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
             <QuestionRow key={q.id} index={i + 1} q={q} passages={passages.data ?? []} onChanged={questions.reload} />
           ))}
           {questions.data && questions.data.length === 0 && (
-            <EmptyState title="Chưa có câu hỏi" body="Thêm câu hỏi đầu tiên để đề có thể tự chấm khi học sinh nộp bài." />
+            <EmptyState
+              title="Chưa có câu hỏi"
+              body="Thêm câu hỏi đầu tiên để đề có thể tự chấm khi học sinh nộp bài."
+            />
           )}
           <NewQuestion
             testId={test.id}
@@ -126,14 +178,20 @@ function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => voi
   const isPlacement = purpose === "placement";
 
   async function save() {
-    setErr(null); setMsg(null);
+    setErr(null);
+    setMsg(null);
     try {
       await saveTest({
-        id: test.id, topic_id: test.topic_id,
-        title: title.trim() || null, prompt: prompt.trim() || null,
-        version_label: version.trim() || "A", purpose,
+        id: test.id,
+        topic_id: test.topic_id,
+        title: title.trim() || null,
+        prompt: prompt.trim() || null,
+        version_label: version.trim() || "A",
+        purpose,
         pass_threshold: Number(threshold) || 0.6,
-        time_limit_min: Number(time) || 0, min_words: Number(minWords) || 0, active,
+        time_limit_min: Number(time) || 0,
+        min_words: Number(minWords) || 0,
+        active,
       });
       setMsg("Đã lưu.");
       onSaved();
@@ -144,24 +202,38 @@ function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => voi
 
   return (
     <div className="card admin-form-card editor-meta-card">
-      <div className="card-title-row compact"><div><h3>Thông tin đề</h3><p className="muted small">Thiết lập tiêu đề, thời gian, mục đích và trạng thái hiển thị.</p></div></div>
+      <div className="card-title-row compact">
+        <div>
+          <h3>Thông tin đề</h3>
+          <p className="muted small">Thiết lập tiêu đề, thời gian, mục đích và trạng thái hiển thị.</p>
+        </div>
+      </div>
       {isWriting && (
-        <label className="field"><span>Đề bài (prompt) — học sinh sẽ thấy</span>
-          <textarea rows={4} value={prompt} onChange={(e) => setPrompt(e.target.value)}
-            placeholder="vd: Some people think that… Discuss both views and give your opinion." />
+        <label className="field">
+          <span>Đề bài (prompt) — học sinh sẽ thấy</span>
+          <textarea
+            rows={4}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="vd: Some people think that… Discuss both views and give your opinion."
+          />
         </label>
       )}
       <div className="grid2">
-        <label className="field"><span>Tiêu đề đề</span>
+        <label className="field">
+          <span>Tiêu đề đề</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="vd: The History of Tea" />
         </label>
-        <label className="field"><span>Phiên bản</span>
+        <label className="field">
+          <span>Phiên bản</span>
           <input value={version} onChange={(e) => setVersion(e.target.value)} />
         </label>
-        <label className="field"><span>Thời gian (phút)</span>
+        <label className="field">
+          <span>Thời gian (phút)</span>
           <input type="number" value={time} onChange={(e) => setTime(Number(e.target.value))} />
         </label>
-        <label className="field"><span>Mục đích</span>
+        <label className="field">
+          <span>Mục đích</span>
           <select value={purpose} onChange={(e) => setPurpose(e.target.value as Test["purpose"])}>
             <option value="progress">Luyện tập (progress)</option>
             <option value="placement">Xếp lớp (placement — tự chấm CEFR)</option>
@@ -169,25 +241,39 @@ function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => voi
           </select>
         </label>
         {isWriting && (
-          <label className="field"><span>Số từ tối thiểu</span>
+          <label className="field">
+            <span>Số từ tối thiểu</span>
             <input type="number" value={minWords} onChange={(e) => setMinWords(Number(e.target.value))} />
           </label>
         )}
         {isPlacement && (
-          <label className="field"><span>Ngưỡng đạt mỗi mức (0–1)</span>
-            <input type="number" min={0} max={1} step="0.05" value={threshold} onChange={(e) => setThreshold(Number(e.target.value))} />
+          <label className="field">
+            <span>Ngưỡng đạt mỗi mức (0–1)</span>
+            <input
+              type="number"
+              min={0}
+              max={1}
+              step="0.05"
+              value={threshold}
+              onChange={(e) => setThreshold(Number(e.target.value))}
+            />
           </label>
         )}
       </div>
       {isPlacement && (
-        <p className="muted small">Đề xếp lớp: gắn <strong>mức CEFR</strong> cho từng câu hỏi bên dưới. Kết quả = mức cao nhất đạt liên tiếp (đúng ≥ ngưỡng).</p>
+        <p className="muted small">
+          Đề xếp lớp: gắn <strong>mức CEFR</strong> cho từng câu hỏi bên dưới. Kết quả = mức cao nhất đạt liên tiếp
+          (đúng ≥ ngưỡng).
+        </p>
       )}
       <label className="check">
         <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
         <span>Mở cho học sinh (active)</span>
       </label>
       <div className="actions">
-        <button className="btn primary" onClick={save}>Lưu đề</button>
+        <button className="btn primary" onClick={save}>
+          Lưu đề
+        </button>
         {msg && <span className="ok-text">{msg}</span>}
       </div>
       {err && <ErrorBox msg={err} />}
@@ -216,7 +302,8 @@ function PassageRow({ passage, onChanged }: { passage: Passage; onChanged: () =>
   async function onUpload(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setErr(null); setUploading(true);
+    setErr(null);
+    setUploading(true);
     try {
       const url = await uploadMedia(file);
       setMedia(url);
@@ -244,25 +331,39 @@ function PassageRow({ passage, onChanged }: { passage: Passage; onChanged: () =>
       {uploading && <p className="muted small">Đang tải lên…</p>}
       {err && <ErrorBox msg={err} />}
 
-      <label className="field"><span>Hoặc dán link media (R2/URL{passage.kind === "reading" ? " ảnh — tùy chọn" : " audio"})</span>
+      <label className="field">
+        <span>Hoặc dán link media (R2/URL{passage.kind === "reading" ? " ảnh — tùy chọn" : " audio"})</span>
         <input value={media} onChange={(e) => setMedia(e.target.value)} placeholder="https://media.tenmien.com/..." />
       </label>
 
-      {media && (isAudio ? (
-        <audio controls src={media} style={{ width: "100%", marginTop: 6 }} />
-      ) : (
-        <img src={media} alt="tư liệu" style={{ maxWidth: "100%", marginTop: 6, borderRadius: 8 }} />
-      ))}
+      {media &&
+        (isAudio ? (
+          <audio controls src={media} style={{ width: "100%", marginTop: 6 }} />
+        ) : (
+          <img src={media} alt="tư liệu" style={{ maxWidth: "100%", marginTop: 6, borderRadius: 8 }} />
+        ))}
 
       <div className="actions">
-        <button className="btn small" onClick={save}>Lưu</button>
-        <button className="btn ghost small danger" onClick={remove}>Xóa</button>
+        <button className="btn small" onClick={save}>
+          Lưu
+        </button>
+        <button className="btn ghost small danger" onClick={remove}>
+          Xóa
+        </button>
       </div>
     </div>
   );
 }
 
-function NewPassage({ testId, onAdded, defaultKind }: { testId: string; onAdded: () => void; defaultKind: "reading" | "audio" }) {
+function NewPassage({
+  testId,
+  onAdded,
+  defaultKind,
+}: {
+  testId: string;
+  onAdded: () => void;
+  defaultKind: "reading" | "audio";
+}) {
   const [kind, setKind] = useState<"reading" | "audio">(defaultKind);
   async function add() {
     await savePassage({ test_id: testId, kind, sort_order: 0, body: null, media_url: null });
@@ -271,18 +372,30 @@ function NewPassage({ testId, onAdded, defaultKind }: { testId: string; onAdded:
   return (
     <div className="card sub editor-add-resource">
       <div className="row-form">
-      <select value={kind} onChange={(e) => setKind(e.target.value as "reading" | "audio")}>
-        <option value="reading">Đoạn đọc</option>
-        <option value="audio">Audio</option>
-      </select>
-      <button className="btn small" onClick={add}>+ Thêm tư liệu</button>
+        <select value={kind} onChange={(e) => setKind(e.target.value as "reading" | "audio")}>
+          <option value="reading">Đoạn đọc</option>
+          <option value="audio">Audio</option>
+        </select>
+        <button className="btn small" onClick={add}>
+          + Thêm tư liệu
+        </button>
       </div>
     </div>
   );
 }
 
 // ---------- Câu hỏi ----------
-function QuestionRow({ index, q, passages, onChanged }: { index: number; q: Question; passages: Passage[]; onChanged: () => void }) {
+function QuestionRow({
+  index,
+  q,
+  passages,
+  onChanged,
+}: {
+  index: number;
+  q: Question;
+  passages: Passage[];
+  onChanged: () => void;
+}) {
   const [open, setOpen] = useState(false);
   async function remove() {
     if (!confirm("Xóa câu hỏi này?")) return;
@@ -292,10 +405,17 @@ function QuestionRow({ index, q, passages, onChanged }: { index: number; q: Ques
   return (
     <div className="card sub">
       <div className="q-row-head">
-        <div><span className="q-no">{index}.</span> {q.prompt || <em className="muted">(chưa có nội dung)</em>} <span className="pill small">{q.qtype}</span></div>
+        <div>
+          <span className="q-no">{index}.</span> {q.prompt || <em className="muted">(chưa có nội dung)</em>}{" "}
+          <span className="pill small">{q.qtype}</span>
+        </div>
         <span>
-          <button className="btn ghost small" onClick={() => setOpen((o) => !o)}>{open ? "Đóng" : "Sửa"}</button>
-          <button className="btn ghost small danger" onClick={remove}>Xóa</button>
+          <button className="btn ghost small" onClick={() => setOpen((o) => !o)}>
+            {open ? "Đóng" : "Sửa"}
+          </button>
+          <button className="btn ghost small danger" onClick={remove}>
+            Xóa
+          </button>
         </span>
       </div>
       {open && (
@@ -303,23 +423,44 @@ function QuestionRow({ index, q, passages, onChanged }: { index: number; q: Ques
           testId={q.test_id}
           passages={passages}
           initial={q}
-          onSaved={() => { setOpen(false); onChanged(); }}
+          onSaved={() => {
+            setOpen(false);
+            onChanged();
+          }}
         />
       )}
     </div>
   );
 }
 
-function NewQuestion({ testId, passages, nextOrder, onAdded }: { testId: string; passages: Passage[]; nextOrder: number; onAdded: () => void }) {
+function NewQuestion({
+  testId,
+  passages,
+  nextOrder,
+  onAdded,
+}: {
+  testId: string;
+  passages: Passage[];
+  nextOrder: number;
+  onAdded: () => void;
+}) {
   const [open, setOpen] = useState(false);
-  if (!open) return <button className="btn" onClick={() => setOpen(true)}>+ Thêm câu hỏi</button>;
+  if (!open)
+    return (
+      <button className="btn" onClick={() => setOpen(true)}>
+        + Thêm câu hỏi
+      </button>
+    );
   return (
     <div className="card sub new-q">
       <QuestionForm
         testId={testId}
         passages={passages}
         sortOrder={nextOrder}
-        onSaved={() => { setOpen(false); onAdded(); }}
+        onSaved={() => {
+          setOpen(false);
+          onAdded();
+        }}
         onCancel={() => setOpen(false)}
       />
     </div>
@@ -328,7 +469,12 @@ function NewQuestion({ testId, passages, nextOrder, onAdded }: { testId: string;
 
 // Form thêm/sửa 1 câu hỏi. Quản lý options + lựa chọn đáp án theo qtype.
 function QuestionForm({
-  testId, passages, initial, sortOrder, onSaved, onCancel,
+  testId,
+  passages,
+  initial,
+  sortOrder,
+  onSaved,
+  onCancel,
 }: {
   testId: string;
   passages: Passage[];
@@ -343,19 +489,23 @@ function QuestionForm({
   const [cefr, setCefr] = useState<string>(initial?.cefr_level ?? "");
   const [passageId, setPassageId] = useState<string>(initial?.passage_id ?? "");
   const [options, setOptions] = useState<string[]>(
-    initial?.options && initial.options.length ? initial.options : ["", ""]
+    initial?.options && initial.options.length ? initial.options : ["", ""],
   );
   // Tập đáp án đúng (theo GIÁ TRỊ option) cho single/multi.
   const [correctVals, setCorrectVals] = useState<string[]>(
-    Array.isArray(initial?.correct) ? (initial?.correct as string[]) : initial?.correct ? [initial.correct as string] : []
+    Array.isArray(initial?.correct)
+      ? (initial?.correct as string[])
+      : initial?.correct
+        ? [initial.correct as string]
+        : [],
   );
-  const [tfng, setTfng] = useState<string>(
-    initial?.qtype === "tfng" ? String(initial.correct) : "true"
-  );
+  const [tfng, setTfng] = useState<string>(initial?.qtype === "tfng" ? String(initial.correct) : "true");
   const [fillAns, setFillAns] = useState<string>(
     initial?.qtype === "fill"
-      ? (Array.isArray(initial.correct) ? initial.correct.join("\n") : String(initial.correct))
-      : ""
+      ? Array.isArray(initial.correct)
+        ? initial.correct.join("\n")
+        : String(initial.correct)
+      : "",
   );
   const [err, setErr] = useState<string | null>(null);
 
@@ -369,21 +519,36 @@ function QuestionForm({
 
   async function save() {
     setErr(null);
-    if (!prompt.trim()) { setErr("Chưa nhập nội dung câu hỏi."); return; }
+    if (!prompt.trim()) {
+      setErr("Chưa nhập nội dung câu hỏi.");
+      return;
+    }
 
     let correct: string | string[];
     let opts: string[] = [];
     if (qtype === "single" || qtype === "multi") {
       opts = options.map((o) => o.trim()).filter(Boolean);
       const chosen = correctVals.filter((v) => opts.includes(v));
-      if (opts.length < 2) { setErr("Cần ít nhất 2 lựa chọn."); return; }
-      if (chosen.length === 0) { setErr("Chưa chọn đáp án đúng."); return; }
+      if (opts.length < 2) {
+        setErr("Cần ít nhất 2 lựa chọn.");
+        return;
+      }
+      if (chosen.length === 0) {
+        setErr("Chưa chọn đáp án đúng.");
+        return;
+      }
       correct = qtype === "single" ? chosen[0] : chosen;
     } else if (qtype === "tfng") {
       correct = tfng;
     } else {
-      const arr = fillAns.split("\n").map((s) => s.trim()).filter(Boolean);
-      if (arr.length === 0) { setErr("Nhập ít nhất 1 đáp án chấp nhận."); return; }
+      const arr = fillAns
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (arr.length === 0) {
+        setErr("Nhập ít nhất 1 đáp án chấp nhận.");
+        return;
+      }
       correct = arr;
     }
 
@@ -393,7 +558,8 @@ function QuestionForm({
         test_id: testId,
         passage_id: passageId || null,
         sort_order: initial?.sort_order ?? sortOrder ?? 0,
-        qtype, prompt: prompt.trim(),
+        qtype,
+        prompt: prompt.trim(),
         options: opts,
         correct,
         points: Number(points) || 1,
@@ -410,7 +576,8 @@ function QuestionForm({
   return (
     <div className="q-form">
       <div className="grid2">
-        <label className="field"><span>Loại câu</span>
+        <label className="field">
+          <span>Loại câu</span>
           <select value={qtype} onChange={(e) => setQtype(e.target.value as QType)}>
             <option value="single">Trắc nghiệm 1 đáp án</option>
             <option value="multi">Trắc nghiệm nhiều đáp án</option>
@@ -418,29 +585,39 @@ function QuestionForm({
             <option value="fill">Điền từ</option>
           </select>
         </label>
-        <label className="field"><span>Điểm</span>
+        <label className="field">
+          <span>Điểm</span>
           <input type="number" step="0.5" value={points} onChange={(e) => setPoints(Number(e.target.value))} />
         </label>
-        <label className="field"><span>Mức CEFR (cho đề xếp lớp)</span>
+        <label className="field">
+          <span>Mức CEFR (cho đề xếp lớp)</span>
           <select value={cefr} onChange={(e) => setCefr(e.target.value)}>
             <option value="">— Không gắn —</option>
-            {["A1", "A2", "B1", "B2", "C1", "C2"].map((l) => <option key={l} value={l}>{l}</option>)}
+            {["A1", "A2", "B1", "B2", "C1", "C2"].map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
           </select>
         </label>
       </div>
 
       {passages.length > 0 && (
-        <label className="field"><span>Gắn với tư liệu (tùy chọn)</span>
+        <label className="field">
+          <span>Gắn với tư liệu (tùy chọn)</span>
           <select value={passageId} onChange={(e) => setPassageId(e.target.value)}>
             <option value="">— Không —</option>
             {passages.map((p, i) => (
-              <option key={p.id} value={p.id}>{p.kind === "audio" ? "🎧" : "📄"} Tư liệu {i + 1}</option>
+              <option key={p.id} value={p.id}>
+                {p.kind === "audio" ? "🎧" : "📄"} Tư liệu {i + 1}
+              </option>
             ))}
           </select>
         </label>
       )}
 
-      <label className="field"><span>Nội dung câu hỏi</span>
+      <label className="field">
+        <span>Nội dung câu hỏi</span>
         <textarea rows={2} value={prompt} onChange={(e) => setPrompt(e.target.value)} />
       </label>
 
@@ -456,15 +633,23 @@ function QuestionForm({
                 onChange={() => toggleCorrect(o)}
               />
               <input value={o} onChange={(e) => setOption(i, e.target.value)} placeholder={`Lựa chọn ${i + 1}`} />
-              <button className="btn ghost small danger" onClick={() => setOptions((arr) => arr.filter((_, idx) => idx !== i))}>×</button>
+              <button
+                className="btn ghost small danger"
+                onClick={() => setOptions((arr) => arr.filter((_, idx) => idx !== i))}
+              >
+                ×
+              </button>
             </div>
           ))}
-          <button className="btn ghost small" onClick={() => setOptions((o) => [...o, ""])}>+ Lựa chọn</button>
+          <button className="btn ghost small" onClick={() => setOptions((o) => [...o, ""])}>
+            + Lựa chọn
+          </button>
         </div>
       )}
 
       {qtype === "tfng" && (
-        <label className="field"><span>Đáp án đúng</span>
+        <label className="field">
+          <span>Đáp án đúng</span>
           <select value={tfng} onChange={(e) => setTfng(e.target.value)}>
             <option value="true">TRUE / YES</option>
             <option value="false">FALSE / NO</option>
@@ -474,15 +659,27 @@ function QuestionForm({
       )}
 
       {qtype === "fill" && (
-        <label className="field"><span>Đáp án chấp nhận (mỗi dòng 1 cách viết)</span>
-          <textarea rows={3} value={fillAns} onChange={(e) => setFillAns(e.target.value)} placeholder={"library\nthe library"} />
+        <label className="field">
+          <span>Đáp án chấp nhận (mỗi dòng 1 cách viết)</span>
+          <textarea
+            rows={3}
+            value={fillAns}
+            onChange={(e) => setFillAns(e.target.value)}
+            placeholder={"library\nthe library"}
+          />
         </label>
       )}
 
       {err && <ErrorBox msg={err} />}
       <div className="actions">
-        <button className="btn primary" onClick={save}>Lưu câu hỏi</button>
-        {onCancel && <button className="btn ghost" onClick={onCancel}>Hủy</button>}
+        <button className="btn primary" onClick={save}>
+          Lưu câu hỏi
+        </button>
+        {onCancel && (
+          <button className="btn ghost" onClick={onCancel}>
+            Hủy
+          </button>
+        )}
       </div>
     </div>
   );

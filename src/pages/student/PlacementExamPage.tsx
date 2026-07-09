@@ -25,7 +25,12 @@ export default function PlacementExamPage() {
   const nav = useNavigate();
   const loc = useLocation();
   const savedIdentity = loadStudentIdentity();
-  const routeMeta = (loc.state ?? {}) as { name?: string; email?: string; studentCode?: string | null; studentMode?: string };
+  const routeMeta = (loc.state ?? {}) as {
+    name?: string;
+    email?: string;
+    studentCode?: string | null;
+    studentMode?: string;
+  };
   const meta = {
     name: routeMeta.name ?? savedIdentity?.name,
     email: routeMeta.email ?? savedIdentity?.email,
@@ -57,12 +62,23 @@ export default function PlacementExamPage() {
       setSubmitErr(null);
       try {
         const res = await submitPlacement({
-          testId, name: meta.name ?? "", email: meta.email ?? "",
-          answers, violations: ac.violations, log: ac.log, startedAt: startedAtRef.current,
+          testId,
+          name: meta.name ?? "",
+          email: meta.email ?? "",
+          answers,
+          violations: ac.violations,
+          log: ac.log,
+          startedAt: startedAtRef.current,
         });
         if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
         nav("/result", {
-          state: { placement: res, name: meta.name, topic: data.data?.topic.name, auto: reason !== "manual", stoppedForViolations: reason === "violations" },
+          state: {
+            placement: res,
+            name: meta.name,
+            topic: data.data?.topic.name,
+            auto: reason !== "manual",
+            stoppedForViolations: reason === "violations",
+          },
           replace: true,
         });
       } catch (e) {
@@ -70,12 +86,15 @@ export default function PlacementExamPage() {
         setSubmitting(false);
       }
     },
-    [submitting, data.data, answers, testId, meta, ac.violations, ac.log, nav]
+    [submitting, data.data, answers, testId, meta, ac.violations, ac.log, nav],
   );
 
   useEffect(() => {
     if (!started || secondsLeft === null) return;
-    if (secondsLeft <= 0) { void doSubmit("timeout"); return; }
+    if (secondsLeft <= 0) {
+      void doSubmit("timeout");
+      return;
+    }
     const id = window.setTimeout(() => setSecondsLeft((s) => (s === null ? null : s - 1)), 1000);
     return () => window.clearTimeout(id);
   }, [started, secondsLeft, doSubmit]);
@@ -84,8 +103,18 @@ export default function PlacementExamPage() {
     if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
   }, [started, ac.violations, doSubmit]);
 
-  if (data.loading) return <div className="wrap"><Spinner /></div>;
-  if (data.error) return <div className="wrap"><ErrorBox msg={data.error} /></div>;
+  if (data.loading)
+    return (
+      <div className="wrap">
+        <Spinner />
+      </div>
+    );
+  if (data.error)
+    return (
+      <div className="wrap">
+        <ErrorBox msg={data.error} />
+      </div>
+    );
   if (!data.data) return null;
   const { test, topic, passages, questions } = data.data;
   const answeredCount = questions.filter((q) => isAnswered(answers[q.id])).length;
@@ -98,13 +127,24 @@ export default function PlacementExamPage() {
           <h1>Kiểm tra xếp lớp</h1>
           <p className="muted">{test.title ?? topic.name}</p>
           <div className="exam-start-meta">
-            <span><b>{questions.length}</b> câu hỏi</span>
-            <span><b>{test.time_limit_min}′</b> thời gian</span>
-            <span><b>CEFR</b> tự chấm</span>
+            <span>
+              <b>{questions.length}</b> câu hỏi
+            </span>
+            <span>
+              <b>{test.time_limit_min}′</b> thời gian
+            </span>
+            <span>
+              <b>CEFR</b> tự chấm
+            </span>
           </div>
           <ul className="steps exam-start-steps">
-            <li>Hệ thống <strong>tự chấm</strong> và xếp <strong>trình độ CEFR</strong> ngay sau khi nộp.</li>
-            <li>Chế độ toàn màn hình; rời tab/sao chép bị ghi nhận. Vi phạm <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong> sẽ bị dừng bài.</li>
+            <li>
+              Hệ thống <strong>tự chấm</strong> và xếp <strong>trình độ CEFR</strong> ngay sau khi nộp.
+            </li>
+            <li>
+              Chế độ toàn màn hình; rời tab/sao chép bị ghi nhận. Vi phạm{" "}
+              <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong> sẽ bị dừng bài.
+            </li>
           </ul>
           <button
             className="btn primary big exam-start-button"
@@ -114,7 +154,9 @@ export default function PlacementExamPage() {
               setSecondsLeft(test.time_limit_min * 60);
               setStarted(true);
             }}
-          >Bắt đầu</button>
+          >
+            Bắt đầu
+          </button>
         </div>
       </div>
     );
@@ -123,9 +165,15 @@ export default function PlacementExamPage() {
   return (
     <div className="wrap exam">
       <div className="exam-bar">
-        <div><strong>Xếp lớp</strong> <span className="muted">— {meta.name}</span></div>
+        <div>
+          <strong>Xếp lớp</strong> <span className="muted">— {meta.name}</span>
+        </div>
         <div className="exam-bar-right">
-          {ac.violations > 0 && <span className="viol">Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}</span>}
+          {ac.violations > 0 && (
+            <span className="viol">
+              Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}
+            </span>
+          )}
           <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
             ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
           </span>
@@ -135,9 +183,13 @@ export default function PlacementExamPage() {
       {ac.warning && <div className="warn-banner">{ac.warning}</div>}
 
       <div className="exam-progress-strip">
-        <span><strong>{answeredCount}</strong>/{questions.length} câu đã làm</span>
+        <span>
+          <strong>{answeredCount}</strong>/{questions.length} câu đã làm
+        </span>
         <span>{passages.length} tư liệu</span>
-        <span>{ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm</span>
+        <span>
+          {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
+        </span>
       </div>
 
       {passages.map((p) => (
@@ -153,20 +205,25 @@ export default function PlacementExamPage() {
             />
           )}
           {p.kind === "reading" && p.body && <div className="passage-body">{p.body}</div>}
-          {p.media_url && p.kind === "reading" && (
-            <img src={p.media_url} alt="" style={{ maxWidth: "100%" }} />
-          )}
+          {p.media_url && p.kind === "reading" && <img src={p.media_url} alt="" style={{ maxWidth: "100%" }} />}
         </div>
       ))}
 
       {questions.map((q, i) => (
-        <QuestionView key={q.id} index={i + 1} q={q} value={answers[q.id]}
-          onChange={(v) => setAnswers((a) => ({ ...a, [q.id]: v }))} />
+        <QuestionView
+          key={q.id}
+          index={i + 1}
+          q={q}
+          value={answers[q.id]}
+          onChange={(v) => setAnswers((a) => ({ ...a, [q.id]: v }))}
+        />
       ))}
 
       {submitErr && <ErrorBox msg={submitErr} />}
       <div className="exam-submit-panel">
-        <span className="muted small">Đã làm {answeredCount}/{questions.length} câu.</span>
+        <span className="muted small">
+          Đã làm {answeredCount}/{questions.length} câu.
+        </span>
         <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
           {submitting ? "Đang chấm…" : "Nộp & xem trình độ"}
         </button>

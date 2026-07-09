@@ -22,29 +22,54 @@ export default function ResultPage() {
   return (
     <div className="wrap">
       <div className="card result">
-        <h1>{st.stoppedForViolations ? "Bài làm đã bị dừng" : st.placement ? "Kết quả xếp lớp 🎯" : "Đã nộp bài ✅"}</h1>
-        {st.stoppedForViolations ? <p className="warn-text">{VIOLATION_STOP_MESSAGE}</p> : st.auto && <p className="warn-text">Bài được tự nộp do hết giờ.</p>}
-        <p className="muted">{st.name}{st.topic ? ` · ${st.topic}` : ""}</p>
+        <h1>
+          {st.stoppedForViolations ? "Bài làm đã bị dừng" : st.placement ? "Kết quả xếp lớp 🎯" : "Đã nộp bài ✅"}
+        </h1>
+        {st.stoppedForViolations ? (
+          <p className="warn-text">{VIOLATION_STOP_MESSAGE}</p>
+        ) : (
+          st.auto && <p className="warn-text">Bài được tự nộp do hết giờ.</p>
+        )}
+        <p className="muted">
+          {st.name}
+          {st.topic ? ` · ${st.topic}` : ""}
+        </p>
 
         {st.stoppedForViolations ? (
-          <p className="big-note">Hệ thống đã ghi nhận nhật ký vi phạm. Vui lòng làm bài nghiêm túc hơn trong lần tới.</p>
+          <p className="big-note">
+            Hệ thống đã ghi nhận nhật ký vi phạm. Vui lòng làm bài nghiêm túc hơn trong lần tới.
+          </p>
         ) : st.session ? (
           <SessionView res={st.session} />
         ) : st.placement ? (
           <PlacementView res={st.placement} />
         ) : st.writing ? (
           <p className="big-note">
-            Bài viết đã được lưu. <strong>Giáo viên sẽ chấm tay</strong> (4 tiêu chí IELTS) và phản hồi sau.<br />
-            Xem điểm &amp; tiến bộ ở mục <Link className="link" to="/progress">Xem tiến bộ</Link>.
+            Bài viết đã được lưu. <strong>Giáo viên sẽ chấm tay</strong> (4 tiêu chí IELTS) và phản hồi sau.
+            <br />
+            Xem điểm &amp; tiến bộ ở mục{" "}
+            <Link className="link" to="/progress">
+              Xem tiến bộ
+            </Link>
+            .
           </p>
         ) : st.result ? (
           <div className="score-box">
-            <div className="score-main">{st.result.score}<span className="muted"> / {st.result.max_score}</span></div>
-            {st.result.band !== null && <div className="band">Band: <strong>{st.result.band}</strong></div>}
+            <div className="score-main">
+              {st.result.score}
+              <span className="muted"> / {st.result.max_score}</span>
+            </div>
+            {st.result.band !== null && (
+              <div className="band">
+                Band: <strong>{st.result.band}</strong>
+              </div>
+            )}
           </div>
         ) : null}
 
-        <Link className="btn" to="/">Về trang chủ</Link>
+        <Link className="btn" to="/">
+          Về trang chủ
+        </Link>
       </div>
     </div>
   );
@@ -52,13 +77,24 @@ export default function ResultPage() {
 
 function SessionView({ res }: { res: SessionSubmitResult }) {
   if (res.skill === "writing") {
-    return <p className="big-note">Bài thi đã được lưu. <strong>Giáo viên sẽ chấm tay</strong> và phản hồi sau.</p>;
+    return (
+      <p className="big-note">
+        Bài thi đã được lưu. <strong>Giáo viên sẽ chấm tay</strong> và phản hồi sau.
+      </p>
+    );
   }
   if (res.show_result && res.score != null) {
     return (
       <div className="score-box">
-        <div className="score-main">{res.score}<span className="muted"> / {res.max_score}</span></div>
-        {res.band != null && <div className="band">Band: <strong>{res.band}</strong></div>}
+        <div className="score-main">
+          {res.score}
+          <span className="muted"> / {res.max_score}</span>
+        </div>
+        {res.band != null && (
+          <div className="band">
+            Band: <strong>{res.band}</strong>
+          </div>
+        )}
       </div>
     );
   }
@@ -75,12 +111,22 @@ function PlacementView({ res }: { res: PlacementResult }) {
       </div>
       {res.detail.length > 0 && (
         <table className="table level-detail">
-          <thead><tr><th>Mức</th><th>Đúng</th><th>Kết quả</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Mức</th>
+              <th>Đúng</th>
+              <th>Kết quả</th>
+            </tr>
+          </thead>
           <tbody>
             {res.detail.map((d) => (
               <tr key={d.cefr}>
-                <td><strong>{d.cefr}</strong></td>
-                <td>{d.correct}/{d.total}</td>
+                <td>
+                  <strong>{d.cefr}</strong>
+                </td>
+                <td>
+                  {d.correct}/{d.total}
+                </td>
                 <td>{d.passed ? <span className="ok-text">Đạt</span> : <span className="muted">Chưa đạt</span>}</td>
               </tr>
             ))}

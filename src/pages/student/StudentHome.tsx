@@ -21,7 +21,11 @@ import type { ExamListItem, PlacementItem, WritingTopic } from "../../lib/types"
 const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
 
 function normalizeVi(s: string) {
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 function isLegacyIntensiveName(name: string) {
@@ -52,23 +56,18 @@ export default function StudentHome() {
   const exams = useAsync<ExamListItem[]>(listExams, []);
 
   const writingTopics = useMemo(() => topics.data ?? [], [topics.data]);
-  const normalWritingTopics = useMemo(
-    () => writingTopics.filter((t) => !isIntensiveTopic(t)),
-    [writingTopics]
-  );
-  const intensiveTopics = useMemo(
-    () => writingTopics.filter((t) => isIntensiveTopic(t)),
-    [writingTopics]
-  );
+  const normalWritingTopics = useMemo(() => writingTopics.filter((t) => !isIntensiveTopic(t)), [writingTopics]);
+  const intensiveTopics = useMemo(() => writingTopics.filter((t) => isIntensiveTopic(t)), [writingTopics]);
   const practiceExams = useMemo(
     () => (exams.data ?? []).filter((e) => e.skill === "reading" || e.skill === "listening"),
-    [exams.data]
+    [exams.data],
   );
   const intensiveExamTopics = useMemo(
     () => (exams.data ?? []).filter((e) => e.skill === "writing" && isIntensiveTopic(e)),
-    [exams.data]
+    [exams.data],
   );
-  const selectedIntensiveExamTopic = intensiveExamTopics.find((t) => t.topic_id === selectedIntensiveTopicId) ?? intensiveExamTopics[0];
+  const selectedIntensiveExamTopic =
+    intensiveExamTopics.find((t) => t.topic_id === selectedIntensiveTopicId) ?? intensiveExamTopics[0];
   const totalIntensiveTests = intensiveExamTopics.reduce((sum, topic) => sum + topic.tests.length, 0);
   const totalPracticeTests = practiceExams.reduce((sum, topic) => sum + topic.tests.length, 0);
   const totalWritingPrompts = normalWritingTopics.reduce((sum, topic) => sum + topic.num_prompts, 0);
@@ -81,9 +80,10 @@ export default function StudentHome() {
     setName(saved.name);
     setEmail(saved.email);
     if (saved.code) setCode(saved.code);
-    setCodeMsg(saved.mode === "student"
-      ? `Đang dùng hồ sơ ${saved.name}${saved.className ? ` · ${saved.className}` : ""}.`
-      : `Đang dùng chế độ khách: ${saved.name}.`
+    setCodeMsg(
+      saved.mode === "student"
+        ? `Đang dùng hồ sơ ${saved.name}${saved.className ? ` · ${saved.className}` : ""}.`
+        : `Đang dùng chế độ khách: ${saved.name}.`,
     );
   }, []);
 
@@ -103,12 +103,12 @@ export default function StudentHome() {
 
   function setManualName(nextName: string) {
     setName(nextName);
-    setIdentity((cur) => cur ? { ...cur, name: nextName } : null);
+    setIdentity((cur) => (cur ? { ...cur, name: nextName } : null));
   }
 
   function setManualEmail(nextEmail: string) {
     setEmail(nextEmail);
-    setIdentity((cur) => cur ? { ...cur, email: nextEmail } : null);
+    setIdentity((cur) => (cur ? { ...cur, email: nextEmail } : null));
   }
 
   function routeState() {
@@ -130,18 +130,23 @@ export default function StudentHome() {
 
   async function loginByCode() {
     if (!code.trim()) return;
-    setCodeBusy(true); setCodeMsg(null);
+    setCodeBusy(true);
+    setCodeMsg(null);
     try {
       const s = await studentByCode(code.trim());
-      if (!s) { setCodeMsg("Không tìm thấy mã học viên này."); return; }
+      if (!s) {
+        setCodeMsg("Không tìm thấy mã học viên này.");
+        return;
+      }
       const nextIdentity = identityFromStudentCode(s, code);
       saveStudentIdentity(nextIdentity);
       setIdentity(nextIdentity);
       setName(s.full_name);
       if (s.email) setEmail(s.email);
-      setCodeMsg(s.email
-        ? `Xin chào ${s.full_name}${s.class_name ? ` · ${s.class_name}` : ""}!`
-        : `Đã nhận diện ${s.full_name}, nhưng hồ sơ chưa có email. Vui lòng nhập email để làm bài.`
+      setCodeMsg(
+        s.email
+          ? `Xin chào ${s.full_name}${s.class_name ? ` · ${s.class_name}` : ""}!`
+          : `Đã nhận diện ${s.full_name}, nhưng hồ sơ chưa có email. Vui lòng nhập email để làm bài.`,
       );
     } catch (e) {
       setCodeMsg(e instanceof Error ? e.message : String(e));
@@ -168,7 +173,9 @@ export default function StudentHome() {
     setAccessMsg(null);
     if (!ready) return;
     if (!isStudent) {
-      showAccessDenied("Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để vào Học tăng cường.");
+      showAccessDenied(
+        "Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để vào Học tăng cường.",
+      );
       return;
     }
     if (!selectedIntensiveExamTopic || !selectedIntensiveTestId) return;
@@ -221,9 +228,15 @@ export default function StudentHome() {
         <div className="hero-top">
           <Logo height={52} light />
           <span className="hero-links">
-            <Link className="link" to="/exam-room">Vào phòng thi</Link>
-            <Link className="link" to="/progress">Xem tiến bộ</Link>
-            <Link className="link" to="/admin/login">Giáo viên →</Link>
+            <Link className="link" to="/exam-room">
+              Vào phòng thi
+            </Link>
+            <Link className="link" to="/progress">
+              Xem tiến bộ
+            </Link>
+            <Link className="link" to="/admin/login">
+              Giáo viên →
+            </Link>
           </span>
         </div>
         <div className="hero-grid">
@@ -234,7 +247,8 @@ export default function StudentHome() {
               <span>HỆ THỐNG ĐÁNH GIÁ NĂNG LỰC TIẾNG ANH VÀ THEO DÕI TIẾN BỘ</span>
             </h1>
             <p className="tagline">
-              Làm bài xếp lớp, luyện Đọc/Nghe, viết IELTS và xem hành trình tiến bộ — tất cả trong một nền tảng dành cho học viên IELTS Ms. Trà My.
+              Làm bài xếp lớp, luyện Đọc/Nghe, viết IELTS và xem hành trình tiến bộ — tất cả trong một nền tảng dành cho
+              học viên IELTS Ms. Trà My.
             </p>
             <div className="hero-cta">
               {firstPlacement && (
@@ -242,27 +256,41 @@ export default function StudentHome() {
                   🎯 Làm bài xếp lớp
                 </button>
               )}
-              <Link className="btn hero-btn ghost-light" to="/exam-room">🔐 Vào phòng thi</Link>
+              <Link className="btn hero-btn ghost-light" to="/exam-room">
+                🔐 Vào phòng thi
+              </Link>
             </div>
           </div>
           <div className="hero-stats" aria-label="Tổng quan nền tảng">
-            <div className="mini-stat"><strong>{placements.data?.length ?? 0}</strong><span>bài xếp lớp</span></div>
-            <div className="mini-stat"><strong>{totalPracticeTests}</strong><span>đề Đọc/Nghe</span></div>
-            <div className="mini-stat"><strong>{totalWritingPrompts}</strong><span>đề Writing</span></div>
-            <div className="mini-stat"><strong>{totalIntensiveTests}</strong><span>đề tăng cường</span></div>
+            <div className="mini-stat">
+              <strong>{placements.data?.length ?? 0}</strong>
+              <span>bài xếp lớp</span>
+            </div>
+            <div className="mini-stat">
+              <strong>{totalPracticeTests}</strong>
+              <span>đề Đọc/Nghe</span>
+            </div>
+            <div className="mini-stat">
+              <strong>{totalWritingPrompts}</strong>
+              <span>đề Writing</span>
+            </div>
+            <div className="mini-stat">
+              <strong>{totalIntensiveTests}</strong>
+              <span>đề tăng cường</span>
+            </div>
           </div>
         </div>
       </header>
 
-      {!isConfigured && (
-        <ErrorBox msg="Chưa cấu hình Supabase (.env). Xem docs/SETUP.md để kết nối database." />
-      )}
+      {!isConfigured && <ErrorBox msg="Chưa cấu hình Supabase (.env). Xem docs/SETUP.md để kết nối database." />}
 
       <section className="identity-card">
         <div className="identity-copy">
           <span className="eyebrow dark">Bước 1</span>
           <h2>Nhận diện học viên</h2>
-          <p className="muted">Nhập mã học viên hoặc điền tên/email để hệ thống lưu kết quả và vẽ tiến bộ theo thời gian.</p>
+          <p className="muted">
+            Nhập mã học viên hoặc điền tên/email để hệ thống lưu kết quả và vẽ tiến bộ theo thời gian.
+          </p>
         </div>
         <div className="identity-form">
           {identity && (
@@ -274,19 +302,26 @@ export default function StudentHome() {
                   {identity.className ? ` · ${identity.className}` : ""} · {identity.email}
                 </p>
               </div>
-              <button className="btn ghost small" type="button" onClick={logoutStudent}>Đổi người</button>
+              <button className="btn ghost small" type="button" onClick={logoutStudent}>
+                Đổi người
+              </button>
             </div>
           )}
           <div className="row-form code-login premium-code">
-            <input placeholder="Có mã học viên? Nhập tại đây…" value={code}
+            <input
+              placeholder="Có mã học viên? Nhập tại đây…"
+              value={code}
               onChange={(e) => setCode(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && loginByCode()} />
+              onKeyDown={(e) => e.key === "Enter" && loginByCode()}
+            />
             <button className="btn small" disabled={codeBusy} onClick={loginByCode}>
               {codeBusy ? "…" : "Nhận diện"}
             </button>
           </div>
           {codeMsg && <p className="muted small code-msg">{codeMsg}</p>}
-          <div className="or-line"><span>hoặc nhập thủ công</span></div>
+          <div className="or-line">
+            <span>hoặc nhập thủ công</span>
+          </div>
           <div className="grid2">
             <label className="field">
               <span>Họ và tên</span>
@@ -297,7 +332,9 @@ export default function StudentHome() {
               <input value={email} onChange={(e) => setManualEmail(e.target.value)} placeholder="email@example.com" />
             </label>
           </div>
-          <button className="btn ghost" type="button" onClick={continueAsGuest}>Tiếp tục dạng khách</button>
+          <button className="btn ghost" type="button" onClick={continueAsGuest}>
+            Tiếp tục dạng khách
+          </button>
           {touched && !ready && (
             <p className="warn-text">Vui lòng nhập đúng họ tên và email (email dùng để theo dõi tiến bộ).</p>
           )}
@@ -355,9 +392,13 @@ export default function StudentHome() {
               <div className="premium-test-row" key={p.test_id}>
                 <div>
                   <strong>{p.title}</strong> <SkillBadge skill={p.skill} />
-                  <span className="meta-line">{p.num_q} câu · {p.time_limit_min} phút</span>
+                  <span className="meta-line">
+                    {p.num_q} câu · {p.time_limit_min} phút
+                  </span>
                 </div>
-                <button className="btn primary" onClick={() => startPlacement(p.test_id)}>Làm bài</button>
+                <button className="btn primary" onClick={() => startPlacement(p.test_id)}>
+                  Làm bài
+                </button>
               </div>
             ))}
           </div>
@@ -381,15 +422,21 @@ export default function StudentHome() {
               <div className="practice-topic" key={topic.topic_id}>
                 <div className="practice-topic-head">
                   <strong>{topic.topic_name}</strong>
-                  <span><SkillBadge skill={topic.skill} /> <span className="muted small">{skillLabel(topic.skill)}</span></span>
+                  <span>
+                    <SkillBadge skill={topic.skill} /> <span className="muted small">{skillLabel(topic.skill)}</span>
+                  </span>
                 </div>
                 {topic.tests.map((test) => (
                   <div className="premium-test-row compact" key={test.id}>
                     <div>
                       <strong>{test.title || `Đề ${test.version_label}`}</strong>
-                      <span className="meta-line">Bản {test.version_label} · {test.time_limit_min} phút</span>
+                      <span className="meta-line">
+                        Bản {test.version_label} · {test.time_limit_min} phút
+                      </span>
                     </div>
-                    <button className="btn primary" onClick={() => startPractice(test.id)}>Làm bài</button>
+                    <button className="btn primary" onClick={() => startPractice(test.id)}>
+                      Làm bài
+                    </button>
                   </div>
                 ))}
               </div>
@@ -423,7 +470,9 @@ export default function StudentHome() {
                   }}
                 >
                   {intensiveExamTopics.map((topic) => (
-                    <option key={topic.topic_id} value={topic.topic_id}>{topic.topic_name}</option>
+                    <option key={topic.topic_id} value={topic.topic_id}>
+                      {topic.topic_name}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -436,10 +485,7 @@ export default function StudentHome() {
                 </div>
                 <label className="field">
                   <span>Chọn đề</span>
-                  <select
-                    value={selectedIntensiveTestId}
-                    onChange={(e) => setSelectedIntensiveTestId(e.target.value)}
-                  >
+                  <select value={selectedIntensiveTestId} onChange={(e) => setSelectedIntensiveTestId(e.target.value)}>
                     <option value="">— Chọn đề tăng cường —</option>
                     {selectedIntensiveExamTopic.tests.map((test) => (
                       <option key={test.id} value={test.id}>
@@ -451,7 +497,9 @@ export default function StudentHome() {
                 {intensiveTouched && !selectedIntensiveTestId && (
                   <p className="warn-text">Vui lòng chọn đề trước khi bắt đầu Học tăng cường 2026.</p>
                 )}
-                <button className="btn primary" onClick={startIntensive}>Làm đề đã chọn</button>
+                <button className="btn primary" onClick={startIntensive}>
+                  Làm đề đã chọn
+                </button>
               </div>
             )}
           </div>

@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
 import {
-  assignTeacherToClass, createStaffAccount, listClasses, listClassTeachers, listProfiles, removeTeacherFromClass, updateProfile,
+  assignTeacherToClass,
+  createStaffAccount,
+  listClasses,
+  listClassTeachers,
+  listProfiles,
+  removeTeacherFromClass,
+  updateProfile,
 } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { EmptyState, ErrorBox, Spinner } from "../../components/common";
@@ -55,10 +61,22 @@ export default function StaffPage() {
       </header>
 
       <section className="admin-stat-grid" aria-label="Tổng quan giáo viên">
-        <div className="admin-stat-card"><span>Tài khoản</span><strong>{profiles.data?.length ?? 0}</strong></div>
-        <div className="admin-stat-card"><span>Đang hoạt động</span><strong>{activeCount}</strong></div>
-        <div className="admin-stat-card"><span>Teacher / Grader</span><strong>{teacherCount}</strong></div>
-        <div className="admin-stat-card"><span>Đã gán lớp</span><strong>{assignedTeacherCount}</strong></div>
+        <div className="admin-stat-card">
+          <span>Tài khoản</span>
+          <strong>{profiles.data?.length ?? 0}</strong>
+        </div>
+        <div className="admin-stat-card">
+          <span>Đang hoạt động</span>
+          <strong>{activeCount}</strong>
+        </div>
+        <div className="admin-stat-card">
+          <span>Teacher / Grader</span>
+          <strong>{teacherCount}</strong>
+        </div>
+        <div className="admin-stat-card">
+          <span>Đã gán lớp</span>
+          <strong>{assignedTeacherCount}</strong>
+        </div>
       </section>
 
       <div className="card admin-form-card staff-note-card">
@@ -71,7 +89,8 @@ export default function StaffPage() {
       <CreateStaffForm onCreated={reload} onErr={setErr} />
 
       <div className="card admin-form-card staff-filter-card">
-        <label className="field inline"><span>Tìm giáo viên</span>
+        <label className="field inline">
+          <span>Tìm giáo viên</span>
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Email, tên, role…" />
         </label>
       </div>
@@ -80,7 +99,10 @@ export default function StaffPage() {
       {(err || errors) && <ErrorBox msg={[err, errors].filter(Boolean).join(" | ")} />}
 
       {rows.length === 0 && !loading ? (
-        <EmptyState title="Chưa có hồ sơ giáo viên" body="Hãy chạy migration vận hành và tạo/đăng nhập tài khoản giáo viên trong Supabase Auth." />
+        <EmptyState
+          title="Chưa có hồ sơ giáo viên"
+          body="Hãy chạy migration vận hành và tạo/đăng nhập tài khoản giáo viên trong Supabase Auth."
+        />
       ) : (
         <div className="staff-list">
           {rows.map((p) => (
@@ -109,7 +131,9 @@ function CreateStaffForm({ onCreated, onErr }: { onCreated: () => void; onErr: (
   const [msg, setMsg] = useState<string | null>(null);
 
   async function createAccount() {
-    setBusy(true); setMsg(null); onErr(null);
+    setBusy(true);
+    setMsg(null);
+    onErr(null);
     try {
       await createStaffAccount({
         email: email.trim(),
@@ -141,18 +165,36 @@ function CreateStaffForm({ onCreated, onErr }: { onCreated: () => void; onErr: (
         </div>
       </div>
       <div className="grid2 admin-form-grid">
-        <label className="field"><span>Email đăng nhập</span>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="giaovien@example.com" />
+        <label className="field">
+          <span>Email đăng nhập</span>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="giaovien@example.com"
+          />
         </label>
-        <label className="field"><span>Tên hiển thị</span>
+        <label className="field">
+          <span>Tên hiển thị</span>
           <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Tên giáo viên" />
         </label>
-        <label className="field"><span>Mật khẩu tạm</span>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Tối thiểu 8 ký tự" />
+        <label className="field">
+          <span>Mật khẩu tạm</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Tối thiểu 8 ký tự"
+          />
         </label>
-        <label className="field"><span>Vai trò</span>
+        <label className="field">
+          <span>Vai trò</span>
           <select value={role} onChange={(e) => setRole(e.target.value as AdminRole)}>
-            {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+            {ROLES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
           </select>
         </label>
       </div>
@@ -162,7 +204,12 @@ function CreateStaffForm({ onCreated, onErr }: { onCreated: () => void; onErr: (
       </label>
       {msg && <p className="success-text small">{msg}</p>}
       <div className="form-actions">
-        <button className="btn primary" type="button" disabled={busy || !email.trim() || password.length < 8} onClick={createAccount}>
+        <button
+          className="btn primary"
+          type="button"
+          disabled={busy || !email.trim() || password.length < 8}
+          onClick={createAccount}
+        >
           {busy ? "Đang tạo…" : "Tạo tài khoản"}
         </button>
       </div>
@@ -170,7 +217,13 @@ function CreateStaffForm({ onCreated, onErr }: { onCreated: () => void; onErr: (
   );
 }
 
-function StaffCard({ profile, classes, links, onChanged, onErr }: {
+function StaffCard({
+  profile,
+  classes,
+  links,
+  onChanged,
+  onErr,
+}: {
   profile: Profile;
   classes: ClassRow[];
   links: ClassTeacher[];
@@ -184,7 +237,8 @@ function StaffCard({ profile, classes, links, onChanged, onErr }: {
   const assignedClassIds = new Set(links.filter((x) => x.teacher_id === profile.id).map((x) => x.class_id));
 
   async function saveProfile() {
-    setBusy(true); onErr(null);
+    setBusy(true);
+    onErr(null);
     try {
       await updateProfile(profile.id, { full_name: fullName.trim() || null, role, active });
       onChanged();
@@ -196,7 +250,8 @@ function StaffCard({ profile, classes, links, onChanged, onErr }: {
   }
 
   async function toggleClass(classId: string, checked: boolean) {
-    setBusy(true); onErr(null);
+    setBusy(true);
+    onErr(null);
     try {
       if (checked) await assignTeacherToClass(classId, profile.id);
       else await removeTeacherFromClass(classId, profile.id);
@@ -213,18 +268,26 @@ function StaffCard({ profile, classes, links, onChanged, onErr }: {
       <div className="staff-card-main">
         <div>
           <h3>{teacherLabel(profile)}</h3>
-          <p className="muted small">{profile.email || "Chưa có email"} · {profile.id.slice(0, 8)}</p>
+          <p className="muted small">
+            {profile.email || "Chưa có email"} · {profile.id.slice(0, 8)}
+          </p>
         </div>
         <span className={`status-badge ${active ? "open" : "closed"}`}>{active ? "Đang hoạt động" : "Đã khóa"}</span>
       </div>
 
       <div className="grid2 admin-form-grid">
-        <label className="field"><span>Tên hiển thị</span>
+        <label className="field">
+          <span>Tên hiển thị</span>
           <input value={fullName} onChange={(e) => setFullName(e.target.value)} />
         </label>
-        <label className="field"><span>Vai trò</span>
+        <label className="field">
+          <span>Vai trò</span>
           <select value={role} onChange={(e) => setRole(e.target.value as AdminRole)}>
-            {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+            {ROLES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
           </select>
           <span className="muted small">{ROLES.find((r) => r.value === role)?.note}</span>
         </label>
@@ -245,7 +308,11 @@ function StaffCard({ profile, classes, links, onChanged, onErr }: {
         <div className="staff-class-grid">
           {classes.map((c) => (
             <label className="check" key={c.id}>
-              <input type="checkbox" checked={assignedClassIds.has(c.id)} onChange={(e) => toggleClass(c.id, e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={assignedClassIds.has(c.id)}
+                onChange={(e) => toggleClass(c.id, e.target.checked)}
+              />
               <span>{c.name}</span>
             </label>
           ))}
@@ -254,7 +321,9 @@ function StaffCard({ profile, classes, links, onChanged, onErr }: {
       </div>
 
       <div className="form-actions">
-        <button className="btn primary small" disabled={busy} onClick={saveProfile}>{busy ? "Đang lưu…" : "Lưu phân quyền"}</button>
+        <button className="btn primary small" disabled={busy} onClick={saveProfile}>
+          {busy ? "Đang lưu…" : "Lưu phân quyền"}
+        </button>
       </div>
     </section>
   );

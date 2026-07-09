@@ -15,15 +15,7 @@ export function ErrorBox({ msg }: { msg: string }) {
   return <div className="errbox">⚠️ {msg}</div>;
 }
 
-export function EmptyState({
-  title,
-  body,
-  action,
-}: {
-  title: string;
-  body?: string;
-  action?: ReactNode;
-}) {
+export function EmptyState({ title, body, action }: { title: string; body?: string; action?: ReactNode }) {
   return (
     <div className="empty-state rich">
       <div>
