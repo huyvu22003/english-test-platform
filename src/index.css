@@ -427,8 +427,18 @@ code { background: #f1f1f6; padding: 1px 6px; border-radius: 5px; font-size: 13p
 .progress-skill-card { margin-bottom: 0; }
 .progress-big { font-size: 38px; font-weight: 800; color: var(--brand); margin: 8px 0 2px; }
 .progress-chart-card { min-height: 230px; }
+.writing-criteria-chart-card { grid-column: 1 / -1; }
 .chart-title, .detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .empty-chart { min-height: 140px; display: grid; place-items: center; border: 1px dashed var(--line); border-radius: 12px; margin-top: 12px; }
+.criteria-delta-grid { display: grid; grid-template-columns: repeat(4, minmax(110px, 1fr)); gap: 10px; margin-top: 12px; }
+.criteria-delta { border: 1px solid var(--line); border-left-width: 4px; border-radius: 10px; padding: 10px; background: #fff; }
+.criteria-delta span { display: block; color: var(--muted); font-size: 12px; font-weight: 800; }
+.criteria-delta strong { display: block; color: var(--ink); font-size: 24px; line-height: 1.1; margin-top: 4px; }
+.criteria-delta small { display: block; margin-top: 4px; }
+.criteria-chart { margin-top: 14px; }
+.criteria-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.criteria-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.criteria-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .progress-layout { margin-top: 14px; }
 .progress-layout.single { display: block; }
 .progress-history { max-height: 360px; overflow: auto; }
@@ -959,6 +969,7 @@ td.cell-weak { background: #fff1f1; color: var(--danger); font-weight: 700; }
 
   /* Progress */
   .progress-summary-grid, .progress-chart-grid { grid-template-columns: 1fr; }
+  .criteria-delta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .progress-modal { padding: 14px; }
   .progress-detail-grid { grid-template-columns: 1fr; }
   .teacher-column { position: static; }

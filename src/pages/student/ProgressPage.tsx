@@ -13,6 +13,12 @@ const SKILL_LABEL: Record<string, string> = {
   writing: "Viết",
   use_of_english: "Use of English",
 };
+const WRITING_CRITERIA = [
+  { key: "score_tr", short: "TR", label: "Task Response", color: "#ef4444" },
+  { key: "score_cc", short: "CC", label: "Coherence & Cohesion", color: "#2563eb" },
+  { key: "score_lr", short: "LR", label: "Lexical Resource", color: "#16a34a" },
+  { key: "score_gra", short: "GRA", label: "Grammar", color: "#9333ea" },
+] as const;
 
 export default function ProgressPage() {
   const [email, setEmail] = useState("");
@@ -126,7 +132,7 @@ export default function ProgressPage() {
 
           <div className="progress-chart-grid">
             {Object.entries(grouped).map(([skill, skillItems]) => (
-              <BandChart key={skill} skill={skill} items={skillItems.filter(hasBand)} />
+              <ProgressChart key={skill} skill={skill} items={skillItems.filter(hasBand)} />
             ))}
           </div>
 
@@ -174,7 +180,7 @@ function HistoryTable({ items, selected, onSelect }: {
   return (
     <div className="card table-wrap progress-history">
       <table className="table">
-        <thead><tr><th>Ngày</th><th>Kỹ năng</th><th>Chủ đề</th><th>Band</th><th>CEFR</th><th>Trạng thái</th></tr></thead>
+        <thead><tr><th>Ngày</th><th>Kỹ năng</th><th>Chủ đề</th><th>Band</th><th>TR</th><th>CC</th><th>LR</th><th>GRA</th><th>CEFR</th><th>Trạng thái</th></tr></thead>
         <tbody>
           {items.map((i, idx) => {
             const active = selected && keyOf(selected, -1) === keyOf(i, idx);
@@ -184,6 +190,10 @@ function HistoryTable({ items, selected, onSelect }: {
                 <td><span className={`pill small skill-${i.skill}`}>{skillLabel(i.skill)}</span></td>
                 <td>{i.topic_name ?? i.test_title ?? "—"}</td>
                 <td>{bandOf(i) ?? "—"}</td>
+                <td>{i.score_tr ?? "—"}</td>
+                <td>{i.score_cc ?? "—"}</td>
+                <td>{i.score_lr ?? "—"}</td>
+                <td>{i.score_gra ?? "—"}</td>
                 <td>{i.cefr ?? "—"}</td>
                 <td>{i.status === "graded" ? "Đã chấm" : <span className="muted">Chờ chấm</span>}</td>
               </tr>
@@ -347,6 +357,82 @@ function WritingScoreGrid({ item }: { item: ProgressItem }) {
           <div className="crit-lbl">{label}</div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ProgressChart({ skill, items }: { skill: string; items: ProgressItem[] }) {
+  if (skill === "writing" && items.some(hasWritingCriteria)) {
+    return <WritingCriteriaChart items={items.filter(hasWritingCriteria)} />;
+  }
+  return <BandChart skill={skill} items={items} />;
+}
+
+// Biểu đồ cột nhóm cho 4 tiêu chí Writing, giúp thấy từng phần tăng/giảm riêng.
+function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
+  const rows = [...items].sort(bySubmittedAsc);
+  const W = 620, H = 240, padX = 42, padY = 32, chartH = H - padY * 2;
+  const groupW = (W - 2 * padX) / Math.max(1, rows.length);
+  const barW = Math.max(5, Math.min(14, (groupW - 18) / WRITING_CRITERIA.length));
+  const y = (value: number) => H - padY - (value / 9) * chartH;
+  const deltas = WRITING_CRITERIA.map((criterion) => {
+    const values = rows.map((row) => criterionValue(row, criterion.key)).filter((v): v is number => v != null);
+    const first = values[0] ?? null;
+    const latest = values[values.length - 1] ?? null;
+    return { ...criterion, first, latest, delta: first != null && latest != null && values.length > 1 ? latest - first : null };
+  });
+  return (
+    <div className="card progress-chart-card writing-criteria-chart-card">
+      <div className="chart-title">
+        <b>Viết · 4 tiêu chí IELTS</b>
+        <span className="muted small">{rows.length} bài đã chấm</span>
+      </div>
+      <div className="criteria-delta-grid">
+        {deltas.map((d) => (
+          <div className="criteria-delta" key={d.key} style={{ borderColor: d.color }}>
+            <span>{d.short}</span>
+            <strong>{d.latest ?? "—"}</strong>
+            <small className={d.delta == null ? "muted" : d.delta >= 0 ? "ok-text" : "warn-text"}>
+              {d.delta == null ? "Chưa đủ dữ liệu" : `${d.delta >= 0 ? "+" : ""}${d.delta.toFixed(1)}`}
+            </small>
+          </div>
+        ))}
+      </div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="chart criteria-chart" role="img" aria-label="Biểu đồ tiến bộ 4 tiêu chí Writing">
+        {[0, 3, 6, 9].map((tick) => (
+          <g key={tick}>
+            <line x1={padX} x2={W - padX} y1={y(tick)} y2={y(tick)} stroke="var(--line)" />
+            <text x={padX - 10} y={y(tick) + 4} textAnchor="end" fontSize="11" fill="var(--muted)">{tick}</text>
+          </g>
+        ))}
+        {rows.map((row, rowIdx) => {
+          const groupStart = padX + rowIdx * groupW + (groupW - barW * WRITING_CRITERIA.length) / 2;
+          return (
+            <g key={keyOf(row, rowIdx)}>
+              {WRITING_CRITERIA.map((criterion, criterionIdx) => {
+                const value = criterionValue(row, criterion.key);
+                if (value == null) return null;
+                const barX = groupStart + criterionIdx * barW;
+                const barY = y(value);
+                return (
+                  <g key={criterion.key}>
+                    <rect x={barX} y={barY} width={barW - 1} height={H - padY - barY} rx="3" fill={criterion.color}>
+                      <title>{criterion.label}: {value}</title>
+                    </rect>
+                    {rows.length <= 4 && <text x={barX + barW / 2} y={barY - 5} textAnchor="middle" fontSize="10" fill="var(--muted)">{value}</text>}
+                  </g>
+                );
+              })}
+              <text x={padX + rowIdx * groupW + groupW / 2} y={H - 8} textAnchor="middle" fontSize="10" fill="var(--muted)">{dateShort(row.submitted_at)}</text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="criteria-legend">
+        {WRITING_CRITERIA.map((criterion) => (
+          <span key={criterion.key}><i style={{ background: criterion.color }} />{criterion.short} · {criterion.label}</span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -524,8 +610,15 @@ function esc(v: unknown) { return String(v ?? "").replace(/[&<>"]/g, (c) => ({ "
 
 function bandOf(item: ProgressItem) { return item.overall_band ?? item.band ?? null; }
 function hasBand(item: ProgressItem) { return item.status === "graded" && bandOf(item) != null; }
+function hasWritingCriteria(item: ProgressItem) {
+  return WRITING_CRITERIA.some((criterion) => criterionValue(item, criterion.key) != null);
+}
+function criterionValue(item: ProgressItem, key: (typeof WRITING_CRITERIA)[number]["key"]) {
+  return item[key] ?? null;
+}
 function bySubmittedAsc(a: ProgressItem, b: ProgressItem) { return new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime(); }
 function bySubmittedDesc(a: ProgressItem, b: ProgressItem) { return -bySubmittedAsc(a, b); }
 function dateVi(value: string) { return new Date(value).toLocaleDateString("vi-VN"); }
+function dateShort(value: string) { return new Date(value).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }); }
 function skillLabel(skill?: string | null) { return SKILL_LABEL[skill ?? ""] ?? "Khác"; }
 function keyOf(item: ProgressItem, fallback: number) { return item.submission_id ?? `${item.submitted_at}-${item.topic_name ?? ""}-${fallback}`; }
