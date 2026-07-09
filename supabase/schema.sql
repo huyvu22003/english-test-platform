@@ -11,7 +11,8 @@ create table if not exists profiles (
   id          uuid primary key references auth.users(id) on delete cascade,
   email       text,
   full_name   text,
-  role        text not null default 'teacher' check (role in ('admin','teacher')),
+  role        text not null default 'teacher' check (role in ('owner','admin','teacher','grader','content_editor')),
+  active      boolean not null default true,
   created_at  timestamptz not null default now()
 );
 
@@ -67,25 +68,18 @@ create table if not exists questions (
   points      numeric not null default 1
 );
 
--- ---------- 6. Buổi thi (tùy chọn — tổ chức 1 lần thi) ----------
+-- ---------- 6. Buổi thi (tổ chức 1 lần thi, HS vào bằng mã thi) ----------
 create table if not exists exam_sessions (
-  id          uuid primary key default gen_random_uuid(),
-  name        text not null,
-  topic_id    uuid references topics(id),
-  access_code text,
-  open_at     timestamptz,
-  close_at    timestamptz,
-  settings    jsonb default '{}'::jsonb,   -- {one_submission, show_answers, shuffle...}
-  created_at  timestamptz not null default now()
-);
-
--- ---------- 7. Phân đề (HS nào nhận phiên bản nào — xoay vòng) ----------
-create table if not exists assignments (
-  id            uuid primary key default gen_random_uuid(),
-  session_id    uuid references exam_sessions(id) on delete cascade,
-  student_email text not null,
-  test_id       uuid not null references tests(id),
-  assigned_at   timestamptz not null default now()
+  id              uuid primary key default gen_random_uuid(),
+  name            text not null,
+  test_id         uuid references tests(id),
+  access_code     text,
+  open_at         timestamptz,
+  close_at        timestamptz,
+  one_submission  boolean not null default true,
+  max_violations  int not null default 0,
+  show_result     boolean not null default false,
+  created_at      timestamptz not null default now()
 );
 
 -- ---------- 8. Bài nộp + điểm ----------
@@ -120,21 +114,54 @@ alter table tests         enable row level security;
 alter table passages      enable row level security;
 alter table questions     enable row level security;
 alter table exam_sessions enable row level security;
-alter table assignments   enable row level security;
 alter table submissions   enable row level security;
 
--- Giáo viên đã đăng nhập: toàn quyền trên nội dung
-create policy teacher_all_topics   on topics        for all to authenticated using (true) with check (true);
-create policy teacher_all_tests    on tests         for all to authenticated using (true) with check (true);
-create policy teacher_all_passages on passages      for all to authenticated using (true) with check (true);
-create policy teacher_all_questions on questions    for all to authenticated using (true) with check (true);
-create policy teacher_all_sessions on exam_sessions for all to authenticated using (true) with check (true);
-create policy teacher_all_assign   on assignments   for all to authenticated using (true) with check (true);
-create policy teacher_read_subs    on submissions   for select to authenticated using (true);
--- GV chấm tay bài Viết / gán band / sửa & xóa bài nộp:
-create policy teacher_update_subs  on submissions   for update to authenticated using (true) with check (true);
-create policy teacher_delete_subs  on submissions   for delete to authenticated using (true);
-create policy own_profile          on profiles      for select to authenticated using (id = auth.uid());
+-- Hàm kiểm tra quyền theo role (dùng trong RLS policy)
+create or replace function is_ops_admin()
+returns boolean language sql stable security definer as $$
+  select exists(
+    select 1 from profiles
+    where id = auth.uid() and role in ('owner','admin') and active = true
+  );
+$$;
+
+create or replace function can_manage_content()
+returns boolean language sql stable security definer as $$
+  select exists(
+    select 1 from profiles
+    where id = auth.uid() and role in ('owner','admin','content_editor') and active = true
+  );
+$$;
+
+create or replace function teacher_can_access_student(p_student_id uuid, p_student_email text)
+returns boolean language sql stable security definer as $$
+  select exists(
+    select 1 from class_teachers ct
+    join students s on s.class_id = ct.class_id
+    where ct.teacher_id = auth.uid()
+      and (s.id = p_student_id or lower(s.email) = lower(p_student_email))
+  );
+$$;
+
+-- Nội dung đề: chỉ content manager trở lên
+create policy content_all_topics   on topics        for all to authenticated using (can_manage_content()) with check (can_manage_content());
+create policy content_all_tests    on tests         for all to authenticated using (can_manage_content()) with check (can_manage_content());
+create policy content_all_passages on passages      for all to authenticated using (can_manage_content()) with check (can_manage_content());
+create policy content_all_questions on questions    for all to authenticated using (can_manage_content()) with check (can_manage_content());
+
+-- Buổi thi: chỉ admin
+create policy admin_all_sessions on exam_sessions for all to authenticated using (is_ops_admin()) with check (is_ops_admin());
+
+-- Bài nộp: admin thấy tất cả; GV thấy bài được giao hoặc bài của HS trong lớp mình
+create policy ops_read_submissions on submissions for select to authenticated
+  using (is_ops_admin() or assigned_to = auth.uid() or teacher_can_access_student(student_id, student_email));
+create policy ops_update_submissions on submissions for update to authenticated
+  using (is_ops_admin() or assigned_to = auth.uid() or teacher_can_access_student(student_id, student_email))
+  with check (is_ops_admin() or assigned_to = auth.uid() or teacher_can_access_student(student_id, student_email));
+create policy admin_delete_submissions on submissions for delete to authenticated using (is_ops_admin());
+
+-- Profile: mỗi người chỉ đọc profile mình
+create policy own_profile on profiles for select to authenticated using (id = auth.uid());
 
 -- HS (anon): KHÔNG có policy đọc questions/correct -> chặn đọc trực tiếp.
 -- Mọi thao tác của HS đi qua RPC bên dưới (SECURITY DEFINER).
@@ -686,11 +713,6 @@ grant execute on function rpc_submit_placement(uuid, text, text, jsonb, int, tex
 --   Tái dùng bảng exam_sessions; học sinh vào bằng access_code, làm 1 đề cố định.
 -- =====================================================================
 
-alter table exam_sessions add column if not exists test_id uuid references tests(id);
-alter table exam_sessions add column if not exists one_submission boolean not null default true;
-alter table exam_sessions add column if not exists max_violations int not null default 0;   -- 0 = dùng mặc định app (2 lần)
-alter table exam_sessions add column if not exists show_result boolean not null default false;
-
 -- Tra buổi thi theo MÃ THI (anon). Kiểm tra cửa sổ thời gian; trả thông tin để vào làm.
 create or replace function rpc_session_by_code(p_code text)
 returns jsonb language plpgsql security definer set search_path = public as $$
@@ -789,11 +811,11 @@ grant execute on function rpc_submit_session(uuid, text, text, jsonb, text, int,
 -- Học sinh chỉ đi qua RPC public. Không cấp anon đọc trực tiếp bảng nội bộ
 -- như tests/questions/submissions/students; đáp án và roster nằm sau RLS/RPC.
 revoke all on table
-  profiles, topics, tests, passages, questions, exam_sessions, assignments,
+  profiles, topics, tests, passages, questions, exam_sessions,
   submissions, classes, students
 from anon;
 revoke all on table
-  profiles, topics, tests, passages, questions, exam_sessions, assignments,
+  profiles, topics, tests, passages, questions, exam_sessions,
   submissions, classes, students
 from public;
 
