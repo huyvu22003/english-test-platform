@@ -368,19 +368,32 @@ function ProgressChart({ skill, items }: { skill: string; items: ProgressItem[] 
   return <BandChart skill={skill} items={items} />;
 }
 
-// Biểu đồ cột nhóm cho 4 tiêu chí Writing, giúp thấy từng phần tăng/giảm riêng.
+// Biểu đồ đường cho 4 tiêu chí Writing, tập trung vào xu hướng thay vì cột rời.
 function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
   const rows = [...items].sort(bySubmittedAsc);
-  const W = 620, H = 240, padX = 42, padY = 32, chartH = H - padY * 2;
-  const groupW = (W - 2 * padX) / Math.max(1, rows.length);
-  const barW = Math.max(5, Math.min(14, (groupW - 18) / WRITING_CRITERIA.length));
-  const y = (value: number) => H - padY - (value / 9) * chartH;
+  const W = 720, H = 240, padL = 42, padR = 18, padT = 18, padB = 34;
+  const values = rows.flatMap((row) => WRITING_CRITERIA.map((criterion) => criterionValue(row, criterion.key))).filter((v): v is number => v != null);
+  const rawMin = Math.min(...values, 4);
+  const rawMax = Math.max(...values, 7);
+  const minScore = Math.max(0, Math.floor((rawMin - 0.5) * 2) / 2);
+  const maxScore = Math.min(9, Math.ceil((rawMax + 0.5) * 2) / 2);
+  const scoreRange = Math.max(1, maxScore - minScore);
+  const x = (idx: number) => rows.length === 1 ? (padL + (W - padR)) / 2 : padL + (idx * (W - padL - padR)) / (rows.length - 1);
+  const y = (value: number) => padT + ((maxScore - value) / scoreRange) * (H - padT - padB);
+  const ticks = Array.from(new Set([minScore, Math.round(((minScore + maxScore) / 2) * 2) / 2, maxScore]));
   const deltas = WRITING_CRITERIA.map((criterion) => {
     const values = rows.map((row) => criterionValue(row, criterion.key)).filter((v): v is number => v != null);
     const first = values[0] ?? null;
     const latest = values[values.length - 1] ?? null;
     return { ...criterion, first, latest, delta: first != null && latest != null && values.length > 1 ? latest - first : null };
   });
+  const linePoints = (criterion: (typeof WRITING_CRITERIA)[number]) => rows
+    .map((row, idx) => {
+      const value = criterionValue(row, criterion.key);
+      return value == null ? null : { x: x(idx), y: y(value), value, row };
+    })
+    .filter((point): point is { x: number; y: number; value: number; row: ProgressItem } => point != null);
+
   return (
     <div className="card progress-chart-card writing-criteria-chart-card">
       <div className="chart-title">
@@ -389,8 +402,8 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
       </div>
       <div className="criteria-delta-grid">
         {deltas.map((d) => (
-          <div className="criteria-delta" key={d.key} style={{ borderColor: d.color }}>
-            <span>{d.short}</span>
+          <div className="criteria-delta" key={d.key} style={{ borderTopColor: d.color }}>
+            <span>{d.short} · {d.label}</span>
             <strong>{d.latest ?? "—"}</strong>
             <small className={d.delta == null ? "muted" : d.delta >= 0 ? "ok-text" : "warn-text"}>
               {d.delta == null ? "Chưa đủ dữ liệu" : `${d.delta >= 0 ? "+" : ""}${d.delta.toFixed(1)}`}
@@ -399,31 +412,35 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
         ))}
       </div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="chart criteria-chart" role="img" aria-label="Biểu đồ tiến bộ 4 tiêu chí Writing">
-        {[0, 3, 6, 9].map((tick) => (
+        {ticks.map((tick) => (
           <g key={tick}>
-            <line x1={padX} x2={W - padX} y1={y(tick)} y2={y(tick)} stroke="var(--line)" />
-            <text x={padX - 10} y={y(tick) + 4} textAnchor="end" fontSize="11" fill="var(--muted)">{tick}</text>
+            <line x1={padL} x2={W - padR} y1={y(tick)} y2={y(tick)} stroke="var(--line)" />
+            <text x={padL - 10} y={y(tick) + 4} textAnchor="end" fontSize="11" fill="var(--muted)">{tick}</text>
           </g>
         ))}
-        {rows.map((row, rowIdx) => {
-          const groupStart = padX + rowIdx * groupW + (groupW - barW * WRITING_CRITERIA.length) / 2;
+        {rows.map((row, rowIdx) => (
+          <g key={keyOf(row, rowIdx)}>
+            <line x1={x(rowIdx)} x2={x(rowIdx)} y1={padT} y2={H - padB} stroke="var(--line)" strokeDasharray="3 6" opacity="0.7" />
+            <text x={x(rowIdx)} y={H - 8} textAnchor="middle" fontSize="10" fill="var(--muted)">{dateShort(row.submitted_at)}</text>
+          </g>
+        ))}
+        {WRITING_CRITERIA.map((criterion) => {
+          const points = linePoints(criterion);
+          if (!points.length) return null;
+          const path = points.map((point, idx) => `${idx === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
           return (
-            <g key={keyOf(row, rowIdx)}>
-              {WRITING_CRITERIA.map((criterion, criterionIdx) => {
-                const value = criterionValue(row, criterion.key);
-                if (value == null) return null;
-                const barX = groupStart + criterionIdx * barW;
-                const barY = y(value);
-                return (
-                  <g key={criterion.key}>
-                    <rect x={barX} y={barY} width={barW - 1} height={H - padY - barY} rx="3" fill={criterion.color}>
-                      <title>{criterion.label}: {value}</title>
-                    </rect>
-                    {rows.length <= 4 && <text x={barX + barW / 2} y={barY - 5} textAnchor="middle" fontSize="10" fill="var(--muted)">{value}</text>}
-                  </g>
-                );
-              })}
-              <text x={padX + rowIdx * groupW + groupW / 2} y={H - 8} textAnchor="middle" fontSize="10" fill="var(--muted)">{dateShort(row.submitted_at)}</text>
+            <g key={criterion.key}>
+              {points.length > 1 && <path d={path} fill="none" stroke={criterion.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />}
+              {points.map((point, idx) => (
+                <g key={`${criterion.key}-${idx}`}>
+                  <circle cx={point.x} cy={point.y} r="5" fill="#fff" stroke={criterion.color} strokeWidth="2.5">
+                    <title>{criterion.label}: {point.value}</title>
+                  </circle>
+                  {(rows.length <= 5 || idx === points.length - 1) && (
+                    <text x={point.x} y={point.y - 9} textAnchor="middle" fontSize="10" fill={criterion.color} fontWeight="700">{point.value}</text>
+                  )}
+                </g>
+              ))}
             </g>
           );
         })}
