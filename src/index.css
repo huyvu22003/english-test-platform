@@ -1400,19 +1400,24 @@ code {
 .criteria-delta-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(120px, 1fr));
-  gap: 8px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 14px;
 }
 .criteria-delta {
   border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
   border-top-width: 3px;
-  border-radius: 8px;
-  padding: 9px 10px;
+  border-radius: 10px;
+  padding: 10px 12px;
   background: #fff;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: end;
   gap: 2px 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s;
+}
+.criteria-delta:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 .criteria-delta span {
   color: var(--muted);
@@ -1424,25 +1429,26 @@ code {
 }
 .criteria-delta strong {
   color: var(--ink);
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1;
 }
 .criteria-delta small {
   font-weight: 800;
   justify-self: end;
 }
-.criteria-chart {
-  margin-top: 10px;
+.criteria-chart,
+.band-chart {
+  margin-top: 14px;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: linear-gradient(180deg, #fff 0%, #fffafc 100%);
-  padding: 4px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fefefe 0%, #faf8fc 100%);
+  padding: 6px;
 }
 .criteria-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 14px;
-  margin-top: 10px;
+  gap: 8px 16px;
+  margin-top: 12px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
@@ -1455,7 +1461,7 @@ code {
 .criteria-legend i {
   width: 10px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: 50%;
   display: inline-block;
 }
 .progress-layout {
