@@ -10,8 +10,22 @@ import type { QType, Skill, Topic } from "../../lib/types";
 type Mode = "writing" | "mcq";
 
 const WRITING_COLS = ["topic", "prompt", "time_limit_min", "min_words"];
-const MCQ_COLS = ["topic", "skill", "purpose", "pass_threshold", "test_title", "qtype",
-  "prompt", "option1", "option2", "option3", "option4", "correct", "cefr_level", "points"];
+const MCQ_COLS = [
+  "topic",
+  "skill",
+  "purpose",
+  "pass_threshold",
+  "test_title",
+  "qtype",
+  "prompt",
+  "option1",
+  "option2",
+  "option3",
+  "option4",
+  "correct",
+  "cefr_level",
+  "points",
+];
 
 export default function ImportPage() {
   const [mode, setMode] = useState<Mode>("writing");
@@ -21,26 +35,50 @@ export default function ImportPage() {
         <div>
           <span className="eyebrow dark">Bulk import</span>
           <h1>Nhập nội dung từ Excel</h1>
-          <p className="muted small">Tải template, nhập dữ liệu hàng loạt và xem trước CSV trước khi ghi vào hệ thống.</p>
+          <p className="muted small">
+            Tải template, nhập dữ liệu hàng loạt và xem trước CSV trước khi ghi vào hệ thống.
+          </p>
         </div>
       </header>
 
       <section className="admin-stat-grid" aria-label="Tổng quan import">
-        <div className="admin-stat-card"><span>Đề Writing</span><strong>{WRITING_COLS.length}</strong><small className="muted">cột mẫu</small></div>
-        <div className="admin-stat-card"><span>Trắc nghiệm</span><strong>{MCQ_COLS.length}</strong><small className="muted">cột mẫu</small></div>
-        <div className="admin-stat-card"><span>Định dạng</span><strong>CSV</strong><small className="muted">UTF-8</small></div>
-        <div className="admin-stat-card"><span>Kiểm tra</span><strong>15</strong><small className="muted">dòng preview</small></div>
+        <div className="admin-stat-card">
+          <span>Đề Writing</span>
+          <strong>{WRITING_COLS.length}</strong>
+          <small className="muted">cột mẫu</small>
+        </div>
+        <div className="admin-stat-card">
+          <span>Trắc nghiệm</span>
+          <strong>{MCQ_COLS.length}</strong>
+          <small className="muted">cột mẫu</small>
+        </div>
+        <div className="admin-stat-card">
+          <span>Định dạng</span>
+          <strong>CSV</strong>
+          <small className="muted">UTF-8</small>
+        </div>
+        <div className="admin-stat-card">
+          <span>Kiểm tra</span>
+          <strong>15</strong>
+          <small className="muted">dòng preview</small>
+        </div>
       </section>
 
       <div className="card sub import-guide import-guide-card">
         <div>
           <strong>Quy trình chuẩn</strong>
           <ol>
-            <li>Bấm <strong>Tải template Excel</strong> để lấy file mẫu có sẵn cột và ví dụ.</li>
+            <li>
+              Bấm <strong>Tải template Excel</strong> để lấy file mẫu có sẵn cột và ví dụ.
+            </li>
             <li>Mở file trong Excel/Google Sheets, điền dữ liệu theo đúng cột.</li>
-            <li>Khi nhập vào hệ thống, lưu/xuất lại thành <strong>CSV UTF-8</strong> rồi tải file CSV lên.</li>
+            <li>
+              Khi nhập vào hệ thống, lưu/xuất lại thành <strong>CSV UTF-8</strong> rồi tải file CSV lên.
+            </li>
           </ol>
-          <p className="muted small">Template Excel giúp giáo viên nhập dễ đọc; CSV UTF-8 giúp import ổn định, không lỗi font tiếng Việt.</p>
+          <p className="muted small">
+            Template Excel giúp giáo viên nhập dễ đọc; CSV UTF-8 giúp import ổn định, không lỗi font tiếng Việt.
+          </p>
         </div>
       </div>
 
@@ -52,8 +90,12 @@ export default function ImportPage() {
           </div>
         </div>
         <div className="import-mode-tabs">
-          <button className={`btn ${mode === "writing" ? "primary" : ""}`} onClick={() => setMode("writing")}>✍️ Đề Viết</button>
-          <button className={`btn ${mode === "mcq" ? "primary" : ""}`} onClick={() => setMode("mcq")}>✅ Câu hỏi trắc nghiệm</button>
+          <button className={`btn ${mode === "writing" ? "primary" : ""}`} onClick={() => setMode("writing")}>
+            ✍️ Đề Viết
+          </button>
+          <button className={`btn ${mode === "mcq" ? "primary" : ""}`} onClick={() => setMode("mcq")}>
+            ✅ Câu hỏi trắc nghiệm
+          </button>
         </div>
       </div>
       {mode === "writing" ? <WritingImport /> : <McqImport />}
@@ -108,10 +150,14 @@ function FilePick({ onFile }: { onFile: (f: File) => void }) {
   return (
     <label className="file-pick">
       <span>Chọn file CSV UTF-8</span>
-      <input type="file" accept=".csv,text/csv" onChange={(e) => {
-        const f = e.target.files?.[0];
-        if (f) onFile(f);
-      }} />
+      <input
+        type="file"
+        accept=".csv,text/csv"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onFile(f);
+        }}
+      />
     </label>
   );
 }
@@ -120,10 +166,22 @@ function Preview({ rows, cols }: { rows: Record<string, string>[]; cols: string[
   return (
     <div className="card table-wrap import-preview-card">
       <table className="table">
-        <thead><tr>{cols.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+        <thead>
+          <tr>
+            {cols.map((c) => (
+              <th key={c}>{c}</th>
+            ))}
+          </tr>
+        </thead>
         <tbody>
           {rows.slice(0, 15).map((r, i) => (
-            <tr key={i}>{cols.map((c) => <td key={c} className="small">{(r[c] ?? "").slice(0, 60)}</td>)}</tr>
+            <tr key={i}>
+              {cols.map((c) => (
+                <td key={c} className="small">
+                  {(r[c] ?? "").slice(0, 60)}
+                </td>
+              ))}
+            </tr>
           ))}
         </tbody>
       </table>
@@ -131,7 +189,6 @@ function Preview({ rows, cols }: { rows: Record<string, string>[]; cols: string[
     </div>
   );
 }
-
 
 interface TemplateExcelArgs {
   filename: string;
@@ -143,8 +200,15 @@ interface TemplateExcelArgs {
 
 function downloadTemplateExcel({ filename, title, cols, rows, notes }: TemplateExcelArgs) {
   const colHeader = cols.map((c) => `<th>${escExcel(c)}</th>`).join("");
-  const exampleRows = rows.map((r) => `<tr>${cols.map((_, idx) => `<td>${escExcel(r[idx] ?? "")}</td>`).join("")}</tr>`).join("");
-  const noteRows = notes.map((n, idx) => `<tr><td class="center">${idx + 1}</td><td colspan="${Math.max(1, cols.length - 1)}">${escExcel(n)}</td></tr>`).join("");
+  const exampleRows = rows
+    .map((r) => `<tr>${cols.map((_, idx) => `<td>${escExcel(r[idx] ?? "")}</td>`).join("")}</tr>`)
+    .join("");
+  const noteRows = notes
+    .map(
+      (n, idx) =>
+        `<tr><td class="center">${idx + 1}</td><td colspan="${Math.max(1, cols.length - 1)}">${escExcel(n)}</td></tr>`,
+    )
+    .join("");
   const html = `<!doctype html><html><head><meta charset="utf-8" />
     <style>
       body { font-family: Arial, sans-serif; color: #221b26; }
@@ -177,7 +241,10 @@ function downloadTemplateExcel({ filename, title, cols, rows, notes }: TemplateE
 }
 
 function escExcel(v: unknown): string {
-  return String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
+  return String(v ?? "").replace(
+    /[&<>"]/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string,
+  );
 }
 
 // ---------- Import ĐỀ VIẾT ----------
@@ -190,7 +257,12 @@ function WritingImport() {
       title: "TEMPLATE NHẬP ĐỀ WRITING",
       cols: WRITING_COLS,
       rows: [
-        ["Education", "Some people think teachers should teach values. Discuss both views and give your opinion.", "40", "250"],
+        [
+          "Education",
+          "Some people think teachers should teach values. Discuss both views and give your opinion.",
+          "40",
+          "250",
+        ],
         ["Technology", "Technology makes people less sociable. To what extent do you agree?", "40", "250"],
       ],
       notes: [
@@ -207,24 +279,39 @@ function WritingImport() {
     try {
       const resolve = await topicResolver();
       const perTopic = new Map<string, number>();
-      let ok = 0; const errs: string[] = [];
+      let ok = 0;
+      const errs: string[] = [];
       for (const [i, r] of st.rows.entries()) {
         const topic = (r.topic ?? "").trim();
         const prompt = (r.prompt ?? "").trim();
-        if (!topic || !prompt) { errs.push(`Dòng ${i + 2}: thiếu topic hoặc prompt`); continue; }
+        if (!topic || !prompt) {
+          errs.push(`Dòng ${i + 2}: thiếu topic hoặc prompt`);
+          continue;
+        }
         try {
           const topicId = await resolve(topic, "writing");
           const n = perTopic.get(topicId) ?? 0;
           perTopic.set(topicId, n + 1);
           await saveTest({
-            topic_id: topicId, version_label: letter(n), prompt, title: null,
-            purpose: "progress", time_limit_min: Number(r.time_limit_min) || 40,
-            min_words: Number(r.min_words) || 250, active: true,
+            topic_id: topicId,
+            version_label: letter(n),
+            prompt,
+            title: null,
+            purpose: "progress",
+            time_limit_min: Number(r.time_limit_min) || 40,
+            min_words: Number(r.min_words) || 250,
+            active: true,
           });
           ok++;
-        } catch (e) { errs.push(`Dòng ${i + 2}: ${e instanceof Error ? e.message : String(e)}`); }
+        } catch (e) {
+          errs.push(`Dòng ${i + 2}: ${e instanceof Error ? e.message : String(e)}`);
+        }
       }
-      setSt({ ...st, busy: false, result: `Đã nhập ${ok} đề Viết.` + (errs.length ? ` ${errs.length} lỗi:\n` + errs.slice(0, 8).join("\n") : "") });
+      setSt({
+        ...st,
+        busy: false,
+        result: `Đã nhập ${ok} đề Viết.` + (errs.length ? ` ${errs.length} lỗi:\n` + errs.slice(0, 8).join("\n") : ""),
+      });
     } catch (e) {
       setSt({ ...st, busy: false, error: e instanceof Error ? e.message : String(e) });
     }
@@ -238,11 +325,15 @@ function WritingImport() {
             <h3>Import đề Writing</h3>
             <p className="muted small">Mỗi dòng CSV sẽ tạo một đề Writing trong chủ đề tương ứng.</p>
           </div>
-          <button className="btn small" onClick={template}>⬇ Tải template Excel</button>
+          <button className="btn small" onClick={template}>
+            ⬇ Tải template Excel
+          </button>
         </div>
         <div className="import-upload-row">
           <FilePick onFile={onFile} />
-          <p className="muted small">Cột bắt buộc: <code>{WRITING_COLS.join(", ")}</code>.</p>
+          <p className="muted small">
+            Cột bắt buộc: <code>{WRITING_COLS.join(", ")}</code>.
+          </p>
         </div>
       </div>
       {st.error && <ErrorBox msg={st.error} />}
@@ -271,10 +362,38 @@ function McqImport() {
       title: "TEMPLATE NHẬP CÂU HỎI TRẮC NGHIỆM",
       cols: MCQ_COLS,
       rows: [
-        ["Placement UoE", "use_of_english", "placement", "0.6", "Use of English A", "single",
-          "She ___ to school every day.", "go", "goes", "going", "gone", "goes", "A2", "1"],
-        ["Placement UoE", "use_of_english", "placement", "0.6", "Use of English A", "fill",
-          "The opposite of 'big' is ___.", "", "", "", "", "small", "A1", "1"],
+        [
+          "Placement UoE",
+          "use_of_english",
+          "placement",
+          "0.6",
+          "Use of English A",
+          "single",
+          "She ___ to school every day.",
+          "go",
+          "goes",
+          "going",
+          "gone",
+          "goes",
+          "A2",
+          "1",
+        ],
+        [
+          "Placement UoE",
+          "use_of_english",
+          "placement",
+          "0.6",
+          "Use of English A",
+          "fill",
+          "The opposite of 'big' is ___.",
+          "",
+          "",
+          "",
+          "",
+          "small",
+          "A1",
+          "1",
+        ],
       ],
       notes: [
         "Cùng topic + test_title sẽ được gom vào một đề.",
@@ -293,7 +412,8 @@ function McqImport() {
       const testCache = new Map<string, string>(); // key topic||test_title -> test_id
       const perTopicCount = new Map<string, number>();
       const orderByTest = new Map<string, number>();
-      let ok = 0; const errs: string[] = [];
+      let ok = 0;
+      const errs: string[] = [];
 
       for (const [i, r] of st.rows.entries()) {
         const ln = i + 2;
@@ -301,9 +421,18 @@ function McqImport() {
         const qtype = (r.qtype ?? "").trim().toLowerCase() as QType;
         const prompt = (r.prompt ?? "").trim();
         const correctRaw = (r.correct ?? "").trim();
-        if (!topic || !prompt) { errs.push(`Dòng ${ln}: thiếu topic/prompt`); continue; }
-        if (!QTYPES.includes(qtype)) { errs.push(`Dòng ${ln}: qtype không hợp lệ (${qtype})`); continue; }
-        if (!correctRaw) { errs.push(`Dòng ${ln}: thiếu correct`); continue; }
+        if (!topic || !prompt) {
+          errs.push(`Dòng ${ln}: thiếu topic/prompt`);
+          continue;
+        }
+        if (!QTYPES.includes(qtype)) {
+          errs.push(`Dòng ${ln}: qtype không hợp lệ (${qtype})`);
+          continue;
+        }
+        if (!correctRaw) {
+          errs.push(`Dòng ${ln}: thiếu correct`);
+          continue;
+        }
         const skill = ((r.skill ?? "use_of_english").trim() || "use_of_english") as Skill;
         const purpose = ((r.purpose ?? "placement").trim() || "placement") as "placement" | "progress" | "exit";
         const testTitle = (r.test_title ?? "").trim() || topic;
@@ -313,27 +442,52 @@ function McqImport() {
           const tkey = `${topicId}||${testTitle.toLowerCase()}`;
           let testId = testCache.get(tkey);
           if (!testId) {
-            const n = perTopicCount.get(topicId) ?? 0; perTopicCount.set(topicId, n + 1);
+            const n = perTopicCount.get(topicId) ?? 0;
+            perTopicCount.set(topicId, n + 1);
             const test = await saveTest({
-              topic_id: topicId, version_label: letter(n), title: testTitle, purpose,
+              topic_id: topicId,
+              version_label: letter(n),
+              title: testTitle,
+              purpose,
               pass_threshold: Number(r.pass_threshold) || 0.6,
-              time_limit_min: 20, min_words: 0, active: true,
+              time_limit_min: 20,
+              min_words: 0,
+              active: true,
             });
-            testId = test.id; testCache.set(tkey, testId);
+            testId = test.id;
+            testCache.set(tkey, testId);
           }
           const options = [r.option1, r.option2, r.option3, r.option4].map((o) => (o ?? "").trim()).filter(Boolean);
-          const correct = qtype === "multi" || qtype === "fill" ? correctRaw.split("|").map((x) => x.trim()).filter(Boolean) : correctRaw;
-          const ord = (orderByTest.get(testId) ?? 0) + 1; orderByTest.set(testId, ord);
+          const correct =
+            qtype === "multi" || qtype === "fill"
+              ? correctRaw
+                  .split("|")
+                  .map((x) => x.trim())
+                  .filter(Boolean)
+              : correctRaw;
+          const ord = (orderByTest.get(testId) ?? 0) + 1;
+          orderByTest.set(testId, ord);
           await saveQuestion({
-            test_id: testId, passage_id: null, sort_order: ord, qtype, prompt,
+            test_id: testId,
+            passage_id: null,
+            sort_order: ord,
+            qtype,
+            prompt,
             options: qtype === "tfng" || qtype === "fill" ? [] : options,
-            correct, points: Number(r.points) || 1,
+            correct,
+            points: Number(r.points) || 1,
             cefr_level: ((r.cefr_level ?? "").trim() || null) as never,
           });
           ok++;
-        } catch (e) { errs.push(`Dòng ${ln}: ${e instanceof Error ? e.message : String(e)}`); }
+        } catch (e) {
+          errs.push(`Dòng ${ln}: ${e instanceof Error ? e.message : String(e)}`);
+        }
       }
-      setSt({ ...st, busy: false, result: `Đã nhập ${ok} câu hỏi.` + (errs.length ? ` ${errs.length} lỗi:\n` + errs.slice(0, 8).join("\n") : "") });
+      setSt({
+        ...st,
+        busy: false,
+        result: `Đã nhập ${ok} câu hỏi.` + (errs.length ? ` ${errs.length} lỗi:\n` + errs.slice(0, 8).join("\n") : ""),
+      });
     } catch (e) {
       setSt({ ...st, busy: false, error: e instanceof Error ? e.message : String(e) });
     }
@@ -347,13 +501,17 @@ function McqImport() {
             <h3>Import câu hỏi trắc nghiệm</h3>
             <p className="muted small">Cùng topic + test_title sẽ gom vào một đề; mỗi dòng là một câu hỏi.</p>
           </div>
-          <button className="btn small" onClick={template}>⬇ Tải template Excel</button>
+          <button className="btn small" onClick={template}>
+            ⬇ Tải template Excel
+          </button>
         </div>
         <div className="import-upload-row">
           <FilePick onFile={onFile} />
           <p className="muted small">
-            Cột chính: <code>topic, skill, purpose, test_title, qtype, prompt, option1..4, correct, cefr_level, points</code>.
-            <code>correct</code> = giá trị đáp án; multi/fill nhiều đáp án ngăn bằng <code>|</code>; tfng dùng <code>true/false/notgiven</code>.
+            Cột chính:{" "}
+            <code>topic, skill, purpose, test_title, qtype, prompt, option1..4, correct, cefr_level, points</code>.
+            <code>correct</code> = giá trị đáp án; multi/fill nhiều đáp án ngăn bằng <code>|</code>; tfng dùng{" "}
+            <code>true/false/notgiven</code>.
           </p>
         </div>
       </div>

@@ -49,15 +49,25 @@ async function imageToBase64(path: string): Promise<string | null> {
   }
 }
 
-function num(v: number | null | undefined): string { return v == null ? "" : String(v); }
-function dateVi(v: string | null | undefined): string { return v ? new Date(v).toLocaleString("vi-VN") : ""; }
-function wordCount(essay: string | null): number | string { return essay ? essay.trim().split(/\s+/).filter(Boolean).length : ""; }
+function num(v: number | null | undefined): string {
+  return v == null ? "" : String(v);
+}
+function dateVi(v: string | null | undefined): string {
+  return v ? new Date(v).toLocaleString("vi-VN") : "";
+}
+function wordCount(essay: string | null): number | string {
+  return essay ? essay.trim().split(/\s+/).filter(Boolean).length : "";
+}
 function percentOf(x: Submission): string {
   if (x.score == null || !x.max_score) return "";
   return String(Math.round((Number(x.score) / Number(x.max_score)) * 1000) / 10) + "%";
 }
-function bandOf(x: Submission): string { return num(x.overall_band ?? x.band); }
-function statusOf(x: Submission): string { return x.status === "graded" ? "Đã chấm" : "Chờ chấm"; }
+function bandOf(x: Submission): string {
+  return num(x.overall_band ?? x.band);
+}
+function statusOf(x: Submission): string {
+  return x.status === "graded" ? "Đã chấm" : "Chờ chấm";
+}
 function skillLabel(skill?: string): string {
   if (skill === "writing") return "Writing";
   if (skill === "reading") return "Reading";
@@ -69,8 +79,8 @@ function testName(test: TestWithTopic | undefined, fallback: string | null): str
   return test ? (test.title ?? `Đề ${test.version_label}`) : (fallback ?? "");
 }
 
-function safeName(v: string): string {
-  return v.replace(/[\\/?*\[\]:]/g, " ").slice(0, 31) || "Sheet";
+function _safeName(v: string): string {
+  return v.replace(/[\\/?*[\]:]/g, " ").slice(0, 31) || "Sheet";
 }
 
 function styleMergedTitle(ws: ExcelJSType.Worksheet, range: string, value: string, size = 18) {
@@ -130,19 +140,45 @@ export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs)
 
   const graded = submissions.filter((x) => x.status === "graded").length;
   const waiting = submissions.length - graded;
-  const avgBandValues = submissions.map((x) => x.overall_band ?? x.band).filter((v): v is number => typeof v === "number");
-  const avgBand = avgBandValues.length ? (avgBandValues.reduce((a, b) => a + Number(b), 0) / avgBandValues.length).toFixed(1) : "—";
-  const avgPercentValues = submissions
-    .map((x) => x.score != null && x.max_score ? Number(x.score) / Number(x.max_score) * 100 : null)
+  const avgBandValues = submissions
+    .map((x) => x.overall_band ?? x.band)
     .filter((v): v is number => typeof v === "number");
-  const avgPercent = avgPercentValues.length ? (avgPercentValues.reduce((a, b) => a + b, 0) / avgPercentValues.length).toFixed(1) + "%" : "—";
+  const avgBand = avgBandValues.length
+    ? (avgBandValues.reduce((a, b) => a + Number(b), 0) / avgBandValues.length).toFixed(1)
+    : "—";
+  const avgPercentValues = submissions
+    .map((x) => (x.score != null && x.max_score ? (Number(x.score) / Number(x.max_score)) * 100 : null))
+    .filter((v): v is number => typeof v === "number");
+  const avgPercent = avgPercentValues.length
+    ? (avgPercentValues.reduce((a, b) => a + b, 0) / avgPercentValues.length).toFixed(1) + "%"
+    : "—";
 
   const ws = workbook.addWorksheet("Bảng điểm", { views: [{ state: "frozen", ySplit: 11 }] });
   ws.properties.defaultRowHeight = 20;
   ws.columns = [
-    { width: 6 }, { width: 19 }, { width: 24 }, { width: 32 }, { width: 31 }, { width: 15 }, { width: 28 }, { width: 13 },
-    { width: 10 }, { width: 10 }, { width: 10 }, { width: 13 }, { width: 15 }, { width: 10 }, { width: 14 },
-    { width: 8 }, { width: 8 }, { width: 8 }, { width: 8 }, { width: 9 }, { width: 10 }, { width: 19 }, { width: 42 },
+    { width: 6 },
+    { width: 19 },
+    { width: 24 },
+    { width: 32 },
+    { width: 31 },
+    { width: 15 },
+    { width: 28 },
+    { width: 13 },
+    { width: 10 },
+    { width: 10 },
+    { width: 10 },
+    { width: 13 },
+    { width: 15 },
+    { width: 10 },
+    { width: 14 },
+    { width: 8 },
+    { width: 8 },
+    { width: 8 },
+    { width: 8 },
+    { width: 9 },
+    { width: 10 },
+    { width: 19 },
+    { width: 42 },
   ];
   addLogo(ws, workbook, logoBase64);
   styleMergedTitle(ws, "D1:W2", "BẢNG ĐIỂM KIỂM TRA", 21);
@@ -151,9 +187,23 @@ export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs)
 
   const info = [
     ["Buổi thi", session.name, "Mã thi", session.access_code || "—", "Lớp", className || "Tất cả"],
-    ["Kỹ năng", skillLabel(test?.skill) || "—", "Số bài nộp", submissions.length, "Đã chấm / Chờ", `${graded} / ${waiting}`],
+    [
+      "Kỹ năng",
+      skillLabel(test?.skill) || "—",
+      "Số bài nộp",
+      submissions.length,
+      "Đã chấm / Chờ",
+      `${graded} / ${waiting}`,
+    ],
     ["Band TB", avgBand, "Điểm TB", avgPercent, "Xuất lúc", new Date().toLocaleString("vi-VN")],
-    ["Mở lúc", dateVi(session.open_at) || "Ngay", "Đóng lúc", dateVi(session.close_at) || "Không giới hạn", "Đề", testName(test, submissions[0]?.topic_name)],
+    [
+      "Mở lúc",
+      dateVi(session.open_at) || "Ngay",
+      "Đóng lúc",
+      dateVi(session.close_at) || "Không giới hạn",
+      "Đề",
+      testName(test, submissions[0]?.topic_name),
+    ],
   ];
   info.forEach((r, i) => {
     const row = ws.getRow(5 + i);
@@ -165,9 +215,29 @@ export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs)
   ws.getCell("A10").font = { bold: true, size: 14, color: { argb: `FF${BRAND.primary}` } };
 
   const headers = [
-    "STT", "Thời gian nộp", "Họ tên", "Email", "Buổi thi", "Mã thi", "Đề", "Kỹ năng",
-    "Điểm", "Tối đa", "Tỷ lệ", "Band tự chấm", "Overall Writing", "CEFR", "Trạng thái",
-    "TR", "CC", "LR", "GRA", "Số từ", "Vi phạm", "Bắt đầu lúc", "Nhận xét",
+    "STT",
+    "Thời gian nộp",
+    "Họ tên",
+    "Email",
+    "Buổi thi",
+    "Mã thi",
+    "Đề",
+    "Kỹ năng",
+    "Điểm",
+    "Tối đa",
+    "Tỷ lệ",
+    "Band tự chấm",
+    "Overall Writing",
+    "CEFR",
+    "Trạng thái",
+    "TR",
+    "CC",
+    "LR",
+    "GRA",
+    "Số từ",
+    "Vi phạm",
+    "Bắt đầu lúc",
+    "Nhận xét",
   ];
   ws.getRow(11).values = headers;
   styleHeader(ws.getRow(11));
@@ -175,10 +245,29 @@ export async function downloadGradeReportWorkbook(args: DownloadGradeReportArgs)
   submissions.forEach((x, idx) => {
     const row = ws.getRow(12 + idx);
     row.values = [
-      idx + 1, dateVi(x.submitted_at), x.student_name ?? "", x.student_email ?? "", session.name, session.access_code ?? "",
-      testName(test, x.topic_name), skillLabel(test?.skill), num(x.score), num(x.max_score), percentOf(x), num(x.band), num(x.overall_band),
-      x.cefr ?? "", statusOf(x), num(x.score_tr), num(x.score_cc), num(x.score_lr), num(x.score_gra), wordCount(x.essay),
-      num(x.violations), dateVi(x.started_at), x.feedback ?? "",
+      idx + 1,
+      dateVi(x.submitted_at),
+      x.student_name ?? "",
+      x.student_email ?? "",
+      session.name,
+      session.access_code ?? "",
+      testName(test, x.topic_name),
+      skillLabel(test?.skill),
+      num(x.score),
+      num(x.max_score),
+      percentOf(x),
+      num(x.band),
+      num(x.overall_band),
+      x.cefr ?? "",
+      statusOf(x),
+      num(x.score_tr),
+      num(x.score_cc),
+      num(x.score_lr),
+      num(x.score_gra),
+      wordCount(x.essay),
+      num(x.violations),
+      dateVi(x.started_at),
+      x.feedback ?? "",
     ];
     styleBodyRow(row, idx);
     row.getCell(3).font = { bold: true, color: { argb: `FF${BRAND.primary}` } };

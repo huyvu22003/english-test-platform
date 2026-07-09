@@ -8,6 +8,4 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 export const isConfigured = Boolean(url && anonKey);
 
 // Khi chưa cấu hình .env, client = null để app vẫn chạy (Phase 0 / chế độ demo).
-export const supabase: SupabaseClient | null = isConfigured
-  ? createClient(url as string, anonKey as string)
-  : null;
+export const supabase: SupabaseClient | null = isConfigured ? createClient(url as string, anonKey as string) : null;

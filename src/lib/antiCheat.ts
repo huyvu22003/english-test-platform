@@ -6,15 +6,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface AntiCheat {
   violations: number;
-  log: string;          // mỗi dòng: "HH:mm:ss — lý do"
+  log: string; // mỗi dòng: "HH:mm:ss — lý do"
   warning: string | null;
   enterFullscreen: () => Promise<void>;
 }
 
 export const MAX_ALLOWED_VIOLATIONS = 2; // từ 2 lần sẽ dừng/nộp bài thi
-export const VIOLATION_STOP_MESSAGE = "Bài làm đã bị dừng do vượt quá số lần vi phạm cho phép. Học sinh cần nghiêm túc hơn trong lần làm bài tiếp theo.";
+export const VIOLATION_STOP_MESSAGE =
+  "Bài làm đã bị dừng do vượt quá số lần vi phạm cho phép. Học sinh cần nghiêm túc hơn trong lần làm bài tiếp theo.";
 
-const WARN_AT = 1;       // bắt đầu cảnh báo ngay từ lần đầu
+const WARN_AT = 1; // bắt đầu cảnh báo ngay từ lần đầu
 const HIDE_WARN_MS = 4000;
 const RECORD_COOLDOWN_MS = 1500; // một hành động rời màn hình có thể bắn nhiều event; chỉ tính 1 lần
 

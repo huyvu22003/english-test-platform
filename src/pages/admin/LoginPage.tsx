@@ -32,11 +32,15 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
-      <div className="auth-logo"><Logo height={54} light /></div>
+      <div className="auth-logo">
+        <Logo height={54} light />
+      </div>
       <div className="auth-box auth-box-premium">
         <span className="eyebrow dark">Teacher admin</span>
         <h1>Đăng nhập giáo viên</h1>
-        <p className="muted small auth-subtitle">Vào khu quản trị IELTS Ms. Trà My để soạn đề, chấm bài và theo dõi lớp.</p>
+        <p className="muted small auth-subtitle">
+          Vào khu quản trị IELTS Ms. Trà My để soạn đề, chấm bài và theo dõi lớp.
+        </p>
         {!isConfigured && <ErrorBox msg="Chưa cấu hình Supabase (.env). Xem docs/SETUP.md." />}
         <form onSubmit={onSubmit}>
           <label className="field">
@@ -45,14 +49,23 @@ export default function LoginPage() {
           </label>
           <label className="field">
             <span>Mật khẩu</span>
-            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" autoComplete="current-password" />
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              autoComplete="current-password"
+            />
           </label>
           {err && <ErrorBox msg={err} />}
           <button className="btn primary big auth-submit" disabled={busy || !isConfigured} type="submit">
             {busy ? "Đang đăng nhập…" : "Đăng nhập"}
           </button>
         </form>
-        <div className="auth-footer-link"><Link className="link" to="/">← Về trang học sinh</Link></div>
+        <div className="auth-footer-link">
+          <Link className="link" to="/">
+            ← Về trang học sinh
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,5 @@
 // Bối cảnh đăng nhập giáo viên (Supabase Auth). Giữ phiên + cung cấp hook useAuth.
-import {
-  createContext, useContext, useEffect, useState, type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import type { AdminRole, Profile } from "./types";
@@ -39,13 +37,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("id", s.user.id)
       .maybeSingle();
     const fallbackRole: AdminRole = s.user.email ? "teacher" : "teacher";
-    setProfile((data as Profile | null) ?? {
-      id: s.user.id,
-      email: s.user.email ?? null,
-      full_name: s.user.user_metadata?.full_name ?? null,
-      role: fallbackRole,
-      active: true,
-    });
+    setProfile(
+      (data as Profile | null) ?? {
+        id: s.user.id,
+        email: s.user.email ?? null,
+        full_name: s.user.user_metadata?.full_name ?? null,
+        role: fallbackRole,
+        active: true,
+      },
+    );
     setProfileLoading(false);
   }
 
@@ -83,7 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canGrade = isAdmin || role === "teacher" || role === "grader";
 
   return (
-    <Ctx.Provider value={{ session, profile, loading, profileLoading, isAdmin, canManageContent, canGrade, signIn, signOut }}>
+    <Ctx.Provider
+      value={{ session, profile, loading, profileLoading, isAdmin, canManageContent, canGrade, signIn, signOut }}
+    >
       {children}
     </Ctx.Provider>
   );

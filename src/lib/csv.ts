@@ -7,24 +7,37 @@ function tokenize(text: string): string[][] {
   let row: string[] = [];
   let field = "";
   let inQuotes = false;
+  // eslint-disable-next-line no-irregular-whitespace
   const s = text.replace(/^﻿/, ""); // bỏ BOM
   for (let i = 0; i < s.length; i++) {
     const c = s[i];
     if (inQuotes) {
       if (c === '"') {
-        if (s[i + 1] === '"') { field += '"'; i++; }
-        else inQuotes = false;
+        if (s[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else inQuotes = false;
       } else field += c;
     } else {
       if (c === '"') inQuotes = true;
-      else if (c === ",") { row.push(field); field = ""; }
-      else if (c === "\r") { /* bỏ qua */ }
-      else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
-      else field += c;
+      else if (c === ",") {
+        row.push(field);
+        field = "";
+      } else if (c === "\r") {
+        /* bỏ qua */
+      } else if (c === "\n") {
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else field += c;
     }
   }
   // ô/dòng cuối
-  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
   return rows;
 }
 
@@ -40,7 +53,9 @@ export function parseCsv(text: string): ParsedCsv {
   const headers = cells[0].map((h) => h.trim().toLowerCase());
   const rows = cells.slice(1).map((r) => {
     const o: Record<string, string> = {};
-    headers.forEach((h, i) => { o[h] = (r[i] ?? "").trim(); });
+    headers.forEach((h, i) => {
+      o[h] = (r[i] ?? "").trim();
+    });
     return o;
   });
   return { headers, rows };
@@ -56,6 +71,8 @@ export function downloadCsv(filename: string, rows: (string | number)[][]) {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = filename; a.click();
+  a.href = url;
+  a.download = filename;
+  a.click();
   URL.revokeObjectURL(url);
 }

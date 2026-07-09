@@ -33,13 +33,7 @@ export default function Logo({
                 <stop offset="1" stopColor="#ec2f2b" />
               </linearGradient>
             </defs>
-            <g
-              fill="none"
-              stroke="url(#etpPetal)"
-              strokeWidth="5"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            >
+            <g fill="none" stroke="url(#etpPetal)" strokeWidth="5" strokeLinejoin="round" strokeLinecap="round">
               {[45, 135, 225, 315].map((r) => (
                 <g key={r} transform={`translate(60 60) rotate(${r})`}>
                   <path d="M0 -4 C 15 -16, 17 -40, 0 -56 C -17 -40, -15 -16, 0 -4 Z" />

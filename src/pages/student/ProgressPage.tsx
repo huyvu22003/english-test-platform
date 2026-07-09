@@ -2,7 +2,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getProgress, studentByCode } from "../../lib/api";
-import { clearStudentIdentity, identityFromStudentCode, loadStudentIdentity, saveStudentIdentity } from "../../lib/studentSession";
+import {
+  clearStudentIdentity,
+  identityFromStudentCode,
+  loadStudentIdentity,
+  saveStudentIdentity,
+} from "../../lib/studentSession";
 import { ErrorBox, Spinner } from "../../components/common";
 import type { ProgressItem, Skill } from "../../lib/types";
 
@@ -41,8 +46,14 @@ export default function ProgressPage() {
 
   async function lookup() {
     const cleanCode = studentCode.trim();
-    if (!cleanCode) { setErr("Chỉ học viên có mã HV mới được xem tiến bộ. Guest chỉ được làm bài xếp lớp."); return; }
-    setErr(null); setLoading(true); setItems(null); setSelected(null);
+    if (!cleanCode) {
+      setErr("Chỉ học viên có mã HV mới được xem tiến bộ. Guest chỉ được làm bài xếp lớp.");
+      return;
+    }
+    setErr(null);
+    setLoading(true);
+    setItems(null);
+    setSelected(null);
     try {
       const student = await studentByCode(cleanCode);
       if (!student) {
@@ -86,9 +97,13 @@ export default function ProgressPage() {
       <header className="topbar">
         <div>
           <h1>Tiến bộ của bạn</h1>
-          <p className="muted small sub">Nhập mã học sinh để hệ thống tự điền hồ sơ và xem biểu đồ Nghe · Đọc · Viết cùng lịch sử bài đã làm.</p>
+          <p className="muted small sub">
+            Nhập mã học sinh để hệ thống tự điền hồ sơ và xem biểu đồ Nghe · Đọc · Viết cùng lịch sử bài đã làm.
+          </p>
         </div>
-        <Link className="link" to="/">← Trang chủ</Link>
+        <Link className="link" to="/">
+          ← Trang chủ
+        </Link>
       </header>
 
       <div className="card progress-lookup">
@@ -100,27 +115,21 @@ export default function ProgressPage() {
             onKeyDown={(e) => e.key === "Enter" && lookup()}
             autoFocus
           />
-          <button className="btn primary" onClick={lookup}>Xem</button>
-          <button className="btn ghost danger" type="button" onClick={clearLookup}>Xóa</button>
+          <button className="btn primary" onClick={lookup}>
+            Xem
+          </button>
+          <button className="btn ghost danger" type="button" onClick={clearLookup}>
+            Xóa
+          </button>
         </div>
         <div className="progress-student-grid">
-          <input
-            placeholder="Họ tên học sinh…"
-            value={studentName}
-            readOnly
-          />
-          <input
-            placeholder="Email đã dùng khi thi…"
-            value={email}
-            readOnly
-          />
-          <input
-            placeholder="Lớp…"
-            value={className}
-            readOnly
-          />
+          <input placeholder="Họ tên học sinh…" value={studentName} readOnly />
+          <input placeholder="Email đã dùng khi thi…" value={email} readOnly />
+          <input placeholder="Lớp…" value={className} readOnly />
         </div>
-        <div className="muted small progress-lookup-hint">Quy tắc tra cứu: dùng mã học sinh làm khóa chính; họ tên, email và lớp được tự điền từ hồ sơ học sinh.</div>
+        <div className="muted small progress-lookup-hint">
+          Quy tắc tra cứu: dùng mã học sinh làm khóa chính; họ tên, email và lớp được tự điền từ hồ sơ học sinh.
+        </div>
       </div>
 
       {loading && <Spinner />}
@@ -144,9 +153,7 @@ export default function ProgressPage() {
         </>
       )}
 
-      {items && items.length === 0 && (
-        <div className="card muted">Chưa có bài nộp nào khớp thông tin đã nhập.</div>
-      )}
+      {items && items.length === 0 && <div className="card muted">Chưa có bài nộp nào khớp thông tin đã nhập.</div>}
     </div>
   );
 }
@@ -158,13 +165,18 @@ function SkillSummary({ grouped }: { grouped: Record<string, ProgressItem[]> }) 
         const graded = rows.filter(hasBand);
         const latest = [...graded].sort(bySubmittedDesc)[0];
         const first = [...graded].sort(bySubmittedAsc)[0];
-        const delta = latest && first && latest !== first ? (bandOf(latest)! - bandOf(first)!) : null;
+        const delta = latest && first && latest !== first ? bandOf(latest)! - bandOf(first)! : null;
         return (
           <div className="card progress-skill-card" key={skill}>
             <span className={`pill skill-${skill}`}>{skillLabel(skill)}</span>
             <div className="progress-big">{latest ? bandOf(latest) : "—"}</div>
             <div className="muted small">Band gần nhất · {rows.length} bài</div>
-            {delta !== null && <div className={delta >= 0 ? "ok-text" : "warn-text"}>{delta >= 0 ? "+" : ""}{delta.toFixed(1)} so với bài đầu</div>}
+            {delta !== null && (
+              <div className={delta >= 0 ? "ok-text" : "warn-text"}>
+                {delta >= 0 ? "+" : ""}
+                {delta.toFixed(1)} so với bài đầu
+              </div>
+            )}
           </div>
         );
       })}
@@ -172,7 +184,11 @@ function SkillSummary({ grouped }: { grouped: Record<string, ProgressItem[]> }) 
   );
 }
 
-function HistoryTable({ items, selected, onSelect }: {
+function HistoryTable({
+  items,
+  selected,
+  onSelect,
+}: {
   items: ProgressItem[];
   selected: ProgressItem | null;
   onSelect: (item: ProgressItem) => void;
@@ -180,14 +196,29 @@ function HistoryTable({ items, selected, onSelect }: {
   return (
     <div className="card table-wrap progress-history">
       <table className="table">
-        <thead><tr><th>Ngày</th><th>Kỹ năng</th><th>Chủ đề</th><th>Band</th><th>TR</th><th>CC</th><th>LR</th><th>GRA</th><th>CEFR</th><th>Trạng thái</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Ngày</th>
+            <th>Kỹ năng</th>
+            <th>Chủ đề</th>
+            <th>Band</th>
+            <th>TR</th>
+            <th>CC</th>
+            <th>LR</th>
+            <th>GRA</th>
+            <th>CEFR</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
         <tbody>
           {items.map((i, idx) => {
             const active = selected && keyOf(selected, -1) === keyOf(i, idx);
             return (
               <tr key={keyOf(i, idx)} className={active ? "selected-row" : "clickable-row"} onClick={() => onSelect(i)}>
                 <td className="small">{dateVi(i.submitted_at)}</td>
-                <td><span className={`pill small skill-${i.skill}`}>{skillLabel(i.skill)}</span></td>
+                <td>
+                  <span className={`pill small skill-${i.skill}`}>{skillLabel(i.skill)}</span>
+                </td>
                 <td>{i.topic_name ?? i.test_title ?? "—"}</td>
                 <td>{bandOf(i) ?? "—"}</td>
                 <td>{i.score_tr ?? "—"}</td>
@@ -217,15 +248,23 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
           <div>
             <span className={`pill skill-${item.skill}`}>{skillLabel(item.skill)}</span>
             <h2>{item.topic_name ?? item.test_title ?? "Chi tiết bài làm"}</h2>
-            <p className="muted small">{dateVi(item.submitted_at)} · {item.student_name ?? "Học viên"}{item.student_code ? ` · Mã ${item.student_code}` : ""}{item.class_name ? ` · Lớp ${item.class_name}` : ""} · {item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</p>
+            <p className="muted small">
+              {dateVi(item.submitted_at)} · {item.student_name ?? "Học viên"}
+              {item.student_code ? ` · Mã ${item.student_code}` : ""}
+              {item.class_name ? ` · Lớp ${item.class_name}` : ""} · {item.status === "graded" ? "Đã chấm" : "Chờ chấm"}
+            </p>
           </div>
           <div className="modal-head-actions">
             <div className="detail-score">
               <div>{bandOf(item) ?? "—"}</div>
               <span>Band</span>
             </div>
-            <button className="btn small" onClick={() => printProgressPdf(item, corrections)}>In / Tải PDF</button>
-            <button className="btn ghost small" onClick={onClose}>Đóng ✕</button>
+            <button className="btn small" onClick={() => printProgressPdf(item, corrections)}>
+              In / Tải PDF
+            </button>
+            <button className="btn ghost small" onClick={onClose}>
+              Đóng ✕
+            </button>
           </div>
         </div>
 
@@ -233,20 +272,40 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
           <div className="detail-column">
             <section className="detail-section first">
               <h3>Đề bài</h3>
-              <div className="detail-box prewrap prompt-box">{item.prompt || item.test_title || item.topic_name || "Chưa có đề bài lưu trong hệ thống."}</div>
+              <div className="detail-box prewrap prompt-box">
+                {item.prompt || item.test_title || item.topic_name || "Chưa có đề bài lưu trong hệ thống."}
+              </div>
             </section>
 
             <section className="detail-section">
               <h3>Bài làm của học viên</h3>
               {essayTextOf(item) ? (
                 <>
-                  <div className="detail-box prewrap essay-detail-box"><HighlightedEssay essay={essayTextOf(item)!} corrections={corrections} activeId={activeCorrection} openNoteId={openNoteId} onToggleNote={setOpenNoteId} /></div>
-                  {openCorrection && <CorrectionInlineNote correction={openCorrection} onClose={() => setOpenNoteId(null)} />}
+                  <div className="detail-box prewrap essay-detail-box">
+                    <HighlightedEssay
+                      essay={essayTextOf(item)!}
+                      corrections={corrections}
+                      activeId={activeCorrection}
+                      openNoteId={openNoteId}
+                      onToggleNote={setOpenNoteId}
+                    />
+                  </div>
+                  {openCorrection && (
+                    <CorrectionInlineNote correction={openCorrection} onClose={() => setOpenNoteId(null)} />
+                  )}
                 </>
               ) : item.score != null && item.max_score != null ? (
-                <div className="detail-box">Điểm tự chấm: <b>{item.score}/{item.max_score}</b></div>
+                <div className="detail-box">
+                  Điểm tự chấm:{" "}
+                  <b>
+                    {item.score}/{item.max_score}
+                  </b>
+                </div>
               ) : (
-                <div className="detail-box muted">Chưa có bài làm lưu trực tiếp trong hệ thống. Nếu giáo viên chấm qua Google Docs, vui lòng mở link trong phần nhận xét tổng quan.</div>
+                <div className="detail-box muted">
+                  Chưa có bài làm lưu trực tiếp trong hệ thống. Nếu giáo viên chấm qua Google Docs, vui lòng mở link
+                  trong phần nhận xét tổng quan.
+                </div>
               )}
             </section>
           </div>
@@ -255,15 +314,40 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
             <section className="detail-section first">
               <h3>Điểm</h3>
               <WritingScoreGrid item={item} />
-              {item.score != null && item.max_score != null && <div className="detail-box">Điểm tự chấm: <b>{item.score}/{item.max_score}</b></div>}
-              {item.cefr && <div className="detail-box small">CEFR: <b>{item.cefr}</b></div>}
+              {item.score != null && item.max_score != null && (
+                <div className="detail-box">
+                  Điểm tự chấm:{" "}
+                  <b>
+                    {item.score}/{item.max_score}
+                  </b>
+                </div>
+              )}
+              {item.cefr && (
+                <div className="detail-box small">
+                  CEFR: <b>{item.cefr}</b>
+                </div>
+              )}
             </section>
 
             <section className="detail-section">
               <h3>Nhận xét tổng quan của giáo viên</h3>
-              <div className="detail-box prewrap feedback-box"><FeedbackText text={item.feedback || "Chưa có nhận xét tổng quan."} /></div>
+              <div className="detail-box prewrap feedback-box">
+                <FeedbackText text={item.feedback || "Chưa có nhận xét tổng quan."} />
+              </div>
               <h3>Sửa câu chi tiết</h3>
-              {corrections.length > 0 ? <StructuredCorrectionList corrections={corrections} activeId={activeCorrection} onFocus={setActiveCorrection} onOpenNote={setOpenNoteId} /> : <p className="muted small">Chưa có dữ liệu sửa câu có cấu trúc trong hệ thống. Nếu nhận xét nằm trong Google Docs, hãy mở link ở phần nhận xét tổng quan.</p>}
+              {corrections.length > 0 ? (
+                <StructuredCorrectionList
+                  corrections={corrections}
+                  activeId={activeCorrection}
+                  onFocus={setActiveCorrection}
+                  onOpenNote={setOpenNoteId}
+                />
+              ) : (
+                <p className="muted small">
+                  Chưa có dữ liệu sửa câu có cấu trúc trong hệ thống. Nếu nhận xét nằm trong Google Docs, hãy mở link ở
+                  phần nhận xét tổng quan.
+                </p>
+              )}
             </section>
           </div>
         </div>
@@ -272,9 +356,23 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
   );
 }
 
-interface CorrectionPair { id: string; original: string; corrected: string; note?: string; start?: number; end?: number; index: number; }
+interface CorrectionPair {
+  id: string;
+  original: string;
+  corrected: string;
+  note?: string;
+  start?: number;
+  end?: number;
+  index: number;
+}
 
-function HighlightedEssay({ essay, corrections, activeId, openNoteId, onToggleNote }: {
+function HighlightedEssay({
+  essay,
+  corrections,
+  activeId,
+  openNoteId,
+  onToggleNote,
+}: {
   essay: string;
   corrections: CorrectionPair[];
   activeId: string | null;
@@ -282,31 +380,51 @@ function HighlightedEssay({ essay, corrections, activeId, openNoteId, onToggleNo
   onToggleNote: (id: string | null) => void;
 }) {
   const parts = highlightEssayParts(essay, corrections);
-  return <>{parts.map((p, idx) => {
-    if (!p.hit) return <span key={idx}>{p.text}</span>;
-    const open = openNoteId === p.hit.id;
-    return (
-      <button
-        id={`essay-hit-${p.hit.id}`}
-        type="button"
-        className={`essay-error-mark${activeId === p.hit.id || open ? " active" : ""}`}
-        key={idx}
-        onClick={() => onToggleNote(open ? null : p.hit!.id)}
-        title="Bấm để xem câu sửa của giáo viên"
-      >{p.text}</button>
-    );
-  })}</>;
+  return (
+    <>
+      {parts.map((p, idx) => {
+        if (!p.hit) return <span key={idx}>{p.text}</span>;
+        const open = openNoteId === p.hit.id;
+        return (
+          <button
+            id={`essay-hit-${p.hit.id}`}
+            type="button"
+            className={`essay-error-mark${activeId === p.hit.id || open ? " active" : ""}`}
+            key={idx}
+            onClick={() => onToggleNote(open ? null : p.hit!.id)}
+            title="Bấm để xem câu sửa của giáo viên"
+          >
+            {p.text}
+          </button>
+        );
+      })}
+    </>
+  );
 }
 
 function FeedbackText({ text }: { text: string }) {
   const parts = String(text).split(/(https?:\/\/[^\s]+)/g);
-  return <>{parts.map((part, idx) => /^https?:\/\//.test(part) ? <a key={idx} className="link" href={part} target="_blank" rel="noopener noreferrer">{part}</a> : <span key={idx}>{part}</span>)}</>;
+  return (
+    <>
+      {parts.map((part, idx) =>
+        /^https?:\/\//.test(part) ? (
+          <a key={idx} className="link" href={part} target="_blank" rel="noopener noreferrer">
+            {part}
+          </a>
+        ) : (
+          <span key={idx}>{part}</span>
+        ),
+      )}
+    </>
+  );
 }
 
 function CorrectionInlineNote({ correction, onClose }: { correction: CorrectionPair; onClose: () => void }) {
   return (
     <div className="correction-inline-note">
-      <button className="sticknote-close" type="button" onClick={onClose}>×</button>
+      <button className="sticknote-close" type="button" onClick={onClose}>
+        ×
+      </button>
       <div className="correction-label">Lỗi #{correction.index}</div>
       <div className="correction-original">{correction.original}</div>
       {correction.note && <div className="sticknote-note">Lỗi: {correction.note}</div>}
@@ -316,7 +434,12 @@ function CorrectionInlineNote({ correction, onClose }: { correction: CorrectionP
   );
 }
 
-function StructuredCorrectionList({ corrections, activeId, onFocus, onOpenNote }: {
+function StructuredCorrectionList({
+  corrections,
+  activeId,
+  onFocus,
+  onOpenNote,
+}: {
   corrections: CorrectionPair[];
   activeId: string | null;
   onFocus: (id: string | null) => void;
@@ -346,7 +469,10 @@ function StructuredCorrectionList({ corrections, activeId, onFocus, onOpenNote }
 
 function WritingScoreGrid({ item }: { item: ProgressItem }) {
   const scores = [
-    ["TR", item.score_tr], ["CC", item.score_cc], ["LR", item.score_lr], ["GRA", item.score_gra],
+    ["TR", item.score_tr],
+    ["CC", item.score_cc],
+    ["LR", item.score_lr],
+    ["GRA", item.score_gra],
   ] as const;
   if (scores.every(([, value]) => value == null)) return null;
   return (
@@ -371,28 +497,42 @@ function ProgressChart({ skill, items }: { skill: string; items: ProgressItem[] 
 // Biểu đồ đường cho 4 tiêu chí Writing, tập trung vào xu hướng thay vì cột rời.
 function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
   const rows = [...items].sort(bySubmittedAsc);
-  const W = 720, H = 240, padL = 42, padR = 18, padT = 18, padB = 34;
-  const values = rows.flatMap((row) => WRITING_CRITERIA.map((criterion) => criterionValue(row, criterion.key))).filter((v): v is number => v != null);
+  const W = 720,
+    H = 240,
+    padL = 42,
+    padR = 18,
+    padT = 18,
+    padB = 34;
+  const values = rows
+    .flatMap((row) => WRITING_CRITERIA.map((criterion) => criterionValue(row, criterion.key)))
+    .filter((v): v is number => v != null);
   const rawMin = Math.min(...values, 4);
   const rawMax = Math.max(...values, 7);
   const minScore = Math.max(0, Math.floor((rawMin - 0.5) * 2) / 2);
   const maxScore = Math.min(9, Math.ceil((rawMax + 0.5) * 2) / 2);
   const scoreRange = Math.max(1, maxScore - minScore);
-  const x = (idx: number) => rows.length === 1 ? (padL + (W - padR)) / 2 : padL + (idx * (W - padL - padR)) / (rows.length - 1);
+  const x = (idx: number) =>
+    rows.length === 1 ? (padL + (W - padR)) / 2 : padL + (idx * (W - padL - padR)) / (rows.length - 1);
   const y = (value: number) => padT + ((maxScore - value) / scoreRange) * (H - padT - padB);
   const ticks = Array.from(new Set([minScore, Math.round(((minScore + maxScore) / 2) * 2) / 2, maxScore]));
   const deltas = WRITING_CRITERIA.map((criterion) => {
     const values = rows.map((row) => criterionValue(row, criterion.key)).filter((v): v is number => v != null);
     const first = values[0] ?? null;
     const latest = values[values.length - 1] ?? null;
-    return { ...criterion, first, latest, delta: first != null && latest != null && values.length > 1 ? latest - first : null };
+    return {
+      ...criterion,
+      first,
+      latest,
+      delta: first != null && latest != null && values.length > 1 ? latest - first : null,
+    };
   });
-  const linePoints = (criterion: (typeof WRITING_CRITERIA)[number]) => rows
-    .map((row, idx) => {
-      const value = criterionValue(row, criterion.key);
-      return value == null ? null : { x: x(idx), y: y(value), value, row };
-    })
-    .filter((point): point is { x: number; y: number; value: number; row: ProgressItem } => point != null);
+  const linePoints = (criterion: (typeof WRITING_CRITERIA)[number]) =>
+    rows
+      .map((row, idx) => {
+        const value = criterionValue(row, criterion.key);
+        return value == null ? null : { x: x(idx), y: y(value), value, row };
+      })
+      .filter((point): point is { x: number; y: number; value: number; row: ProgressItem } => point != null);
 
   return (
     <div className="card progress-chart-card writing-criteria-chart-card">
@@ -403,7 +543,9 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
       <div className="criteria-delta-grid">
         {deltas.map((d) => (
           <div className="criteria-delta" key={d.key} style={{ borderTopColor: d.color }}>
-            <span>{d.short} · {d.label}</span>
+            <span>
+              {d.short} · {d.label}
+            </span>
             <strong>{d.latest ?? "—"}</strong>
             <small className={d.delta == null ? "muted" : d.delta >= 0 ? "ok-text" : "warn-text"}>
               {d.delta == null ? "Chưa đủ dữ liệu" : `${d.delta >= 0 ? "+" : ""}${d.delta.toFixed(1)}`}
@@ -411,17 +553,35 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
           </div>
         ))}
       </div>
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="chart criteria-chart" role="img" aria-label="Biểu đồ tiến bộ 4 tiêu chí Writing">
+      <svg
+        width="100%"
+        viewBox={`0 0 ${W} ${H}`}
+        className="chart criteria-chart"
+        role="img"
+        aria-label="Biểu đồ tiến bộ 4 tiêu chí Writing"
+      >
         {ticks.map((tick) => (
           <g key={tick}>
             <line x1={padL} x2={W - padR} y1={y(tick)} y2={y(tick)} stroke="var(--line)" />
-            <text x={padL - 10} y={y(tick) + 4} textAnchor="end" fontSize="11" fill="var(--muted)">{tick}</text>
+            <text x={padL - 10} y={y(tick) + 4} textAnchor="end" fontSize="11" fill="var(--muted)">
+              {tick}
+            </text>
           </g>
         ))}
         {rows.map((row, rowIdx) => (
           <g key={keyOf(row, rowIdx)}>
-            <line x1={x(rowIdx)} x2={x(rowIdx)} y1={padT} y2={H - padB} stroke="var(--line)" strokeDasharray="3 6" opacity="0.7" />
-            <text x={x(rowIdx)} y={H - 8} textAnchor="middle" fontSize="10" fill="var(--muted)">{dateShort(row.submitted_at)}</text>
+            <line
+              x1={x(rowIdx)}
+              x2={x(rowIdx)}
+              y1={padT}
+              y2={H - padB}
+              stroke="var(--line)"
+              strokeDasharray="3 6"
+              opacity="0.7"
+            />
+            <text x={x(rowIdx)} y={H - 8} textAnchor="middle" fontSize="10" fill="var(--muted)">
+              {dateShort(row.submitted_at)}
+            </text>
           </g>
         ))}
         {WRITING_CRITERIA.map((criterion) => {
@@ -430,14 +590,34 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
           const path = points.map((point, idx) => `${idx === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
           return (
             <g key={criterion.key}>
-              {points.length > 1 && <path d={path} fill="none" stroke={criterion.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />}
+              {points.length > 1 && (
+                <path
+                  d={path}
+                  fill="none"
+                  stroke={criterion.color}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
               {points.map((point, idx) => (
                 <g key={`${criterion.key}-${idx}`}>
                   <circle cx={point.x} cy={point.y} r="5" fill="#fff" stroke={criterion.color} strokeWidth="2.5">
-                    <title>{criterion.label}: {point.value}</title>
+                    <title>
+                      {criterion.label}: {point.value}
+                    </title>
                   </circle>
                   {(rows.length <= 5 || idx === points.length - 1) && (
-                    <text x={point.x} y={point.y - 9} textAnchor="middle" fontSize="10" fill={criterion.color} fontWeight="700">{point.value}</text>
+                    <text
+                      x={point.x}
+                      y={point.y - 9}
+                      textAnchor="middle"
+                      fontSize="10"
+                      fill={criterion.color}
+                      fontWeight="700"
+                    >
+                      {point.value}
+                    </text>
                   )}
                 </g>
               ))}
@@ -447,7 +627,10 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
       </svg>
       <div className="criteria-legend">
         {WRITING_CRITERIA.map((criterion) => (
-          <span key={criterion.key}><i style={{ background: criterion.color }} />{criterion.short} · {criterion.label}</span>
+          <span key={criterion.key}>
+            <i style={{ background: criterion.color }} />
+            {criterion.short} · {criterion.label}
+          </span>
         ))}
       </div>
     </div>
@@ -456,9 +639,12 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
 
 // Đường band đơn giản bằng SVG (không thêm thư viện biểu đồ).
 function BandChart({ skill, items }: { skill: string; items: ProgressItem[] }) {
-  const W = 420, H = 150, pad = 28;
+  const W = 420,
+    H = 150,
+    pad = 28;
   const bands = items.map((i) => bandOf(i) as number);
-  const min = Math.min(...bands, 4), max = Math.max(...bands, 9);
+  const min = Math.min(...bands, 4),
+    max = Math.max(...bands, 9);
   const x = (idx: number) => pad + (idx * (W - 2 * pad)) / Math.max(1, items.length - 1);
   const y = (b: number) => H - pad - ((b - min) / Math.max(0.5, max - min)) * (H - 2 * pad);
   const pts = bands.map((b, idx) => `${x(idx)},${y(b)}`).join(" ");
@@ -475,18 +661,25 @@ function BandChart({ skill, items }: { skill: string; items: ProgressItem[] }) {
           {bands.map((b, idx) => (
             <g key={idx}>
               <circle cx={x(idx)} cy={y(b)} r="4.5" fill="var(--brand2)" />
-              <text x={x(idx)} y={y(b) - 9} textAnchor="middle" fontSize="11" fill="var(--muted)">{b}</text>
+              <text x={x(idx)} y={y(b) - 9} textAnchor="middle" fontSize="11" fill="var(--muted)">
+                {b}
+              </text>
             </g>
           ))}
         </svg>
-      ) : <div className="empty-chart muted">Chưa có dữ liệu để vẽ biểu đồ.</div>}
+      ) : (
+        <div className="empty-chart muted">Chưa có dữ liệu để vẽ biểu đồ.</div>
+      )}
     </div>
   );
 }
 
 function groupBySkill(items: ProgressItem[]) {
   const out: Record<string, ProgressItem[]> = {};
-  const skills = [...SKILL_ORDER, ...items.map((i) => i.skill).filter((s): s is Skill => Boolean(s) && !SKILL_ORDER.includes(s))];
+  const skills = [
+    ...SKILL_ORDER,
+    ...items.map((i) => i.skill).filter((s): s is Skill => Boolean(s) && !SKILL_ORDER.includes(s)),
+  ];
   for (const skill of skills) out[skill] = [];
   for (const item of items) (out[item.skill ?? "writing"] ??= []).push(item);
   return Object.fromEntries(Object.entries(out).filter(([, rows]) => rows.length > 0));
@@ -500,7 +693,10 @@ function normalizedCorrections(item: ProgressItem): CorrectionPair[] {
 }
 
 function parseCorrections(feedback: string): CorrectionPair[] {
-  const lines = feedback.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const lines = feedback
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
   const out: CorrectionPair[] = [];
   for (let i = 0; i < lines.length; i++) {
     if (!/câu gốc|original/i.test(stripMarks(lines[i]))) continue;
@@ -525,9 +721,13 @@ function collectValue(lines: string[], start: number) {
 }
 
 function stripLabel(line: string) {
-  return stripMarks(line).replace(/^(câu gốc|original|sửa|correct(?:ion)?)[\s.:：-]*/i, "").trim();
+  return stripMarks(line)
+    .replace(/^(câu gốc|original|sửa|correct(?:ion)?)[\s.:：-]*/i, "")
+    .trim();
 }
-function stripMarks(line: string) { return line.replace(/^[✅❌✔✘\-–—*#\s]+/, "").trim(); }
+function stripMarks(line: string) {
+  return line.replace(/^[✅❌✔✘\-–—*#\s]+/, "").trim();
+}
 
 function highlightEssayParts(essay: string, corrections: CorrectionPair[]) {
   const ranges: { start: number; end: number; hit: CorrectionPair }[] = [];
@@ -584,7 +784,10 @@ function findExactInsensitive(text: string, needle: string, used: Set<number>) {
   }
   return -1;
 }
-function rangeUsed(start: number, len: number, used: Set<number>) { for (let i = start; i < start + len; i++) if (used.has(i)) return true; return false; }
+function rangeUsed(start: number, len: number, used: Set<number>) {
+  for (let i = start; i < start + len; i++) if (used.has(i)) return true;
+  return false;
+}
 
 function printProgressPdf(item: ProgressItem, corrections: CorrectionPair[]) {
   // Không dùng `noopener` ở đây: trình duyệt sẽ trả về `null`, khiến app không thể
@@ -604,10 +807,28 @@ function printProgressPdf(item: ProgressItem, corrections: CorrectionPair[]) {
 
 function buildPdfHtml(item: ProgressItem, corrections: CorrectionPair[]) {
   const essay = essayTextOf(item);
-  const essayHtml = essay ? highlightEssayParts(essay, corrections).map((p) => p.hit ? `<mark>${esc(p.text)}</mark>` : esc(p.text)).join("") : "<p class=\"muted\">Chưa có bài làm lưu trực tiếp trong hệ thống. Nếu giáo viên chấm qua Google Docs, vui lòng mở link trong phần nhận xét tổng quan.</p>";
+  const essayHtml = essay
+    ? highlightEssayParts(essay, corrections)
+        .map((p) => (p.hit ? `<mark>${esc(p.text)}</mark>` : esc(p.text)))
+        .join("")
+    : '<p class="muted">Chưa có bài làm lưu trực tiếp trong hệ thống. Nếu giáo viên chấm qua Google Docs, vui lòng mở link trong phần nhận xét tổng quan.</p>';
   const highlightedCount = essay ? highlightEssayParts(essay, corrections).filter((p) => p.hit).length : 0;
-  const correctionHtml = corrections.length ? corrections.map((c) => `<div class="fix"><b>Lỗi #${c.index}</b><p class="bad">${esc(c.original)}</p>${c.note ? `<p class="muted">${esc(c.note)}</p>` : ""}<p class="good">${esc(c.corrected)}</p></div>`).join("") : "<p class=\"muted\">Chưa có dữ liệu sửa câu có cấu trúc trong hệ thống. Nếu nhận xét nằm trong Google Docs, hãy mở link ở phần nhận xét tổng quan.</p>";
-  const scores = [["TR", item.score_tr], ["CC", item.score_cc], ["LR", item.score_lr], ["GRA", item.score_gra]].map(([k, v]) => `<div class="score"><b>${v ?? "—"}</b><span>${k}</span></div>`).join("");
+  const correctionHtml = corrections.length
+    ? corrections
+        .map(
+          (c) =>
+            `<div class="fix"><b>Lỗi #${c.index}</b><p class="bad">${esc(c.original)}</p>${c.note ? `<p class="muted">${esc(c.note)}</p>` : ""}<p class="good">${esc(c.corrected)}</p></div>`,
+        )
+        .join("")
+    : '<p class="muted">Chưa có dữ liệu sửa câu có cấu trúc trong hệ thống. Nếu nhận xét nằm trong Google Docs, hãy mở link ở phần nhận xét tổng quan.</p>';
+  const scores = [
+    ["TR", item.score_tr],
+    ["CC", item.score_cc],
+    ["LR", item.score_lr],
+    ["GRA", item.score_gra],
+  ]
+    .map(([k, v]) => `<div class="score"><b>${v ?? "—"}</b><span>${k}</span></div>`)
+    .join("");
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(item.topic_name ?? "Bài kiểm tra")}</title><style>
     @page{size:A4;margin:14mm} body{font-family:Arial,sans-serif;color:#221b26;margin:0;line-height:1.55}.brand{display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #ec3a2b;padding-bottom:14px;margin-bottom:18px}.brand img{height:72px;max-width:320px;object-fit:contain;border-radius:4px}.brand-title{text-align:right}.brand-title h1{margin:0;font-size:24px}.muted{color:#6c6880}.pill{display:inline-block;background:#e7f0ff;color:#1d4ed8;border-radius:99px;padding:3px 10px;font-weight:700;font-size:12px}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.meta div,.box{border:1px solid #ececf1;border-radius:12px;padding:10px;background:#fafafe}.scores{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.score{text-align:center;border:1px solid #fed7aa;background:#fff7ed;border-radius:12px;padding:10px}.score b{display:block;color:#ee5a24;font-size:24px}.score span{font-size:12px;color:#6c6880}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:start}.section{margin-top:16px}.section h2{font-size:17px;margin:0 0 8px}.essay{white-space:pre-wrap}.feedback{white-space:pre-wrap;overflow-wrap:anywhere}.feedback a{color:#1d4ed8;text-decoration:underline}.fix{border-left:4px solid #ec3a2b;background:#fff7f7;padding:8px 10px;margin:8px 0;border-radius:8px}.bad{background:#fff1f2;margin:6px 0;padding:7px;border-radius:6px}.good{background:#ecfdf5;margin:6px 0;padding:7px;border-radius:6px}mark{background:#ffe4e6;color:#9f1239;border-bottom:2px solid #fb7185;padding:0 2px;border-radius:3px}.footer{margin-top:20px;border-top:1px solid #ececf1;padding-top:8px;font-size:12px;color:#6c6880}@media print{button{display:none}.box,.score,.fix{break-inside:avoid}}
   </style></head><body>
@@ -619,23 +840,46 @@ function buildPdfHtml(item: ProgressItem, corrections: CorrectionPair[]) {
     <div class="footer">IELTS Ms. Trà My · Phiếu kết quả được tạo tự động từ English Test Platform</div>
   </body></html>`;
 }
-function essayTextOf(item: ProgressItem) { return item.essay?.trim() || null; }
+function essayTextOf(item: ProgressItem) {
+  return item.essay?.trim() || null;
+}
 function linkifyHtml(value: unknown) {
   return esc(value).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
 }
-function esc(v: unknown) { return String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string)); }
+function esc(v: unknown) {
+  return String(v ?? "").replace(
+    /[&<>"]/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string,
+  );
+}
 
-function bandOf(item: ProgressItem) { return item.overall_band ?? item.band ?? null; }
-function hasBand(item: ProgressItem) { return item.status === "graded" && bandOf(item) != null; }
+function bandOf(item: ProgressItem) {
+  return item.overall_band ?? item.band ?? null;
+}
+function hasBand(item: ProgressItem) {
+  return item.status === "graded" && bandOf(item) != null;
+}
 function hasWritingCriteria(item: ProgressItem) {
   return WRITING_CRITERIA.some((criterion) => criterionValue(item, criterion.key) != null);
 }
 function criterionValue(item: ProgressItem, key: (typeof WRITING_CRITERIA)[number]["key"]) {
   return item[key] ?? null;
 }
-function bySubmittedAsc(a: ProgressItem, b: ProgressItem) { return new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime(); }
-function bySubmittedDesc(a: ProgressItem, b: ProgressItem) { return -bySubmittedAsc(a, b); }
-function dateVi(value: string) { return new Date(value).toLocaleDateString("vi-VN"); }
-function dateShort(value: string) { return new Date(value).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }); }
-function skillLabel(skill?: string | null) { return SKILL_LABEL[skill ?? ""] ?? "Khác"; }
-function keyOf(item: ProgressItem, fallback: number) { return item.submission_id ?? `${item.submitted_at}-${item.topic_name ?? ""}-${fallback}`; }
+function bySubmittedAsc(a: ProgressItem, b: ProgressItem) {
+  return new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime();
+}
+function bySubmittedDesc(a: ProgressItem, b: ProgressItem) {
+  return -bySubmittedAsc(a, b);
+}
+function dateVi(value: string) {
+  return new Date(value).toLocaleDateString("vi-VN");
+}
+function dateShort(value: string) {
+  return new Date(value).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+}
+function skillLabel(skill?: string | null) {
+  return SKILL_LABEL[skill ?? ""] ?? "Khác";
+}
+function keyOf(item: ProgressItem, fallback: number) {
+  return item.submission_id ?? `${item.submitted_at}-${item.topic_name ?? ""}-${fallback}`;
+}
