@@ -1,8 +1,6 @@
--- Patch RPC cho trang /progress: dò bằng email / họ tên / mã học sinh,
--- trả dữ liệu biểu đồ theo kỹ năng + lịch sử + chi tiết bài.
--- Chạy file này trong Supabase SQL Editor nếu database production đã có schema cũ.
-
-alter table submissions add column if not exists writing_corrections jsonb not null default '[]'::jsonb;
+-- Fix /progress lookup by student code:
+-- If old submissions are not linked to students.student_id, match by the
+-- roster email or a normalized Vietnamese full name from the student code.
 
 create or replace function etp_normalize_lookup(p_text text)
 returns text language plpgsql immutable as $$
@@ -20,9 +18,6 @@ begin
   return btrim(v);
 end;
 $$;
-
--- Bỏ bản cũ chỉ nhận email để PostgREST không bị lẫn signature.
-drop function if exists rpc_get_progress(text);
 
 create or replace function rpc_get_progress(p_email text default null, p_name text default null, p_code text default null)
 returns jsonb language sql security definer set search_path = public as $$
@@ -62,7 +57,8 @@ returns jsonb language sql security definer set search_path = public as $$
   left join tests t on t.id = s.test_id
   left join topics tp on tp.id = t.topic_id
   left join lateral (
-    select st.* from students st
+    select st.*
+    from students st
     where st.id = s.student_id
        or lower(st.email) = lower(s.student_email)
        or (target.id is not null and st.id = target.id)
@@ -74,7 +70,8 @@ returns jsonb language sql security definer set search_path = public as $$
     limit 1
   ) st on true
   left join classes c on c.id = coalesce(st.class_id, target.class_id)
-  where (coalesce(btrim(p_email), '') <> '' or coalesce(btrim(p_name), '') <> '' or coalesce(btrim(p_code), '') <> '')
+  where s.status = 'graded'
+    and (coalesce(btrim(p_email), '') <> '' or coalesce(btrim(p_name), '') <> '' or coalesce(btrim(p_code), '') <> '')
     and (
       (
         target.id is not null
