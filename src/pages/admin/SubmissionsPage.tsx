@@ -178,6 +178,7 @@ export default function SubmissionsPage() {
                   key={s.id}
                   s={s}
                   isAdmin={isAdmin}
+                  graderId={profile?.id}
                   teacherOptions={teacherOptions}
                   teacherName={teacherName}
                   onAssign={assignSubmission}
@@ -271,9 +272,10 @@ const CRITERIA: { key: keyof WritingScores; label: string }[] = [
   { key: "gra", label: "Grammar" },
 ];
 
-function Row({ s, isAdmin, teacherOptions, teacherName, onAssign, onChanged, open, onToggle }: {
+function Row({ s, isAdmin, graderId, teacherOptions, teacherName, onAssign, onChanged, open, onToggle }: {
   s: Submission;
   isAdmin: boolean;
+  graderId: string | undefined;
   teacherOptions: Profile[];
   teacherName: (id?: string | null) => string;
   onAssign: (id: string, assignedTo: string) => Promise<void>;
@@ -312,7 +314,7 @@ function Row({ s, isAdmin, teacherOptions, teacherName, onAssign, onChanged, ope
     if (!feedback.trim() && corrections.length === 0 && !confirm("Chưa có nhận xét hoặc sửa câu chi tiết. Vẫn lưu điểm?")) return;
     setBusy(true);
     try {
-      await gradeWriting(s.id, sc, feedback.trim(), corrections);
+      await gradeWriting(s.id, sc, feedback.trim(), corrections, graderId);
       clearGradingDraft(s.id);
       setMsg("Đã lưu điểm và phản hồi.");
       onChanged();
