@@ -494,15 +494,46 @@ function ProgressChart({ skill, items }: { skill: string; items: ProgressItem[] 
   return <BandChart skill={skill} items={items} />;
 }
 
-// Biểu đồ đường cho 4 tiêu chí Writing, tập trung vào xu hướng thay vì cột rời.
+function smoothPath(points: { x: number; y: number }[]): string {
+  if (points.length < 2) return "";
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const tension = 0.3;
+    const dx = curr.x - prev.x;
+    d += ` C ${prev.x + dx * tension} ${prev.y}, ${curr.x - dx * tension} ${curr.y}, ${curr.x} ${curr.y}`;
+  }
+  return d;
+}
+
+function spreadLabels(
+  labels: { cx: number; cy: number; value: number; color: string; key: string }[],
+  minGap: number,
+): { cx: number; cy: number; ly: number; value: number; color: string; key: string }[] {
+  const sorted = [...labels].sort((a, b) => a.cy - b.cy);
+  const out = sorted.map((l) => ({ ...l, ly: l.cy - 12 }));
+  for (let pass = 0; pass < 4; pass++) {
+    for (let i = 1; i < out.length; i++) {
+      const gap = out[i].ly - out[i - 1].ly;
+      if (gap < minGap) {
+        const shift = (minGap - gap) / 2;
+        out[i - 1].ly -= shift;
+        out[i].ly += shift;
+      }
+    }
+  }
+  return out;
+}
+
 function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
   const rows = [...items].sort(bySubmittedAsc);
   const W = 720,
-    H = 240,
-    padL = 42,
-    padR = 18,
-    padT = 18,
-    padB = 34;
+    H = 280,
+    padL = 46,
+    padR = 22,
+    padT = 24,
+    padB = 40;
   const values = rows
     .flatMap((row) => WRITING_CRITERIA.map((criterion) => criterionValue(row, criterion.key)))
     .filter((v): v is number => v != null);
@@ -514,16 +545,19 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
   const x = (idx: number) =>
     rows.length === 1 ? (padL + (W - padR)) / 2 : padL + (idx * (W - padL - padR)) / (rows.length - 1);
   const y = (value: number) => padT + ((maxScore - value) / scoreRange) * (H - padT - padB);
-  const ticks = Array.from(new Set([minScore, Math.round(((minScore + maxScore) / 2) * 2) / 2, maxScore]));
+
+  const ticks: number[] = [];
+  for (let v = minScore; v <= maxScore + 0.01; v += 0.5) ticks.push(Math.round(v * 2) / 2);
+
   const deltas = WRITING_CRITERIA.map((criterion) => {
-    const values = rows.map((row) => criterionValue(row, criterion.key)).filter((v): v is number => v != null);
-    const first = values[0] ?? null;
-    const latest = values[values.length - 1] ?? null;
+    const vals = rows.map((row) => criterionValue(row, criterion.key)).filter((v): v is number => v != null);
+    const first = vals[0] ?? null;
+    const latest = vals[vals.length - 1] ?? null;
     return {
       ...criterion,
       first,
       latest,
-      delta: first != null && latest != null && values.length > 1 ? latest - first : null,
+      delta: first != null && latest != null && vals.length > 1 ? latest - first : null,
     };
   });
   const linePoints = (criterion: (typeof WRITING_CRITERIA)[number]) =>
@@ -560,10 +594,26 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
         role="img"
         aria-label="Biểu đồ tiến bộ 4 tiêu chí Writing"
       >
+        <defs>
+          {WRITING_CRITERIA.map((c) => (
+            <linearGradient key={`grad-${c.key}`} id={`grad-${c.key}`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={c.color} stopOpacity="0.18" />
+              <stop offset="100%" stopColor={c.color} stopOpacity="0.02" />
+            </linearGradient>
+          ))}
+        </defs>
         {ticks.map((tick) => (
           <g key={tick}>
-            <line x1={padL} x2={W - padR} y1={y(tick)} y2={y(tick)} stroke="var(--line)" />
-            <text x={padL - 10} y={y(tick) + 4} textAnchor="end" fontSize="11" fill="var(--muted)">
+            <line
+              x1={padL}
+              x2={W - padR}
+              y1={y(tick)}
+              y2={y(tick)}
+              stroke="var(--line)"
+              strokeDasharray={tick === minScore || tick === maxScore ? "0" : "4 4"}
+              opacity={tick === minScore || tick === maxScore ? 0.6 : 0.35}
+            />
+            <text x={padL - 10} y={y(tick) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" fontWeight="500">
               {tick}
             </text>
           </g>
@@ -577,9 +627,9 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
               y2={H - padB}
               stroke="var(--line)"
               strokeDasharray="3 6"
-              opacity="0.7"
+              opacity="0.3"
             />
-            <text x={x(rowIdx)} y={H - 8} textAnchor="middle" fontSize="10" fill="var(--muted)">
+            <text x={x(rowIdx)} y={H - 10} textAnchor="middle" fontSize="11" fill="var(--muted)" fontWeight="500">
               {dateShort(row.submitted_at)}
             </text>
           </g>
@@ -587,39 +637,50 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
         {WRITING_CRITERIA.map((criterion) => {
           const points = linePoints(criterion);
           if (!points.length) return null;
-          const path = points.map((point, idx) => `${idx === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+          const d = points.length > 1 ? smoothPath(points) : "";
+          const areaD =
+            points.length > 1 ? d + ` L ${points[points.length - 1].x} ${H - padB} L ${points[0].x} ${H - padB} Z` : "";
           return (
             <g key={criterion.key}>
-              {points.length > 1 && (
+              {areaD && <path d={areaD} fill={`url(#grad-${criterion.key})`} />}
+              {d && (
                 <path
-                  d={path}
+                  d={d}
                   fill="none"
                   stroke={criterion.color}
-                  strokeWidth="3"
+                  strokeWidth="2.5"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
+                  opacity="0.85"
                 />
               )}
               {points.map((point, idx) => (
                 <g key={`${criterion.key}-${idx}`}>
-                  <circle cx={point.x} cy={point.y} r="5" fill="#fff" stroke={criterion.color} strokeWidth="2.5">
+                  <circle cx={point.x} cy={point.y} r="6" fill={criterion.color} opacity="0.12" />
+                  <circle cx={point.x} cy={point.y} r="4" fill="#fff" stroke={criterion.color} strokeWidth="2.5">
                     <title>
                       {criterion.label}: {point.value}
                     </title>
                   </circle>
-                  {(rows.length <= 5 || idx === points.length - 1) && (
-                    <text
-                      x={point.x}
-                      y={point.y - 9}
-                      textAnchor="middle"
-                      fontSize="10"
-                      fill={criterion.color}
-                      fontWeight="700"
-                    >
-                      {point.value}
-                    </text>
-                  )}
                 </g>
+              ))}
+            </g>
+          );
+        })}
+        {rows.map((_row, rowIdx) => {
+          const labelsAtX = WRITING_CRITERIA.map((criterion) => {
+            const value = criterionValue(_row, criterion.key);
+            if (value == null) return null;
+            return { cx: x(rowIdx), cy: y(value), value, color: criterion.color, key: criterion.key };
+          }).filter((l): l is NonNullable<typeof l> => l != null);
+          const spread = spreadLabels(labelsAtX, 13);
+          const showAll = rows.length <= 6 || rowIdx === rows.length - 1;
+          if (!showAll) return null;
+          return (
+            <g key={`labels-${rowIdx}`}>
+              {spread.map((l) => (
+                <text key={l.key} x={l.cx} y={l.ly} textAnchor="middle" fontSize="10" fill={l.color} fontWeight="700">
+                  {l.value}
+                </text>
               ))}
             </g>
           );
@@ -637,17 +698,30 @@ function WritingCriteriaChart({ items }: { items: ProgressItem[] }) {
   );
 }
 
-// Đường band đơn giản bằng SVG (không thêm thư viện biểu đồ).
 function BandChart({ skill, items }: { skill: string; items: ProgressItem[] }) {
   const W = 420,
-    H = 150,
-    pad = 28;
+    H = 200,
+    padL = 40,
+    padR = 18,
+    padT = 22,
+    padB = 38;
   const bands = items.map((i) => bandOf(i) as number);
-  const min = Math.min(...bands, 4),
-    max = Math.max(...bands, 9);
-  const x = (idx: number) => pad + (idx * (W - 2 * pad)) / Math.max(1, items.length - 1);
-  const y = (b: number) => H - pad - ((b - min) / Math.max(0.5, max - min)) * (H - 2 * pad);
-  const pts = bands.map((b, idx) => `${x(idx)},${y(b)}`).join(" ");
+  const rawMin = Math.min(...bands, 4);
+  const rawMax = Math.max(...bands, 7);
+  const minB = Math.max(0, Math.floor(rawMin - 0.5));
+  const maxB = Math.min(9, Math.ceil(rawMax + 0.5));
+  const range = Math.max(1, maxB - minB);
+  const x = (idx: number) =>
+    items.length === 1 ? (padL + (W - padR)) / 2 : padL + (idx * (W - padL - padR)) / (items.length - 1);
+  const y = (b: number) => padT + ((maxB - b) / range) * (H - padT - padB);
+
+  const ticks: number[] = [];
+  for (let v = minB; v <= maxB + 0.01; v += 0.5) ticks.push(Math.round(v * 2) / 2);
+
+  const points = bands.map((b, idx) => ({ x: x(idx), y: y(b) }));
+  const d = points.length > 1 ? smoothPath(points) : "";
+  const areaD = d ? d + ` L ${points[points.length - 1].x} ${H - padB} L ${points[0].x} ${H - padB} Z` : "";
+
   return (
     <div className="card progress-chart-card">
       <div className="chart-title">
@@ -655,13 +729,52 @@ function BandChart({ skill, items }: { skill: string; items: ProgressItem[] }) {
         <span className="muted small">{items.length ? `${items.length} bài đã chấm` : "Chưa có điểm"}</span>
       </div>
       {items.length ? (
-        <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="chart">
-          <line x1={pad} x2={W - pad} y1={H - pad} y2={H - pad} stroke="var(--line)" />
-          <polyline points={pts} fill="none" stroke="var(--brand)" strokeWidth="2.5" />
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="chart band-chart">
+          <defs>
+            <linearGradient id={`band-grad-${skill}`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="var(--brand)" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="var(--brand)" stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+          {ticks.map((tick) => (
+            <g key={tick}>
+              <line
+                x1={padL}
+                x2={W - padR}
+                y1={y(tick)}
+                y2={y(tick)}
+                stroke="var(--line)"
+                strokeDasharray={tick === minB || tick === maxB ? "0" : "4 4"}
+                opacity={tick === minB || tick === maxB ? 0.6 : 0.3}
+              />
+              <text x={padL - 10} y={y(tick) + 4} textAnchor="end" fontSize="11" fill="var(--muted)" fontWeight="500">
+                {tick}
+              </text>
+            </g>
+          ))}
+          {items.map((item, idx) => (
+            <g key={idx}>
+              <line
+                x1={x(idx)}
+                x2={x(idx)}
+                y1={padT}
+                y2={H - padB}
+                stroke="var(--line)"
+                strokeDasharray="3 6"
+                opacity="0.3"
+              />
+              <text x={x(idx)} y={H - 10} textAnchor="middle" fontSize="11" fill="var(--muted)" fontWeight="500">
+                {dateShort(item.submitted_at)}
+              </text>
+            </g>
+          ))}
+          {areaD && <path d={areaD} fill={`url(#band-grad-${skill})`} />}
+          {d && <path d={d} fill="none" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />}
           {bands.map((b, idx) => (
             <g key={idx}>
-              <circle cx={x(idx)} cy={y(b)} r="4.5" fill="var(--brand2)" />
-              <text x={x(idx)} y={y(b) - 9} textAnchor="middle" fontSize="11" fill="var(--muted)">
+              <circle cx={x(idx)} cy={y(b)} r="6" fill="var(--brand)" opacity="0.12" />
+              <circle cx={x(idx)} cy={y(b)} r="4" fill="#fff" stroke="var(--brand)" strokeWidth="2.5" />
+              <text x={x(idx)} y={y(b) - 12} textAnchor="middle" fontSize="11" fill="var(--brand)" fontWeight="700">
                 {b}
               </text>
             </g>
