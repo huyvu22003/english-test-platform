@@ -458,6 +458,23 @@ function Row({
     }
   }
 
+  async function updateWorkflow(next: Submission["status"]) {
+    setErr(null);
+    setMsg(null);
+    setBusy(true);
+    try {
+      const patch: Partial<Submission> = { status: next };
+      if (!s.assigned_to && graderId && next !== "submitted") patch.assigned_to = graderId;
+      await updateSubmission(s.id, patch);
+      setMsg(workflowMessage(next));
+      onChanged();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function appendFeedback(text: string) {
     setFeedback((prev) => [prev.trim(), text].filter(Boolean).join("\n"));
   }
@@ -720,6 +737,52 @@ function Row({
                   {initialDraft && !msg && (
                     <span className="muted small">Đã khôi phục nháp chấm chưa lưu trên máy này.</span>
                   )}
+                  {s.status !== "graded" && (
+                    <div className="grading-workflow-box">
+                      <div>
+                        <strong>Quy trình xử lý</strong>
+                        <p className="muted small">
+                          {s.status === "submitted"
+                            ? "Bài mới nộp, chưa giao hoặc chưa nhận chấm."
+                            : s.status === "assigned"
+                              ? "Bài đã có người phụ trách, đang trong bước chấm."
+                              : "Bài đang ở bước review trước khi lưu điểm cuối."}
+                        </p>
+                      </div>
+                      <div className="actions grading-workflow-actions">
+                        {s.status === "submitted" && (
+                          <button
+                            className="btn ghost small"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => updateWorkflow("assigned")}
+                          >
+                            Nhận chấm
+                          </button>
+                        )}
+                        {s.status !== "in_review" && (
+                          <button
+                            className="btn ghost small"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => updateWorkflow("in_review")}
+                          >
+                            Gửi review
+                          </button>
+                        )}
+                        {s.status === "in_review" && (
+                          <button
+                            className="btn ghost small"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => updateWorkflow("assigned")}
+                          >
+                            Đưa về đang chấm
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div className="actions grading-save-actions">
                     <button className="btn small primary" disabled={busy} onClick={save}>
                       {busy ? "Đang lưu…" : s.status === "graded" ? "Cập nhật điểm" : "Lưu điểm & chấm xong"}
@@ -790,6 +853,12 @@ function Row({
 
 function isValidBandScore(v: number): boolean {
   return Number.isFinite(v) && v >= 0 && v <= 9 && Math.abs(v * 2 - Math.round(v * 2)) < 0.001;
+}
+function workflowMessage(status: Submission["status"]): string {
+  if (status === "assigned") return "Đã chuyển bài sang bước đang chấm.";
+  if (status === "in_review") return "Đã chuyển bài sang bước cần review.";
+  if (status === "graded") return "Bài đã hoàn tất chấm.";
+  return "Đã đưa bài về trạng thái chờ xử lý.";
 }
 function canUseStorage(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";

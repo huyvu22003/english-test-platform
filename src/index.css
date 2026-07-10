@@ -1248,6 +1248,21 @@ code {
 .grading-score-card .quick-feedback-row {
   margin: -2px 0 12px;
 }
+.grading-workflow-box {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  margin: 12px 0;
+  border: 1px solid rgba(122, 43, 143, 0.14);
+  border-radius: 12px;
+  background: #faf7ff;
+}
+.grading-workflow-box p {
+  margin: 4px 0 0;
+}
+.grading-workflow-actions {
+  flex-wrap: wrap;
+}
 .grading-save-actions {
   position: sticky;
   bottom: 0;
