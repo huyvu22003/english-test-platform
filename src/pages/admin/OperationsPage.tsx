@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   listClasses,
   listClassTeachers,
@@ -10,6 +11,7 @@ import {
 import { useAuth } from "../../lib/auth";
 import { useAsync } from "../../lib/useAsync";
 import { EmptyState, ErrorBox, Spinner } from "../../components/common";
+import { OPEN_GRADING_KEY } from "./SubmissionsPage";
 import type { ClassRow, ClassTeacher, ExamSession, Profile, Student, Submission } from "../../lib/types";
 
 function avg(nums: number[]): number | null {
@@ -33,6 +35,7 @@ function classNameForSubmission(s: Submission, students: Student[], classes: Cla
 
 export default function OperationsPage() {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const subs = useAsync<Submission[]>(listSubmissions, []);
   const students = useAsync<Student[]>(listStudents, []);
   const classes = useAsync<ClassRow[]>(listClasses, []);
@@ -109,6 +112,15 @@ export default function OperationsPage() {
   const errors = [subs.error, students.error, classes.error, sessions.error, profiles.error, classTeachers.error]
     .filter(Boolean)
     .join(" | ");
+
+  function openGrading(s: Submission) {
+    try {
+      window.localStorage.setItem(OPEN_GRADING_KEY, s.id);
+    } catch {
+      // The query parameter is enough if localStorage is unavailable.
+    }
+    navigate(`/admin/submissions?open=${encodeURIComponent(s.id)}`);
+  }
 
   return (
     <div className="admin-page operations-page">
@@ -268,6 +280,7 @@ export default function OperationsPage() {
                 <th>Lớp</th>
                 <th>Chủ đề</th>
                 <th>Trạng thái</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -284,6 +297,11 @@ export default function OperationsPage() {
                     <span className="pill off small">
                       {s.status === "submitted" ? "Chờ chấm" : s.status === "assigned" ? "Đã giao" : "Cần review"}
                     </span>
+                  </td>
+                  <td>
+                    <button className="btn primary small ops-grade-btn" type="button" onClick={() => openGrading(s)}>
+                      Chấm
+                    </button>
                   </td>
                 </tr>
               ))}

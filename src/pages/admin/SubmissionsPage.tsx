@@ -24,7 +24,7 @@ type GradingDraft = {
   updatedAt: string;
 };
 
-const OPEN_GRADING_KEY = "etp:admin:open-grading-submission";
+export const OPEN_GRADING_KEY = "etp:admin:open-grading-submission";
 const GRADING_DRAFT_PREFIX = "etp:admin:grading-draft:";
 
 export default function SubmissionsPage() {
@@ -816,6 +816,8 @@ function removeStorage(key: string) {
   }
 }
 function getStoredOpenSubmissionId(): string | null {
+  const queryOpenId = new URLSearchParams(window.location.search).get("open");
+  if (queryOpenId?.trim()) return queryOpenId.trim();
   const value = readStorage(OPEN_GRADING_KEY);
   return value?.trim() || null;
 }

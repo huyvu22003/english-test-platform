@@ -2589,6 +2589,14 @@ td.cell-weak {
 .ops-table-head p {
   margin: 0;
 }
+.ops-table-card th:last-child,
+.ops-table-card td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+.ops-grade-btn {
+  min-width: 74px;
+}
 .staff-note-card,
 .staff-filter-card,
 .staff-create-card {
