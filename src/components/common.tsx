@@ -41,3 +41,14 @@ export function SkillBadge({ skill }: { skill: Skill }) {
 export function skillLabel(skill: Skill): string {
   return SKILL_LABEL[skill];
 }
+
+export function Skeleton({ lines = 3, heading = false }: { lines?: number; heading?: boolean }) {
+  return (
+    <div className="skeleton-wrap" aria-hidden="true">
+      {heading && <div className="skeleton-line skeleton-heading" />}
+      {Array.from({ length: lines }, (_, i) => (
+        <div key={i} className="skeleton-line" style={i === lines - 1 ? { width: "60%" } : undefined} />
+      ))}
+    </div>
+  );
+}

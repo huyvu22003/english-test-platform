@@ -2,8 +2,10 @@ import { lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { Skeleton } from "./components/common";
 
 const StudentHome = lazy(() => import("./pages/student/StudentHome"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const ExamPage = lazy(() => import("./pages/student/ExamPage"));
 const WritingExamPage = lazy(() => import("./pages/student/WritingExamPage"));
 const PlacementExamPage = lazy(() => import("./pages/student/PlacementExamPage"));
@@ -25,7 +27,11 @@ const OperationsPage = lazy(() => import("./pages/admin/OperationsPage"));
 const StaffPage = lazy(() => import("./pages/admin/StaffPage"));
 
 function Loading() {
-  return <div className="center muted">Đang tải…</div>;
+  return (
+    <div className="wrap" style={{ paddingTop: 40 }}>
+      <Skeleton heading lines={4} />
+    </div>
+  );
 }
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -158,7 +164,7 @@ export default function App() {
                 />
               </Route>
 
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
         </BrowserRouter>

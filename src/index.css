@@ -3469,3 +3469,173 @@ td.cell-weak {
     min-width: 0;
   }
 }
+
+/* 404 Not Found */
+.not-found-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 2rem;
+}
+.not-found-code {
+  font-size: clamp(72px, 18vw, 140px);
+  font-weight: 900;
+  line-height: 1;
+  background: var(--hero);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.8;
+}
+.not-found-page h1 {
+  margin: 8px 0 6px;
+}
+.not-found-page p {
+  margin-bottom: 24px;
+}
+
+/* Skeleton loading */
+.skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
+}
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--line) 25%, #f5f3f7 50%, var(--line) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+.skeleton-heading {
+  height: 22px;
+  width: 45%;
+  margin-bottom: 6px;
+}
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141018;
+    --bg-glow:
+      radial-gradient(820px 380px at 90% -6%, rgba(247, 148, 29, 0.1), transparent 58%),
+      radial-gradient(760px 420px at -8% 10%, rgba(122, 43, 143, 0.12), transparent 56%),
+      radial-gradient(720px 460px at 12% 96%, rgba(236, 58, 43, 0.06), transparent 60%),
+      radial-gradient(900px 520px at 100% 70%, rgba(247, 148, 29, 0.05), transparent 62%);
+    --panel: #1e1a24;
+    --ink: #eae6ef;
+    --muted: #9e98ab;
+    --line: #2e2a36;
+    --shadow: 0 6px 22px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 20px 54px rgba(0, 0, 0, 0.4);
+  }
+  body::before {
+    background-image: radial-gradient(rgba(122, 43, 143, 0.08) 1px, transparent 1.5px);
+  }
+  body::after {
+    opacity: 0.4;
+  }
+  .card,
+  .admin-stat-card,
+  .admin-page-head {
+    background: var(--panel);
+    border-color: var(--line);
+  }
+  .admin-page-head {
+    background: linear-gradient(135deg, rgba(30, 26, 36, 0.94), rgba(42, 30, 50, 0.9));
+  }
+  input,
+  select,
+  textarea {
+    background: #1a1620;
+    border-color: var(--line);
+    color: var(--ink);
+  }
+  .btn {
+    background: var(--panel);
+    border-color: var(--line);
+    color: var(--ink);
+  }
+  .btn:hover {
+    background: #282430;
+  }
+  .btn.primary {
+    background: var(--grad);
+    color: #fff;
+    border: none;
+  }
+  .btn.ghost {
+    background: transparent;
+    border-color: transparent;
+  }
+  .btn.ghost:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .table thead th {
+    background: #1a1620;
+  }
+  .table tbody td {
+    border-color: var(--line);
+  }
+  .clickable-row:hover td {
+    background: #221e2a;
+  }
+  .selected-row td {
+    background: #2a2430;
+  }
+  .pill {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .criteria-delta,
+  .progress-skill-card {
+    background: var(--panel);
+  }
+  .criteria-chart,
+  .band-chart {
+    background: linear-gradient(180deg, #1e1a24 0%, #1a1620 100%);
+    border-color: var(--line);
+  }
+  .skeleton-line {
+    background: linear-gradient(90deg, var(--line) 25%, #2a2630 50%, var(--line) 75%);
+    background-size: 200% 100%;
+  }
+  .errbox {
+    background: #2a1a1a;
+    border-color: #5c2020;
+    color: #fca5a5;
+  }
+  .empty-state {
+    background: var(--panel);
+    border-color: var(--line);
+  }
+  .progress-modal-backdrop {
+    background: rgba(0, 0, 0, 0.7);
+  }
+  .progress-modal,
+  .detail-box {
+    background: var(--panel);
+  }
+  .correction-card,
+  .correction-inline-note {
+    background: #1a1620;
+    border-color: var(--line);
+  }
+  .sidebar {
+    background: linear-gradient(185deg, #18121e 0%, #0e0a14 100%);
+  }
+  img {
+    opacity: 0.92;
+  }
+}
