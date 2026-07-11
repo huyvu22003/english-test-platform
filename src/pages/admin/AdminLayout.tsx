@@ -16,16 +16,22 @@ export default function AdminLayout() {
 
   return (
     <div className="admin">
-      <aside className="sidebar">
+      <aside className="sidebar" role="complementary" aria-label="Thanh điều hướng quản trị">
         <div className="admin-mobile-head">
           <div className="brand">
             <Logo height={30} light />
           </div>
-          <button className="btn small admin-menu-toggle" type="button" onClick={() => setMenuOpen((v) => !v)}>
+          <button
+            className="btn small admin-menu-toggle"
+            type="button"
+            aria-expanded={menuOpen}
+            aria-controls="admin-nav"
+            onClick={() => setMenuOpen((v) => !v)}
+          >
             {menuOpen ? "Đóng ✕" : "☰ Menu"}
           </button>
         </div>
-        <nav className={menuOpen ? "open" : ""} onClick={() => setMenuOpen(false)}>
+        <nav id="admin-nav" aria-label="Quản trị" className={menuOpen ? "open" : ""} onClick={() => setMenuOpen(false)}>
           <div className="nav-group-label">Vận hành</div>
           <NavLink to="/admin/operations" className={({ isActive }) => (isActive ? "active" : "")}>
             Tổng quan
@@ -92,7 +98,7 @@ export default function AdminLayout() {
           </button>
         </div>
       </aside>
-      <main className="content">
+      <main id="main" className="content" tabIndex={-1}>
         <Outlet />
       </main>
     </div>
