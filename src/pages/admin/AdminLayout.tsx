@@ -84,7 +84,7 @@ export default function AdminLayout() {
         <div className="sidebar-foot">
           <div className="muted small">{profile?.full_name || session?.user.email}</div>
           <div className="muted small">{profile?.role ?? "teacher"}</div>
-          <button className="btn ghost small" onClick={logout}>
+          <button className="btn small sidebar-logout" onClick={logout}>
             Đăng xuất
           </button>
         </div>

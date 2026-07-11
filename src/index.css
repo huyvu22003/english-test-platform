@@ -797,7 +797,9 @@ code {
 .admin {
   display: grid;
   grid-template-columns: 220px 1fr;
+  height: 100vh;
   min-height: 100vh;
+  overflow: hidden;
 }
 .sidebar {
   background: linear-gradient(185deg, #2a1d3d 0%, #1a1126 100%);
@@ -805,16 +807,28 @@ code {
   padding: 20px 14px;
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
 }
 .sidebar .brand {
   font-weight: 800;
   margin-bottom: 20px;
   padding: 0 4px;
+  flex: 0 0 auto;
 }
 .sidebar nav {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  max-height: calc(100vh - 176px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  scrollbar-width: thin;
 }
 .sidebar nav a {
   color: #d8d4e2;
@@ -840,11 +854,28 @@ code {
   padding: 12px 11px 4px;
 }
 .sidebar-foot {
-  margin-top: auto;
+  margin-top: 12px;
+  padding: 12px 4px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: grid;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.sidebar-logout {
+  width: 100%;
+  margin-top: 6px;
+  justify-content: center;
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.sidebar-logout:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 .content {
   padding: 26px 28px;
   overflow: auto;
+  height: 100vh;
 }
 .admin-page {
   max-width: 1180px;
@@ -3087,12 +3118,17 @@ td.cell-weak {
   /* Admin shell */
   .admin {
     display: block;
+    height: auto;
     min-height: 100vh;
+    overflow: visible;
   }
   .sidebar {
     position: sticky;
     top: 0;
     z-index: 30;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
     padding: 10px 10px 8px;
     flex-direction: column;
     gap: 8px;
@@ -3124,6 +3160,7 @@ td.cell-weak {
   }
   .content {
     padding: 16px 12px 44px;
+    height: auto;
     overflow: visible;
   }
   .admin-page-head {
