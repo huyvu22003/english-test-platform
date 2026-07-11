@@ -11,7 +11,7 @@ import {
 import { useAuth } from "../../lib/auth";
 import { useAsync } from "../../lib/useAsync";
 import { EmptyState, ErrorBox, Spinner } from "../../components/common";
-import { OPEN_GRADING_KEY } from "./SubmissionsPage";
+import { OPEN_GRADING_KEY } from "./gradingUtils";
 import type { ClassRow, ClassTeacher, ExamSession, Profile, Student, Submission } from "../../lib/types";
 
 function avg(nums: number[]): number | null {
