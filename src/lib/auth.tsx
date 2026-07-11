@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("id,email,full_name,role,active,created_at")
       .eq("id", s.user.id)
       .maybeSingle();
-    const fallbackRole: AdminRole = s.user.email ? "teacher" : "teacher";
+    const fallbackRole: AdminRole = "teacher";
     setProfile(
       (data as Profile | null) ?? {
         id: s.user.id,

@@ -61,6 +61,9 @@ describe("escExcel", () => {
   it("escapes HTML entities", () => {
     expect(escExcel('<b>"test"</b> & more')).toBe("&lt;b&gt;&quot;test&quot;&lt;/b&gt; &amp; more");
   });
+  it("escapes single quotes", () => {
+    expect(escExcel("it's")).toBe("it&#39;s");
+  });
   it("handles null/undefined", () => {
     expect(escExcel(null)).toBe("");
     expect(escExcel(undefined)).toBe("");
