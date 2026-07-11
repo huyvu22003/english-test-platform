@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { deleteClass, deleteStudent, listClasses, listStudents, saveClass, saveStudent } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { ErrorBox, Spinner } from "../../components/common";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 import type { ClassRow, Student } from "../../lib/types";
 
 export default function RosterPage() {
@@ -39,32 +40,18 @@ export default function RosterPage() {
 
   return (
     <div className="admin-page roster-page">
-      <header className="admin-page-head">
-        <div>
-          <span className="eyebrow dark">Roster & phân lớp</span>
-          <h1>Lớp &amp; Học viên</h1>
-          <p className="muted small">Quản lý lớp, email và mã học viên để giới hạn buổi thi theo roster chính xác.</p>
-        </div>
-      </header>
-
-      <section className="admin-stat-grid" aria-label="Tổng quan roster">
-        <div className="admin-stat-card">
-          <span>Học viên</span>
-          <strong>{studentRows.length}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Lớp / khóa</span>
-          <strong>{classes.data?.length ?? 0}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Đã xếp lớp</span>
-          <strong>{assignedCount}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Có email</span>
-          <strong>{emailCount}</strong>
-        </div>
-      </section>
+      <AdminPageHeader
+        eyebrow="Roster & phân lớp"
+        title="Lớp & Học viên"
+        subtitle="Quản lý lớp, email và mã học viên để giới hạn buổi thi theo roster chính xác."
+        statsAriaLabel="Tổng quan roster"
+        stats={[
+          { label: "Học viên", value: studentRows.length },
+          { label: "Lớp / khóa", value: classes.data?.length ?? 0 },
+          { label: "Đã xếp lớp", value: assignedCount },
+          { label: "Có email", value: emailCount },
+        ]}
+      />
 
       {err && <ErrorBox msg={err} />}
       <div className="grid2 admin-split-grid">

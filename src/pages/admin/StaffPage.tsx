@@ -10,6 +10,7 @@ import {
 } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { EmptyState, ErrorBox, Spinner } from "../../components/common";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 import type { AdminRole, ClassRow, ClassTeacher, Profile } from "../../lib/types";
 
 const ROLES: { value: AdminRole; label: string; note: string }[] = [
@@ -52,32 +53,18 @@ export default function StaffPage() {
 
   return (
     <div className="admin-page staff-page">
-      <header className="admin-page-head">
-        <div>
-          <span className="eyebrow dark">Staff & permissions</span>
-          <h1>Giáo viên &amp; phân quyền</h1>
-          <p className="muted small">Quản lý role, trạng thái tài khoản và lớp phụ trách cho từng giáo viên.</p>
-        </div>
-      </header>
-
-      <section className="admin-stat-grid" aria-label="Tổng quan giáo viên">
-        <div className="admin-stat-card">
-          <span>Tài khoản</span>
-          <strong>{profiles.data?.length ?? 0}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Đang hoạt động</span>
-          <strong>{activeCount}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Teacher / Grader</span>
-          <strong>{teacherCount}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Đã gán lớp</span>
-          <strong>{assignedTeacherCount}</strong>
-        </div>
-      </section>
+      <AdminPageHeader
+        eyebrow="Staff & permissions"
+        title="Giáo viên & phân quyền"
+        subtitle="Quản lý role, trạng thái tài khoản và lớp phụ trách cho từng giáo viên."
+        statsAriaLabel="Tổng quan giáo viên"
+        stats={[
+          { label: "Tài khoản", value: profiles.data?.length ?? 0 },
+          { label: "Đang hoạt động", value: activeCount },
+          { label: "Teacher / Grader", value: teacherCount },
+          { label: "Đã gán lớp", value: assignedTeacherCount },
+        ]}
+      />
 
       <div className="card admin-form-card staff-note-card">
         <strong>Tài khoản giáo viên</strong>

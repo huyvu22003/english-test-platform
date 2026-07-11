@@ -4,21 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getTest, submitPlacement } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
+import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
+import { isAnswered, formatError } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
+import { ExamBar, ExamSubmitPanel } from "../../components/ExamLayout";
 import { QuestionView } from "./ExamPage";
 import type { AnswerMap, PublicTest } from "../../lib/types";
-
-function fmt(sec: number): string {
-  const m = Math.floor(sec / 60);
-  return `${m}:${String(sec % 60).padStart(2, "0")}`;
-}
-
-function isAnswered(value: string | string[] | undefined): boolean {
-  if (Array.isArray(value)) return value.length > 0;
-  return typeof value === "string" && value.trim().length > 0;
-}
 
 export default function PlacementExamPage() {
   const { testId = "" } = useParams();
@@ -41,15 +34,10 @@ export default function PlacementExamPage() {
   const data = useAsync<PublicTest>(() => getTest(testId), [testId]);
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<AnswerMap>({});
-  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
   const ac = useAntiCheat(started);
-
-  useEffect(() => {
-    if (!meta.name || !meta.email) nav("/", { replace: true });
-  }, [meta.name, meta.email, nav]);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
@@ -82,22 +70,19 @@ export default function PlacementExamPage() {
           replace: true,
         });
       } catch (e) {
-        setSubmitErr(e instanceof Error ? e.message : String(e));
+        setSubmitErr(formatError(e));
         setSubmitting(false);
       }
     },
     [submitting, data.data, answers, testId, meta, ac.violations, ac.log, nav],
   );
 
+  const timer = useCountdownTimer(() => void doSubmit("timeout"));
+  const secondsLeft = timer.secondsLeft;
+
   useEffect(() => {
-    if (!started || secondsLeft === null) return;
-    if (secondsLeft <= 0) {
-      void doSubmit("timeout");
-      return;
-    }
-    const id = window.setTimeout(() => setSecondsLeft((s) => (s === null ? null : s - 1)), 1000);
-    return () => window.clearTimeout(id);
-  }, [started, secondsLeft, doSubmit]);
+    if (!meta.name || !meta.email) nav("/", { replace: true });
+  }, [meta.name, meta.email, nav]);
 
   useEffect(() => {
     if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
@@ -151,7 +136,7 @@ export default function PlacementExamPage() {
             onClick={async () => {
               await ac.enterFullscreen();
               startedAtRef.current = new Date().toISOString();
-              setSecondsLeft(test.time_limit_min * 60);
+              timer.start(test.time_limit_min * 60);
               setStarted(true);
             }}
           >
@@ -164,33 +149,26 @@ export default function PlacementExamPage() {
 
   return (
     <div className="wrap exam">
-      <div className="exam-bar">
-        <div>
-          <strong>Xếp lớp</strong> <span className="muted">— {meta.name}</span>
-        </div>
-        <div className="exam-bar-right">
-          {ac.violations > 0 && (
-            <span className="viol">
-              Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}
-            </span>
-          )}
-          <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
-            ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
-          </span>
-        </div>
-      </div>
-
-      {ac.warning && <div className="warn-banner">{ac.warning}</div>}
-
-      <div className="exam-progress-strip">
-        <span>
-          <strong>{answeredCount}</strong>/{questions.length} câu đã làm
-        </span>
-        <span>{passages.length} tư liệu</span>
-        <span>
-          {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
-        </span>
-      </div>
+      <ExamBar
+        title={
+          <>
+            <strong>Xếp lớp</strong> <span className="muted">— {meta.name}</span>
+          </>
+        }
+        secondsLeft={secondsLeft}
+        violations={ac.violations}
+        maxViolations={MAX_ALLOWED_VIOLATIONS}
+        warning={ac.warning}
+        progressItems={[
+          <>
+            <strong>{answeredCount}</strong>/{questions.length} câu đã làm
+          </>,
+          <>{passages.length} tư liệu</>,
+          <>
+            {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
+          </>,
+        ]}
+      />
 
       {passages.map((p) => (
         <div className="card passage exam-material-card" key={p.id}>
@@ -220,14 +198,17 @@ export default function PlacementExamPage() {
       ))}
 
       {submitErr && <ErrorBox msg={submitErr} />}
-      <div className="exam-submit-panel">
-        <span className="muted small">
-          Đã làm {answeredCount}/{questions.length} câu.
-        </span>
-        <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
-          {submitting ? "Đang chấm…" : "Nộp & xem trình độ"}
-        </button>
-      </div>
+      <ExamSubmitPanel
+        meta={
+          <>
+            Đã làm {answeredCount}/{questions.length} câu.
+          </>
+        }
+        submitting={submitting}
+        onSubmit={() => doSubmit("manual")}
+        submitLabel="Nộp & xem trình độ"
+        submittingLabel="Đang chấm…"
+      />
     </div>
   );
 }

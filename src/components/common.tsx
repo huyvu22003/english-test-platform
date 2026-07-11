@@ -1,6 +1,7 @@
 // Các mảnh giao diện dùng lại: spinner, hộp lỗi, badge kỹ năng.
 import type { ReactNode } from "react";
 import type { Skill } from "../lib/types";
+import { skillLabel as getSkillLabel } from "../lib/utils";
 
 export function Spinner({ label = "Đang tải…" }: { label?: string }) {
   return (
@@ -27,19 +28,12 @@ export function EmptyState({ title, body, action }: { title: string; body?: stri
   );
 }
 
-const SKILL_LABEL: Record<Skill, string> = {
-  writing: "Viết",
-  reading: "Đọc",
-  listening: "Nghe",
-  use_of_english: "Use of English",
-};
-
 export function SkillBadge({ skill }: { skill: Skill }) {
-  return <span className={`pill skill-${skill}`}>{SKILL_LABEL[skill]}</span>;
+  return <span className={`pill skill-${skill}`}>{getSkillLabel(skill)}</span>;
 }
 
 export function skillLabel(skill: Skill): string {
-  return SKILL_LABEL[skill];
+  return getSkillLabel(skill);
 }
 
 export function Skeleton({ lines = 3, heading = false }: { lines?: number; heading?: boolean }) {

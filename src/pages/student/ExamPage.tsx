@@ -4,9 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getTest, submitExam } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
+import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
+import { isAnswered, formatError } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
+import { ExamBar, ExamSubmitPanel } from "../../components/ExamLayout";
 import type { AnswerMap, PublicQuestion, PublicTest } from "../../lib/types";
 
 const TFNG_OPTIONS: { value: string; label: string }[] = [
@@ -14,17 +17,6 @@ const TFNG_OPTIONS: { value: string; label: string }[] = [
   { value: "false", label: "FALSE / NO" },
   { value: "notgiven", label: "NOT GIVEN" },
 ];
-
-function fmt(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-function isAnswered(value: string | string[] | undefined): boolean {
-  if (Array.isArray(value)) return value.length > 0;
-  return typeof value === "string" && value.trim().length > 0;
-}
 
 export default function ExamPage() {
   const { testId = "" } = useParams();
@@ -48,7 +40,6 @@ export default function ExamPage() {
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [essay, setEssay] = useState("");
-  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
@@ -56,11 +47,6 @@ export default function ExamPage() {
   const ac = useAntiCheat(started);
   const isWriting = data.data?.topic.skill === "writing";
   const wordCount = useMemo(() => essay.trim().split(/\s+/).filter(Boolean).length, [essay]);
-
-  // Không có thông tin học sinh -> quay lại màn nhập.
-  useEffect(() => {
-    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
-  }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
@@ -102,23 +88,19 @@ export default function ExamPage() {
           replace: true,
         });
       } catch (e) {
-        setSubmitErr(e instanceof Error ? e.message : String(e));
+        setSubmitErr(formatError(e));
         setSubmitting(false);
       }
     },
     [submitting, data.data, isWriting, answers, wordCount, testId, meta, ac.violations, ac.log, essay, nav],
   );
 
-  // Đồng hồ đếm ngược — hết giờ tự nộp.
+  const timer = useCountdownTimer(() => void doSubmit("timeout"));
+  const secondsLeft = timer.secondsLeft;
+
   useEffect(() => {
-    if (!started || secondsLeft === null) return;
-    if (secondsLeft <= 0) {
-      void doSubmit("timeout");
-      return;
-    }
-    const id = window.setTimeout(() => setSecondsLeft((s) => (s === null ? null : s - 1)), 1000);
-    return () => window.clearTimeout(id);
-  }, [started, secondsLeft, doSubmit]);
+    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
+  }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   useEffect(() => {
     if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
@@ -179,7 +161,7 @@ export default function ExamPage() {
             onClick={async () => {
               await ac.enterFullscreen();
               startedAtRef.current = new Date().toISOString();
-              setSecondsLeft(test.time_limit_min * 60);
+              timer.start(test.time_limit_min * 60);
               setStarted(true);
             }}
           >
@@ -192,41 +174,34 @@ export default function ExamPage() {
 
   return (
     <div className="wrap exam">
-      <div className="exam-bar">
-        <div>
-          <strong>{topic.name}</strong> · Đề {test.version_label}
-          <span className="muted"> — {meta.name}</span>
-        </div>
-        <div className="exam-bar-right">
-          {ac.violations > 0 && (
-            <span className="viol">
-              Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}
-            </span>
-          )}
-          <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
-            ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
-          </span>
-        </div>
-      </div>
-
-      {ac.warning && <div className="warn-banner">{ac.warning}</div>}
-
-      <div className="exam-progress-strip">
-        {isWriting ? (
-          <span>
-            <strong>{wordCount}</strong>
-            {test.min_words ? `/${test.min_words}` : ""} từ
-          </span>
-        ) : (
-          <span>
-            <strong>{answeredCount}</strong>/{questions.length} câu đã làm
-          </span>
-        )}
-        <span>{passages.length} tư liệu</span>
-        <span>
-          {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
-        </span>
-      </div>
+      <ExamBar
+        title={
+          <>
+            <strong>{topic.name}</strong> · Đề {test.version_label}
+            <span className="muted"> — {meta.name}</span>
+          </>
+        }
+        secondsLeft={secondsLeft}
+        violations={ac.violations}
+        maxViolations={MAX_ALLOWED_VIOLATIONS}
+        warning={ac.warning}
+        progressItems={[
+          isWriting ? (
+            <>
+              <strong>{wordCount}</strong>
+              {test.min_words ? `/${test.min_words}` : ""} từ
+            </>
+          ) : (
+            <>
+              <strong>{answeredCount}</strong>/{questions.length} câu đã làm
+            </>
+          ),
+          <>{passages.length} tư liệu</>,
+          <>
+            {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
+          </>,
+        ]}
+      />
 
       {/* Tư liệu: đoạn đọc / audio */}
       {passages.map((p) => (
@@ -279,22 +254,22 @@ export default function ExamPage() {
       {isWriting && test.min_words > 0 && wordCount < test.min_words && (
         <p className="warn-text">Bài chưa đạt tối thiểu {test.min_words} từ — vẫn có thể nộp nhưng nên viết thêm.</p>
       )}
-      <div className="exam-submit-panel">
-        {!isWriting && (
-          <span className="muted small">
-            Đã làm {answeredCount}/{questions.length} câu.
-          </span>
-        )}
-        {isWriting && (
-          <span className="muted small">
-            Số từ hiện tại: {wordCount}
-            {test.min_words ? `/${test.min_words}` : ""}.
-          </span>
-        )}
-        <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
-          {submitting ? "Đang nộp…" : "Nộp bài"}
-        </button>
-      </div>
+      <ExamSubmitPanel
+        meta={
+          isWriting ? (
+            <>
+              Số từ hiện tại: {wordCount}
+              {test.min_words ? `/${test.min_words}` : ""}.
+            </>
+          ) : (
+            <>
+              Đã làm {answeredCount}/{questions.length} câu.
+            </>
+          )
+        }
+        submitting={submitting}
+        onSubmit={() => doSubmit("manual")}
+      />
     </div>
   );
 }

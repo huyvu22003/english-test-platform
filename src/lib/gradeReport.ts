@@ -1,5 +1,6 @@
 import type * as ExcelJSType from "exceljs";
 import type { Submission, TestWithTopic } from "./types";
+import { skillLabelEn as skillLabel } from "./utils";
 
 export interface GradeReportSession {
   name: string;
@@ -67,13 +68,6 @@ function bandOf(x: Submission): string {
 }
 function statusOf(x: Submission): string {
   return x.status === "graded" ? "Đã chấm" : "Chờ chấm";
-}
-function skillLabel(skill?: string): string {
-  if (skill === "writing") return "Writing";
-  if (skill === "reading") return "Reading";
-  if (skill === "listening") return "Listening";
-  if (skill === "use_of_english") return "Use of English";
-  return skill || "";
 }
 function testName(test: TestWithTopic | undefined, fallback: string | null): string {
   return test ? (test.title ?? `Đề ${test.version_label}`) : (fallback ?? "");

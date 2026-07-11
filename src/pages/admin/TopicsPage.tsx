@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { deleteTopic, listTopics, saveTopic, listTests, saveTest, deleteTest } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { ErrorBox, SkillBadge, Spinner } from "../../components/common";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 import type { Skill, Test, Topic } from "../../lib/types";
 
 const AUTHORING_SKILLS: Skill[] = ["writing", "reading", "listening"];
@@ -134,41 +135,26 @@ export default function TopicsPage() {
 
   return (
     <div className="admin-page topics-page">
-      <header className="admin-page-head">
-        <div>
-          <span className="eyebrow dark">Question bank</span>
-          <h1>{page.title}</h1>
-          <p className="muted small">{page.desc}</p>
-        </div>
-        {isBank && (
-          <Link className="btn primary" to="/admin/topics/reading">
-            Vào khu soạn đề →
-          </Link>
-        )}
-      </header>
-
-      <section className="admin-stat-grid" aria-label="Tổng quan ngân hàng đề">
-        <div className="admin-stat-card">
-          <span>Đề Viết</span>
-          <strong>{writingCount}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Đề Đọc</span>
-          <strong>{readingCount}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Đề Nghe</span>
-          <strong>{listeningCount}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Tăng cường</span>
-          <strong>{intensiveCount}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Xếp lớp</span>
-          <strong>{placementCount}</strong>
-        </div>
-      </section>
+      <AdminPageHeader
+        eyebrow="Question bank"
+        title={page.title}
+        subtitle={page.desc}
+        actions={
+          isBank ? (
+            <Link className="btn primary" to="/admin/topics/reading">
+              Vào khu soạn đề →
+            </Link>
+          ) : undefined
+        }
+        statsAriaLabel="Tổng quan ngân hàng đề"
+        stats={[
+          { label: "Đề Viết", value: writingCount },
+          { label: "Đề Đọc", value: readingCount },
+          { label: "Đề Nghe", value: listeningCount },
+          { label: "Tăng cường", value: intensiveCount },
+          { label: "Xếp lớp", value: placementCount },
+        ]}
+      />
 
       <div className="authoring-tabs card sub topic-tabs">
         <Link to="/admin/topics/writing" className={fixedSkill === "writing" ? "active" : ""}>

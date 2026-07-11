@@ -5,6 +5,7 @@ import { deleteSession, listAllTests, listClasses, listSessions, listSubmissions
 import { downloadGradeReportWorkbook } from "../../lib/gradeReport";
 import { useAsync } from "../../lib/useAsync";
 import { EmptyState, ErrorBox, Spinner } from "../../components/common";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 import type { ClassRow, ExamSession, Submission, TestWithTopic } from "../../lib/types";
 
 function genCode(): string {
@@ -36,34 +37,22 @@ export default function SessionsPage() {
 
   return (
     <div className="admin-page sessions-page">
-      <header className="admin-page-head">
-        <div>
-          <span className="eyebrow dark">Vận hành kiểm tra</span>
-          <h1>Buổi thi &amp; Mã thi</h1>
-          <p className="muted small">
+      <AdminPageHeader
+        eyebrow="Vận hành kiểm tra"
+        title="Buổi thi & Mã thi"
+        subtitle={
+          <>
             Tạo buổi thi gắn 1 đề; học sinh vào bằng <strong>mã thi</strong> tại trang chủ → "Vào phòng thi".
-          </p>
-        </div>
-      </header>
-
-      <section className="admin-stat-grid" aria-label="Tổng quan buổi thi">
-        <div className="admin-stat-card">
-          <span>Tổng buổi thi</span>
-          <strong>{sessionRows.length}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Đang trong thời gian mở</span>
-          <strong>{openSessions}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Bài nộp</span>
-          <strong>{submissionRows.length}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Lớp trong roster</span>
-          <strong>{classes.data?.length ?? 0}</strong>
-        </div>
-      </section>
+          </>
+        }
+        statsAriaLabel="Tổng quan buổi thi"
+        stats={[
+          { label: "Tổng buổi thi", value: sessionRows.length },
+          { label: "Đang trong thời gian mở", value: openSessions },
+          { label: "Bài nộp", value: submissionRows.length },
+          { label: "Lớp trong roster", value: classes.data?.length ?? 0 },
+        ]}
+      />
 
       {err && <ErrorBox msg={err} />}
 

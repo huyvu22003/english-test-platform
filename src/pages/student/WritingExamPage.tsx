@@ -4,15 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { pickPrompt, submitWriting } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
+import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
+import { formatError } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
+import { ExamBar, ExamSubmitPanel } from "../../components/ExamLayout";
 import type { PickedPrompt } from "../../lib/types";
-
-function fmt(sec: number): string {
-  const m = Math.floor(sec / 60);
-  return `${m}:${String(sec % 60).padStart(2, "0")}`;
-}
 
 export default function WritingExamPage() {
   const { topicId = "" } = useParams();
@@ -36,15 +34,10 @@ export default function WritingExamPage() {
   const data = useAsync<PickedPrompt>(() => pickPrompt(topicId, selectedTestId), [topicId, selectedTestId]);
   const [started, setStarted] = useState(false);
   const [essay, setEssay] = useState("");
-  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
   const ac = useAntiCheat(started);
-
-  useEffect(() => {
-    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
-  }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   const wordCount = useMemo(() => essay.trim().split(/\s+/).filter(Boolean).length, [essay]);
 
@@ -82,22 +75,19 @@ export default function WritingExamPage() {
           replace: true,
         });
       } catch (e) {
-        setSubmitErr(e instanceof Error ? e.message : String(e));
+        setSubmitErr(formatError(e));
         setSubmitting(false);
       }
     },
     [submitting, data.data, wordCount, meta, essay, ac.violations, ac.log, nav],
   );
 
+  const timer = useCountdownTimer(() => void doSubmit("timeout"));
+  const secondsLeft = timer.secondsLeft;
+
   useEffect(() => {
-    if (!started || secondsLeft === null) return;
-    if (secondsLeft <= 0) {
-      void doSubmit("timeout");
-      return;
-    }
-    const id = window.setTimeout(() => setSecondsLeft((s) => (s === null ? null : s - 1)), 1000);
-    return () => window.clearTimeout(id);
-  }, [started, secondsLeft, doSubmit]);
+    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
+  }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   useEffect(() => {
     if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
@@ -151,7 +141,7 @@ export default function WritingExamPage() {
             onClick={async () => {
               await ac.enterFullscreen();
               startedAtRef.current = new Date().toISOString();
-              setSecondsLeft(p.time_limit_min * 60);
+              timer.start(p.time_limit_min * 60);
               setStarted(true);
             }}
           >
@@ -164,32 +154,25 @@ export default function WritingExamPage() {
 
   return (
     <div className="wrap exam">
-      <div className="exam-bar">
-        <div>
-          <strong>{p.topic_name}</strong> <span className="muted">— {meta.name}</span>
-        </div>
-        <div className="exam-bar-right">
-          {ac.violations > 0 && (
-            <span className="viol">
-              Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}
-            </span>
-          )}
-          <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
-            ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
-          </span>
-        </div>
-      </div>
-
-      {ac.warning && <div className="warn-banner">{ac.warning}</div>}
-
-      <div className="exam-progress-strip">
-        <span>
-          <strong>{wordCount}</strong>/{p.min_words} từ
-        </span>
-        <span>
-          {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
-        </span>
-      </div>
+      <ExamBar
+        title={
+          <>
+            <strong>{p.topic_name}</strong> <span className="muted">— {meta.name}</span>
+          </>
+        }
+        secondsLeft={secondsLeft}
+        violations={ac.violations}
+        maxViolations={MAX_ALLOWED_VIOLATIONS}
+        warning={ac.warning}
+        progressItems={[
+          <>
+            <strong>{wordCount}</strong>/{p.min_words} từ
+          </>,
+          <>
+            {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
+          </>,
+        ]}
+      />
 
       <div className="card passage exam-material-card">
         <div className="muted small">ĐỀ BÀI</div>
@@ -213,14 +196,15 @@ export default function WritingExamPage() {
       {wordCount < p.min_words && (
         <p className="warn-text">Bài chưa đạt tối thiểu {p.min_words} từ — vẫn có thể nộp nhưng nên viết thêm.</p>
       )}
-      <div className="exam-submit-panel">
-        <span className="muted small">
-          Số từ hiện tại: {wordCount}/{p.min_words}.
-        </span>
-        <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
-          {submitting ? "Đang nộp…" : "Nộp bài"}
-        </button>
-      </div>
+      <ExamSubmitPanel
+        meta={
+          <>
+            Số từ hiện tại: {wordCount}/{p.min_words}.
+          </>
+        }
+        submitting={submitting}
+        onSubmit={() => doSubmit("manual")}
+      />
     </div>
   );
 }
