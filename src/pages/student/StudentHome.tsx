@@ -37,6 +37,11 @@ function isIntensiveTopic(topic: { topic_name: string; topic_category?: string |
   return topic.topic_category === "intensive_2026" || isLegacyIntensiveName(topic.topic_name);
 }
 
+function isPlacementTopic(topic: { topic_name: string; topic_category?: string | null }) {
+  const n = normalizeVi(topic.topic_name);
+  return topic.topic_category === "placement" || n.includes("placement") || n.includes("xep lop");
+}
+
 export default function StudentHome() {
   const nav = useNavigate();
   const [name, setName] = useState("");
@@ -56,10 +61,13 @@ export default function StudentHome() {
   const exams = useAsync<ExamListItem[]>(listExams, []);
 
   const writingTopics = useMemo(() => topics.data ?? [], [topics.data]);
-  const normalWritingTopics = useMemo(() => writingTopics.filter((t) => !isIntensiveTopic(t)), [writingTopics]);
+  const normalWritingTopics = useMemo(
+    () => writingTopics.filter((t) => !isIntensiveTopic(t) && !isPlacementTopic(t)),
+    [writingTopics],
+  );
   const intensiveTopics = useMemo(() => writingTopics.filter((t) => isIntensiveTopic(t)), [writingTopics]);
   const practiceExams = useMemo(
-    () => (exams.data ?? []).filter((e) => e.skill === "reading" || e.skill === "listening"),
+    () => (exams.data ?? []).filter((e) => (e.skill === "reading" || e.skill === "listening") && !isPlacementTopic(e)),
     [exams.data],
   );
   const intensiveExamTopics = useMemo(
@@ -120,12 +128,20 @@ export default function StudentHome() {
     };
   }
 
-  function startPlacement(testId: string) {
+  function startPlacement(item: PlacementItem) {
     setTouched(true);
     setAccessMsg(null);
     if (!ready) return;
+    if (item.skill === "writing" && !isStudent) {
+      showAccessDenied("Bài Writing xếp lớp cần mã học viên để giáo viên chấm và gắn kết quả vào hồ sơ.");
+      return;
+    }
     saveStudentIdentity(identity ?? guestIdentity(name, email));
-    nav(`/placement/${testId}`, { state: routeState() });
+    if (item.skill === "writing") {
+      nav(`/writing/${item.topic_id}?test=${item.test_id}`, { state: routeState() });
+      return;
+    }
+    nav(`/placement/${item.test_id}`, { state: routeState() });
   }
 
   async function loginByCode() {
@@ -252,7 +268,7 @@ export default function StudentHome() {
             </p>
             <div className="hero-cta">
               {firstPlacement && (
-                <button className="btn primary hero-btn" onClick={() => startPlacement(firstPlacement.test_id)}>
+                <button className="btn primary hero-btn" onClick={() => startPlacement(firstPlacement)}>
                   🎯 Làm bài xếp lớp
                 </button>
               )}
@@ -393,10 +409,10 @@ export default function StudentHome() {
                 <div>
                   <strong>{p.title}</strong> <SkillBadge skill={p.skill} />
                   <span className="meta-line">
-                    {p.num_q} câu · {p.time_limit_min} phút
+                    {p.skill === "writing" ? "Bài viết chấm tay" : `${p.num_q} câu tự chấm`} · {p.time_limit_min} phút
                   </span>
                 </div>
-                <button className="btn primary" onClick={() => startPlacement(p.test_id)}>
+                <button className="btn primary" onClick={() => startPlacement(p)}>
                   Làm bài
                 </button>
               </div>

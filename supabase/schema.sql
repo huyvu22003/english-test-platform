@@ -21,7 +21,7 @@ create table if not exists topics (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
   skill       text not null check (skill in ('writing','reading','listening')),
-  category    text not null default 'regular' check (category in ('regular','intensive_2026')),
+  category    text not null default 'regular' check (category in ('regular','intensive_2026','placement')),
   active      boolean not null default true,
   sort_order  int not null default 0,
   created_by  uuid references profiles(id),
@@ -216,11 +216,12 @@ language sql security definer set search_path = public as $$
                         'id', t.id, 'version_label', t.version_label, 'title', t.title,
                         'time_limit_min', t.time_limit_min, 'min_words', t.min_words
                      ) order by t.version_label), '[]')
-                     from tests t where t.topic_id = tp.id and t.active)
+                     from tests t where t.topic_id = tp.id and t.active and t.purpose <> 'placement')
          ) order by tp.sort_order, tp.name), '[]')
   from topics tp
   where tp.active
-    and exists (select 1 from tests t where t.topic_id = tp.id and t.active);
+    and tp.category <> 'placement'
+    and exists (select 1 from tests t where t.topic_id = tp.id and t.active and t.purpose <> 'placement');
 $$;
 
 -- Lấy đề để làm bài: loại cột correct (đáp án), kèm thông tin chủ đề (skill),
@@ -430,11 +431,11 @@ create or replace function rpc_list_writing_topics()
 returns jsonb language sql security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object(
            'topic_id', tp.id, 'topic_name', tp.name, 'topic_category', tp.category,
-           'num_prompts', (select count(*) from tests t where t.topic_id = tp.id and t.active)
+           'num_prompts', (select count(*) from tests t where t.topic_id = tp.id and t.active and t.purpose <> 'placement')
          ) order by tp.sort_order, tp.name), '[]')
   from topics tp
-  where tp.active and tp.skill = 'writing'
-    and exists (select 1 from tests t where t.topic_id = tp.id and t.active);
+  where tp.active and tp.skill = 'writing' and tp.category <> 'placement'
+    and exists (select 1 from tests t where t.topic_id = tp.id and t.active and t.purpose <> 'placement');
 $$;
 
 -- Bốc NGẪU NHIÊN 1 đề (prompt) trong 1 chủ đề.
@@ -596,7 +597,7 @@ alter table topics add column if not exists category text not null default 'regu
 do $$ begin
   alter table topics drop constraint if exists topics_category_check;
   alter table topics add constraint topics_category_check
-    check (category in ('regular','intensive_2026'));
+    check (category in ('regular','intensive_2026','placement'));
 exception when others then null; end $$;
 
 update topics
@@ -606,6 +607,16 @@ where skill = 'writing'
   and (
     (name ilike '%HỌC TĂNG CƯỜNG%' and name ilike '%2026%')
     or (name ilike '%hoc tang cuong%' and name ilike '%2026%')
+  );
+
+update topics
+set category = 'placement'
+where category = 'regular'
+  and (
+    name ilike '%placement%'
+    or name ilike '%xếp lớp%'
+    or name ilike '%xep lop%'
+    or exists (select 1 from tests t where t.topic_id = topics.id and t.purpose = 'placement')
   );
 
 alter table questions add column if not exists cefr_level text
@@ -644,13 +655,25 @@ $$;
 create or replace function rpc_list_placements()
 returns jsonb language sql security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object(
+           'topic_id', tp.id, 'topic_name', tp.name, 'topic_category', tp.category,
            'test_id', t.id, 'title', coalesce(t.title, tp.name),
            'skill', tp.skill, 'time_limit_min', t.time_limit_min,
            'num_q', (select count(*) from questions q where q.test_id = t.id)
-         ) order by tp.sort_order, t.version_label), '[]')
+         ) order by
+             case tp.skill
+               when 'use_of_english' then 1
+               when 'reading' then 2
+               when 'listening' then 3
+               when 'writing' then 4
+               else 9
+             end,
+             tp.sort_order, t.version_label), '[]')
   from tests t join topics tp on tp.id = t.topic_id
   where t.active and t.purpose = 'placement'
-    and exists (select 1 from questions q where q.test_id = t.id);
+    and (
+      tp.skill = 'writing'
+      or exists (select 1 from questions q where q.test_id = t.id)
+    );
 $$;
 
 -- Nộp + chấm placement: ra CEFR theo ngưỡng từng mức + lưu thống kê chi tiết.

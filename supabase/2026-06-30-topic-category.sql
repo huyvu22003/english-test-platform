@@ -6,7 +6,7 @@ alter table topics add column if not exists category text not null default 'regu
 do $$ begin
   alter table topics drop constraint if exists topics_category_check;
   alter table topics add constraint topics_category_check
-    check (category in ('regular','intensive_2026'));
+    check (category in ('regular','intensive_2026','placement'));
 exception when others then null; end $$;
 
 -- Gắn nhãn lại các topic tăng cường cũ đang còn tên nhận diện.

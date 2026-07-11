@@ -19,7 +19,7 @@ export interface Topic {
   id: string;
   name: string;
   skill: Skill;
-  category?: "regular" | "intensive_2026" | null;
+  category?: "regular" | "intensive_2026" | "placement" | null;
   active: boolean;
   sort_order: number;
   created_at?: string;
@@ -82,7 +82,7 @@ export interface PublicTest {
 export interface ExamListItem {
   topic_id: string;
   topic_name: string;
-  topic_category?: "regular" | "intensive_2026" | null;
+  topic_category?: "regular" | "intensive_2026" | "placement" | null;
   skill: Skill;
   tests: {
     id: string;
@@ -150,7 +150,7 @@ export type AnswerMap = Record<string, string | string[]>;
 export interface WritingTopic {
   topic_id: string;
   topic_name: string;
-  topic_category?: "regular" | "intensive_2026" | null;
+  topic_category?: "regular" | "intensive_2026" | "placement" | null;
   num_prompts: number;
 }
 
@@ -235,8 +235,11 @@ export interface StudentByCode {
 
 // ---------- Phase D — Placement tự chấm ----------
 export interface PlacementItem {
+  topic_id: string;
   test_id: string;
   title: string;
+  topic_name?: string | null;
+  topic_category?: "regular" | "intensive_2026" | "placement" | null;
   skill: Skill;
   time_limit_min: number;
   num_q: number;
@@ -278,7 +281,7 @@ export interface TestWithTopic {
   purpose: string;
   active?: boolean;
   topic_name: string;
-  topic_category?: "regular" | "intensive_2026" | null;
+  topic_category?: "regular" | "intensive_2026" | "placement" | null;
   skill: Skill;
 }
 

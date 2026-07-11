@@ -8,6 +8,7 @@ import type { Skill, Test, Topic } from "../../lib/types";
 
 const AUTHORING_SKILLS: Skill[] = ["writing", "reading", "listening"];
 const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
+const PLACEMENT_TOPIC_NAME = "XẾP LỚP IELTS";
 
 function normalizeVi(s: string) {
   return s
@@ -24,6 +25,11 @@ function isLegacyIntensiveName(name: string) {
 
 function isIntensiveTopic(topic: Pick<Topic, "name"> & { category?: string | null }) {
   return topic.category === "intensive_2026" || isLegacyIntensiveName(topic.name);
+}
+
+function isPlacementTopic(topic: Pick<Topic, "name"> & { category?: string | null }) {
+  const n = normalizeVi(topic.name);
+  return topic.category === "placement" || n.includes("placement") || n.includes("xep lop");
 }
 
 const SKILL_META: Record<Skill, { label: string; title: string; desc: string; cta: string }> = {
@@ -56,19 +62,22 @@ const SKILL_META: Record<Skill, { label: string; title: string; desc: string; ct
 export default function TopicsPage() {
   const { skill: skillParam } = useParams();
   const isIntensive = skillParam === "intensive";
+  const isPlacement = skillParam === "placement";
   const fixedSkill = AUTHORING_SKILLS.includes(skillParam as Skill) ? (skillParam as Skill) : null;
-  const isBank = !fixedSkill && !isIntensive;
+  const isBank = !fixedSkill && !isIntensive && !isPlacement;
   const topics = useAsync<Topic[]>(listTopics, []);
   const [name, setName] = useState("");
-  const [skill, setSkill] = useState<Skill>(fixedSkill ?? "reading");
+  const [skill, setSkill] = useState<Skill>(isPlacement ? "reading" : (fixedSkill ?? "reading"));
   const [err, setErr] = useState<string | null>(null);
 
   const visibleTopics = useMemo(() => {
     const rows = topics.data ?? [];
     if (isIntensive) return rows.filter((t) => t.skill === "writing" && isIntensiveTopic(t));
-    if (fixedSkill === "writing") return rows.filter((t) => t.skill === fixedSkill && !isIntensiveTopic(t));
-    return fixedSkill ? rows.filter((t) => t.skill === fixedSkill) : rows;
-  }, [topics.data, fixedSkill, isIntensive]);
+    if (isPlacement) return rows.filter((t) => isPlacementTopic(t));
+    if (fixedSkill === "writing")
+      return rows.filter((t) => t.skill === fixedSkill && !isIntensiveTopic(t) && !isPlacementTopic(t));
+    return fixedSkill ? rows.filter((t) => t.skill === fixedSkill && !isPlacementTopic(t)) : rows;
+  }, [topics.data, fixedSkill, isIntensive, isPlacement]);
 
   const page = isIntensive
     ? {
@@ -76,23 +85,35 @@ export default function TopicsPage() {
         desc: "Quản lý đề Writing tăng cường. Học sinh phải chọn đề cụ thể, không bốc ngẫu nhiên.",
         cta: "+ Thêm topic tăng cường",
       }
-    : fixedSkill
-      ? SKILL_META[fixedSkill]
-      : {
-          title: "Ngân hàng đề",
-          desc: "Xem tổng quan tất cả chủ đề/đề thi. Nên vào Đề Viết, Đề Đọc hoặc Đề Nghe để soạn cho đúng loại.",
-          cta: "+ Thêm chủ đề",
-        };
+    : isPlacement
+      ? {
+          title: "Đề xếp lớp",
+          desc: "Tách riêng bộ đề đánh giá đầu vào: Reading, Listening, Use of English tự chấm CEFR; Writing chấm tay theo IELTS.",
+          cta: "+ Thêm topic xếp lớp",
+        }
+      : fixedSkill
+        ? SKILL_META[fixedSkill]
+        : {
+            title: "Ngân hàng đề",
+            desc: "Xem tổng quan tất cả chủ đề/đề thi. Nên vào Đề Viết, Đề Đọc hoặc Đề Nghe để soạn cho đúng loại.",
+            cta: "+ Thêm chủ đề",
+          };
 
   const allTopics = topics.data ?? [];
   const writingCount = allTopics.filter((t) => t.skill === "writing" && !isIntensiveTopic(t)).length;
   const readingCount = allTopics.filter((t) => t.skill === "reading").length;
   const listeningCount = allTopics.filter((t) => t.skill === "listening").length;
   const intensiveCount = allTopics.filter((t) => t.skill === "writing" && isIntensiveTopic(t)).length;
+  const placementCount = allTopics.filter((t) => isPlacementTopic(t)).length;
 
   async function addTopic() {
     setErr(null);
-    const topicName = isIntensive && !name.trim() ? INTENSIVE_TOPIC_NAME : name.trim();
+    const topicName =
+      isIntensive && !name.trim()
+        ? INTENSIVE_TOPIC_NAME
+        : isPlacement && !name.trim()
+          ? `${PLACEMENT_TOPIC_NAME} - ${SKILL_META[skill].label}`
+          : name.trim();
     if (topicName.length < 2) {
       setErr("Tên chủ đề phải có ít nhất 2 ký tự.");
       return;
@@ -101,7 +122,7 @@ export default function TopicsPage() {
       await saveTopic({
         name: topicName,
         skill: isIntensive ? "writing" : (fixedSkill ?? skill),
-        category: isIntensive ? "intensive_2026" : "regular",
+        category: isIntensive ? "intensive_2026" : isPlacement ? "placement" : "regular",
         active: true,
       });
       setName("");
@@ -143,6 +164,10 @@ export default function TopicsPage() {
           <span>Tăng cường</span>
           <strong>{intensiveCount}</strong>
         </div>
+        <div className="admin-stat-card">
+          <span>Xếp lớp</span>
+          <strong>{placementCount}</strong>
+        </div>
       </section>
 
       <div className="authoring-tabs card sub topic-tabs">
@@ -154,6 +179,9 @@ export default function TopicsPage() {
         </Link>
         <Link to="/admin/topics/listening" className={fixedSkill === "listening" ? "active" : ""}>
           Đề Nghe
+        </Link>
+        <Link to="/admin/topics/placement" className={isPlacement ? "active" : ""}>
+          Đề xếp lớp
         </Link>
         <Link to="/admin/topics/intensive" className={isIntensive ? "active" : ""}>
           Học tăng cường 2026
@@ -175,19 +203,26 @@ export default function TopicsPage() {
           <label className="field inline">
             <span>Tên chủ đề</span>
             <input
-              placeholder={isIntensive ? INTENSIVE_TOPIC_NAME : "Tên chủ đề mới…"}
+              placeholder={
+                isIntensive
+                  ? INTENSIVE_TOPIC_NAME
+                  : isPlacement
+                    ? `${PLACEMENT_TOPIC_NAME} - ${SKILL_META[skill].label}`
+                    : "Tên chủ đề mới…"
+              }
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </label>
-          {isBank ? (
+          {isBank || isPlacement ? (
             <label className="field inline">
               <span>Kỹ năng</span>
               <select value={skill} onChange={(e) => setSkill(e.target.value as Skill)}>
                 <option value="reading">Đọc</option>
                 <option value="listening">Nghe</option>
+                {isPlacement && <option value="writing">Viết</option>}
                 <option value="use_of_english">Use of English</option>
-                <option value="writing">Viết</option>
+                {!isPlacement && <option value="writing">Viết</option>}
               </select>
             </label>
           ) : isIntensive ? (
@@ -203,6 +238,33 @@ export default function TopicsPage() {
         </div>
       </div>
       {err && <ErrorBox msg={err} />}
+
+      {isPlacement && (
+        <div className="card sub placement-guide-card">
+          <div className="card-title-row compact">
+            <div>
+              <h3>Cấu trúc xếp lớp gợi ý</h3>
+              <p className="muted small">
+                Tạo ít nhất 3 topic xếp lớp để đánh giá đủ kỹ năng trước khi xếp lớp học viên.
+              </p>
+            </div>
+          </div>
+          <div className="placement-guide-grid">
+            <div>
+              <strong>Đọc</strong>
+              <p className="muted small">20-30 câu, chia CEFR A1-C1, có passage ngắn đến dài.</p>
+            </div>
+            <div>
+              <strong>Nghe</strong>
+              <p className="muted small">15-25 câu, audio rõ nguồn, câu hỏi tăng dần độ khó.</p>
+            </div>
+            <div>
+              <strong>Viết</strong>
+              <p className="muted small">1 prompt Task 1/Task 2; giáo viên chấm 4 tiêu chí IELTS để xác nhận lớp.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {topics.loading && <Spinner />}
       {topics.error && <ErrorBox msg={topics.error} />}
@@ -238,7 +300,11 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
     const saved = await saveTopic({
       ...topic,
       name: nextName,
-      category: isIntensiveTopic(topic) ? "intensive_2026" : (topic.category ?? "regular"),
+      category: isIntensiveTopic(topic)
+        ? "intensive_2026"
+        : isPlacementTopic(topic)
+          ? "placement"
+          : (topic.category ?? "regular"),
     });
     setName(saved.name);
     setEditing(false);
@@ -253,7 +319,8 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
     const t = await saveTest({
       topic_id: topic.id,
       version_label: nextVersion(tests.data ?? []),
-      time_limit_min: topic.skill === "writing" ? 40 : 20,
+      purpose: isPlacementTopic(topic) ? "placement" : "progress",
+      time_limit_min: topic.skill === "writing" ? 40 : topic.skill === "listening" ? 30 : 20,
       min_words: topic.skill === "writing" ? 250 : 0,
       active: true,
     });

@@ -35,6 +35,7 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
   const questions = useAsync<Question[]>(() => listQuestions(test.id), [test.id]);
   const skill: Skill | undefined = topic.data?.skill;
   const isIntensive = topic.data?.category === "intensive_2026";
+  const isPlacement = topic.data?.category === "placement" || test.purpose === "placement";
   const isWriting = skill === "writing";
   const hasPrompt = Boolean(test.prompt?.trim());
   const hasQuestions = (questions.data?.length ?? 0) > 0;
@@ -42,18 +43,22 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
 
   const backTo = isIntensive
     ? "/admin/topics/intensive"
-    : skill && ["writing", "reading", "listening"].includes(skill)
-      ? `/admin/topics/${skill}`
-      : "/admin/topics";
+    : isPlacement
+      ? "/admin/topics/placement"
+      : skill && ["writing", "reading", "listening"].includes(skill)
+        ? `/admin/topics/${skill}`
+        : "/admin/topics";
   const backLabel = isIntensive
     ? "Học tăng cường 2026"
-    : skill === "writing"
-      ? "Đề Viết"
-      : skill === "reading"
-        ? "Đề Đọc"
-        : skill === "listening"
-          ? "Đề Nghe"
-          : "Ngân hàng đề";
+    : isPlacement
+      ? "Đề xếp lớp"
+      : skill === "writing"
+        ? "Đề Viết"
+        : skill === "reading"
+          ? "Đề Đọc"
+          : skill === "listening"
+            ? "Đề Nghe"
+            : "Ngân hàng đề";
 
   return (
     <div className="admin-page test-editor-page">
@@ -71,6 +76,7 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
         </div>
         <div className="test-editor-badges">
           {skill && <SkillBadge skill={skill} />}
+          {isPlacement && <span className="pill skill-use_of_english">Xếp lớp</span>}
           {isIntensive && <span className="pill skill-writing">Tăng cường</span>}
           {!test.active && <span className="pill off small">Đang khóa</span>}
         </div>

@@ -257,7 +257,7 @@ export async function listAllTests(): Promise<TestWithTopic[]> {
       version_label: string;
       purpose: string;
       active: boolean;
-      topics: { name: string; skill: Skill; category?: "regular" | "intensive_2026" | null } | null;
+      topics: { name: string; skill: Skill; category?: "regular" | "intensive_2026" | "placement" | null } | null;
     }[]
   >(
     await db()

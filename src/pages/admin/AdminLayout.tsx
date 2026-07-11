@@ -48,6 +48,9 @@ export default function AdminLayout() {
               <NavLink to="/admin/topics/listening" className={({ isActive }) => (isActive ? "active" : "")}>
                 Đề Nghe
               </NavLink>
+              <NavLink to="/admin/topics/placement" className={({ isActive }) => (isActive ? "active" : "")}>
+                Đề xếp lớp
+              </NavLink>
               <NavLink to="/admin/topics/intensive" className={({ isActive }) => (isActive ? "active" : "")}>
                 Học tăng cường 2026
               </NavLink>

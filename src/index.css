@@ -898,7 +898,7 @@ code {
 }
 .admin-stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
   margin: 0 0 14px;
 }
@@ -1381,6 +1381,20 @@ code {
   background: var(--grad);
   color: #fff;
   box-shadow: 0 6px 16px rgba(236, 58, 43, 0.18);
+}
+.placement-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.placement-guide-grid > div {
+  padding: 12px;
+  border: 1px solid rgba(122, 43, 143, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+.placement-guide-grid p {
+  margin: 4px 0 0;
 }
 
 /* Progress dashboard */
@@ -3216,6 +3230,9 @@ td.cell-weak {
   .authoring-tabs a {
     flex: 0 0 auto;
     white-space: nowrap;
+  }
+  .placement-guide-grid {
+    grid-template-columns: 1fr;
   }
   .topic-create-bar,
   .topic-create-card .topic-create-bar {
