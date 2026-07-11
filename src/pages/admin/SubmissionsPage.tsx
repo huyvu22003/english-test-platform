@@ -13,6 +13,7 @@ import {
 } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { EmptyState, ErrorBox, Spinner } from "../../components/common";
+import { AdminPageHeader } from "../../components/AdminPageHeader";
 import { useAuth } from "../../lib/auth";
 import type { ClassTeacher, Profile, Student, Submission, WritingCorrection, WritingScores } from "../../lib/types";
 
@@ -130,40 +131,28 @@ export default function SubmissionsPage() {
 
   return (
     <div className="admin-page grading-page">
-      <header className="admin-page-head">
-        <div>
-          <span className="eyebrow dark">Writing grading</span>
-          <h1>Hàng đợi chấm &amp; Điểm</h1>
-          <p className="muted small">Lọc bài nộp, chấm 4 tiêu chí IELTS, sửa câu chi tiết và xuất báo cáo điểm.</p>
-        </div>
-        <div className="actions grading-head-actions">
-          <button className="btn" type="button" onClick={() => setGuideOpen(true)}>
-            ❔ Hướng dẫn
-          </button>
-          <button className="btn primary" onClick={exportExcel} disabled={rows.length === 0}>
-            ⬇ Xuất Excel
-          </button>
-        </div>
-      </header>
-
-      <section className="admin-stat-grid" aria-label="Tổng quan bài chấm">
-        <div className="admin-stat-card">
-          <span>Tổng bài</span>
-          <strong>{allRows.length}</strong>
-        </div>
-        <div className="admin-stat-card urgent">
-          <span>Chờ chấm</span>
-          <strong>{pending}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Đã chấm</span>
-          <strong>{graded}</strong>
-        </div>
-        <div className="admin-stat-card">
-          <span>Band TB</span>
-          <strong>{avgBand == null ? "—" : avgBand.toFixed(1)}</strong>
-        </div>
-      </section>
+      <AdminPageHeader
+        eyebrow="Writing grading"
+        title="Hàng đợi chấm & Điểm"
+        subtitle="Lọc bài nộp, chấm 4 tiêu chí IELTS, sửa câu chi tiết và xuất báo cáo điểm."
+        actions={
+          <div className="actions grading-head-actions">
+            <button className="btn" type="button" onClick={() => setGuideOpen(true)}>
+              ❔ Hướng dẫn
+            </button>
+            <button className="btn primary" onClick={exportExcel} disabled={rows.length === 0}>
+              ⬇ Xuất Excel
+            </button>
+          </div>
+        }
+        statsAriaLabel="Tổng quan bài chấm"
+        stats={[
+          { label: "Tổng bài", value: allRows.length },
+          { label: "Chờ chấm", value: pending, urgent: true },
+          { label: "Đã chấm", value: graded },
+          { label: "Band TB", value: avgBand == null ? "—" : avgBand.toFixed(1) },
+        ]}
+      />
       {guideOpen && <GradingGuideModal onClose={() => setGuideOpen(false)} />}
 
       <div className="card admin-form-card grading-filter-card">

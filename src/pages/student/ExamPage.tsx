@@ -7,8 +7,9 @@ import { useAsync } from "../../lib/useAsync";
 import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
-import { fmtTime, isAnswered, formatError } from "../../lib/utils";
+import { isAnswered, formatError } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
+import { ExamBar, ExamSubmitPanel } from "../../components/ExamLayout";
 import type { AnswerMap, PublicQuestion, PublicTest } from "../../lib/types";
 
 const TFNG_OPTIONS: { value: string; label: string }[] = [
@@ -173,41 +174,34 @@ export default function ExamPage() {
 
   return (
     <div className="wrap exam">
-      <div className="exam-bar">
-        <div>
-          <strong>{topic.name}</strong> · Đề {test.version_label}
-          <span className="muted"> — {meta.name}</span>
-        </div>
-        <div className="exam-bar-right">
-          {ac.violations > 0 && (
-            <span className="viol">
-              Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}
-            </span>
-          )}
-          <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
-            ⏱ {secondsLeft !== null ? fmtTime(secondsLeft) : "--:--"}
-          </span>
-        </div>
-      </div>
-
-      {ac.warning && <div className="warn-banner">{ac.warning}</div>}
-
-      <div className="exam-progress-strip">
-        {isWriting ? (
-          <span>
-            <strong>{wordCount}</strong>
-            {test.min_words ? `/${test.min_words}` : ""} từ
-          </span>
-        ) : (
-          <span>
-            <strong>{answeredCount}</strong>/{questions.length} câu đã làm
-          </span>
-        )}
-        <span>{passages.length} tư liệu</span>
-        <span>
-          {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
-        </span>
-      </div>
+      <ExamBar
+        title={
+          <>
+            <strong>{topic.name}</strong> · Đề {test.version_label}
+            <span className="muted"> — {meta.name}</span>
+          </>
+        }
+        secondsLeft={secondsLeft}
+        violations={ac.violations}
+        maxViolations={MAX_ALLOWED_VIOLATIONS}
+        warning={ac.warning}
+        progressItems={[
+          isWriting ? (
+            <>
+              <strong>{wordCount}</strong>
+              {test.min_words ? `/${test.min_words}` : ""} từ
+            </>
+          ) : (
+            <>
+              <strong>{answeredCount}</strong>/{questions.length} câu đã làm
+            </>
+          ),
+          <>{passages.length} tư liệu</>,
+          <>
+            {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
+          </>,
+        ]}
+      />
 
       {/* Tư liệu: đoạn đọc / audio */}
       {passages.map((p) => (
@@ -260,22 +254,22 @@ export default function ExamPage() {
       {isWriting && test.min_words > 0 && wordCount < test.min_words && (
         <p className="warn-text">Bài chưa đạt tối thiểu {test.min_words} từ — vẫn có thể nộp nhưng nên viết thêm.</p>
       )}
-      <div className="exam-submit-panel">
-        {!isWriting && (
-          <span className="muted small">
-            Đã làm {answeredCount}/{questions.length} câu.
-          </span>
-        )}
-        {isWriting && (
-          <span className="muted small">
-            Số từ hiện tại: {wordCount}
-            {test.min_words ? `/${test.min_words}` : ""}.
-          </span>
-        )}
-        <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
-          {submitting ? "Đang nộp…" : "Nộp bài"}
-        </button>
-      </div>
+      <ExamSubmitPanel
+        meta={
+          isWriting ? (
+            <>
+              Số từ hiện tại: {wordCount}
+              {test.min_words ? `/${test.min_words}` : ""}.
+            </>
+          ) : (
+            <>
+              Đã làm {answeredCount}/{questions.length} câu.
+            </>
+          )
+        }
+        submitting={submitting}
+        onSubmit={() => doSubmit("manual")}
+      />
     </div>
   );
 }

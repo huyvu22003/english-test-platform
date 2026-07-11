@@ -7,8 +7,9 @@ import { useAsync } from "../../lib/useAsync";
 import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
-import { fmtTime, formatError } from "../../lib/utils";
+import { formatError } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
+import { ExamBar, ExamSubmitPanel } from "../../components/ExamLayout";
 import type { PickedPrompt } from "../../lib/types";
 
 export default function WritingExamPage() {
@@ -153,32 +154,25 @@ export default function WritingExamPage() {
 
   return (
     <div className="wrap exam">
-      <div className="exam-bar">
-        <div>
-          <strong>{p.topic_name}</strong> <span className="muted">— {meta.name}</span>
-        </div>
-        <div className="exam-bar-right">
-          {ac.violations > 0 && (
-            <span className="viol">
-              Vi phạm: {ac.violations}/{MAX_ALLOWED_VIOLATIONS}
-            </span>
-          )}
-          <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
-            ⏱ {secondsLeft !== null ? fmtTime(secondsLeft) : "--:--"}
-          </span>
-        </div>
-      </div>
-
-      {ac.warning && <div className="warn-banner">{ac.warning}</div>}
-
-      <div className="exam-progress-strip">
-        <span>
-          <strong>{wordCount}</strong>/{p.min_words} từ
-        </span>
-        <span>
-          {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
-        </span>
-      </div>
+      <ExamBar
+        title={
+          <>
+            <strong>{p.topic_name}</strong> <span className="muted">— {meta.name}</span>
+          </>
+        }
+        secondsLeft={secondsLeft}
+        violations={ac.violations}
+        maxViolations={MAX_ALLOWED_VIOLATIONS}
+        warning={ac.warning}
+        progressItems={[
+          <>
+            <strong>{wordCount}</strong>/{p.min_words} từ
+          </>,
+          <>
+            {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
+          </>,
+        ]}
+      />
 
       <div className="card passage exam-material-card">
         <div className="muted small">ĐỀ BÀI</div>
@@ -202,14 +196,15 @@ export default function WritingExamPage() {
       {wordCount < p.min_words && (
         <p className="warn-text">Bài chưa đạt tối thiểu {p.min_words} từ — vẫn có thể nộp nhưng nên viết thêm.</p>
       )}
-      <div className="exam-submit-panel">
-        <span className="muted small">
-          Số từ hiện tại: {wordCount}/{p.min_words}.
-        </span>
-        <button className="btn primary big" disabled={submitting} onClick={() => doSubmit("manual")}>
-          {submitting ? "Đang nộp…" : "Nộp bài"}
-        </button>
-      </div>
+      <ExamSubmitPanel
+        meta={
+          <>
+            Số từ hiện tại: {wordCount}/{p.min_words}.
+          </>
+        }
+        submitting={submitting}
+        onSubmit={() => doSubmit("manual")}
+      />
     </div>
   );
 }
