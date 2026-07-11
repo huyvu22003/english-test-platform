@@ -4,15 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { pickPrompt, submitWriting } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
+import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
+import { fmtTime, formatError } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
 import type { PickedPrompt } from "../../lib/types";
-
-function fmt(sec: number): string {
-  const m = Math.floor(sec / 60);
-  return `${m}:${String(sec % 60).padStart(2, "0")}`;
-}
 
 export default function WritingExamPage() {
   const { topicId = "" } = useParams();
@@ -36,15 +33,10 @@ export default function WritingExamPage() {
   const data = useAsync<PickedPrompt>(() => pickPrompt(topicId, selectedTestId), [topicId, selectedTestId]);
   const [started, setStarted] = useState(false);
   const [essay, setEssay] = useState("");
-  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
   const ac = useAntiCheat(started);
-
-  useEffect(() => {
-    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
-  }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   const wordCount = useMemo(() => essay.trim().split(/\s+/).filter(Boolean).length, [essay]);
 
@@ -82,22 +74,19 @@ export default function WritingExamPage() {
           replace: true,
         });
       } catch (e) {
-        setSubmitErr(e instanceof Error ? e.message : String(e));
+        setSubmitErr(formatError(e));
         setSubmitting(false);
       }
     },
     [submitting, data.data, wordCount, meta, essay, ac.violations, ac.log, nav],
   );
 
+  const timer = useCountdownTimer(() => void doSubmit("timeout"));
+  const secondsLeft = timer.secondsLeft;
+
   useEffect(() => {
-    if (!started || secondsLeft === null) return;
-    if (secondsLeft <= 0) {
-      void doSubmit("timeout");
-      return;
-    }
-    const id = window.setTimeout(() => setSecondsLeft((s) => (s === null ? null : s - 1)), 1000);
-    return () => window.clearTimeout(id);
-  }, [started, secondsLeft, doSubmit]);
+    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
+  }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   useEffect(() => {
     if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
@@ -151,7 +140,7 @@ export default function WritingExamPage() {
             onClick={async () => {
               await ac.enterFullscreen();
               startedAtRef.current = new Date().toISOString();
-              setSecondsLeft(p.time_limit_min * 60);
+              timer.start(p.time_limit_min * 60);
               setStarted(true);
             }}
           >
@@ -175,7 +164,7 @@ export default function WritingExamPage() {
             </span>
           )}
           <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
-            ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
+            ⏱ {secondsLeft !== null ? fmtTime(secondsLeft) : "--:--"}
           </span>
         </div>
       </div>

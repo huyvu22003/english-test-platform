@@ -9,15 +9,10 @@ import {
   saveStudentIdentity,
 } from "../../lib/studentSession";
 import { ErrorBox, Spinner } from "../../components/common";
+import { skillLabel } from "../../lib/utils";
 import type { ProgressItem, Skill } from "../../lib/types";
 
 const SKILL_ORDER: Skill[] = ["listening", "reading", "writing"];
-const SKILL_LABEL: Record<string, string> = {
-  listening: "Nghe",
-  reading: "Đọc",
-  writing: "Viết",
-  use_of_english: "Use of English",
-};
 const WRITING_CRITERIA = [
   { key: "score_tr", short: "TR", label: "Task Response", color: "#ef4444" },
   { key: "score_cc", short: "CC", label: "Coherence & Cohesion", color: "#2563eb" },
@@ -168,7 +163,7 @@ function SkillSummary({ grouped }: { grouped: Record<string, ProgressItem[]> }) 
         const delta = latest && first && latest !== first ? bandOf(latest)! - bandOf(first)! : null;
         return (
           <div className="card progress-skill-card" key={skill}>
-            <span className={`pill skill-${skill}`}>{skillLabel(skill)}</span>
+            <span className={`pill skill-${skill}`}>{skillText(skill)}</span>
             <div className="progress-big">{latest ? bandOf(latest) : "—"}</div>
             <div className="muted small">Band gần nhất · {rows.length} bài</div>
             {delta !== null && (
@@ -217,7 +212,7 @@ function HistoryTable({
               <tr key={keyOf(i, idx)} className={active ? "selected-row" : "clickable-row"} onClick={() => onSelect(i)}>
                 <td className="small">{dateVi(i.submitted_at)}</td>
                 <td>
-                  <span className={`pill small skill-${i.skill}`}>{skillLabel(i.skill)}</span>
+                  <span className={`pill small skill-${i.skill}`}>{skillText(i.skill)}</span>
                 </td>
                 <td>{i.topic_name ?? i.test_title ?? "—"}</td>
                 <td>{bandOf(i) ?? "—"}</td>
@@ -246,7 +241,7 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
       <div className="card progress-modal" onClick={(e) => e.stopPropagation()}>
         <div className="detail-head modal-head">
           <div>
-            <span className={`pill skill-${item.skill}`}>{skillLabel(item.skill)}</span>
+            <span className={`pill skill-${item.skill}`}>{skillText(item.skill)}</span>
             <h2>{item.topic_name ?? item.test_title ?? "Chi tiết bài làm"}</h2>
             <p className="muted small">
               {dateVi(item.submitted_at)} · {item.student_name ?? "Học viên"}
@@ -725,7 +720,7 @@ function BandChart({ skill, items }: { skill: string; items: ProgressItem[] }) {
   return (
     <div className="card progress-chart-card">
       <div className="chart-title">
-        <b>{skillLabel(skill)}</b>
+        <b>{skillText(skill)}</b>
         <span className="muted small">{items.length ? `${items.length} bài đã chấm` : "Chưa có điểm"}</span>
       </div>
       {items.length ? (
@@ -945,7 +940,7 @@ function buildPdfHtml(item: ProgressItem, corrections: CorrectionPair[]) {
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(item.topic_name ?? "Bài kiểm tra")}</title><style>
     @page{size:A4;margin:14mm} body{font-family:Arial,sans-serif;color:#221b26;margin:0;line-height:1.55}.brand{display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid #ec3a2b;padding-bottom:14px;margin-bottom:18px}.brand img{height:72px;max-width:320px;object-fit:contain;border-radius:4px}.brand-title{text-align:right}.brand-title h1{margin:0;font-size:24px}.muted{color:#6c6880}.pill{display:inline-block;background:#e7f0ff;color:#1d4ed8;border-radius:99px;padding:3px 10px;font-weight:700;font-size:12px}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.meta div,.box{border:1px solid #ececf1;border-radius:12px;padding:10px;background:#fafafe}.scores{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.score{text-align:center;border:1px solid #fed7aa;background:#fff7ed;border-radius:12px;padding:10px}.score b{display:block;color:#ee5a24;font-size:24px}.score span{font-size:12px;color:#6c6880}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:start}.section{margin-top:16px}.section h2{font-size:17px;margin:0 0 8px}.essay{white-space:pre-wrap}.feedback{white-space:pre-wrap;overflow-wrap:anywhere}.feedback a{color:#1d4ed8;text-decoration:underline}.fix{border-left:4px solid #ec3a2b;background:#fff7f7;padding:8px 10px;margin:8px 0;border-radius:8px}.bad{background:#fff1f2;margin:6px 0;padding:7px;border-radius:6px}.good{background:#ecfdf5;margin:6px 0;padding:7px;border-radius:6px}mark{background:#ffe4e6;color:#9f1239;border-bottom:2px solid #fb7185;padding:0 2px;border-radius:3px}.footer{margin-top:20px;border-top:1px solid #ececf1;padding-top:8px;font-size:12px;color:#6c6880}@media print{button{display:none}.box,.score,.fix{break-inside:avoid}}
   </style></head><body>
-    <div class="brand"><img src="/logo-ielts-tra-my.jpg"/><div class="brand-title"><span class="pill">${esc(skillLabel(item.skill))}</span><h1>${esc(item.topic_name ?? item.test_title ?? "Bài kiểm tra")}</h1><div class="muted">${dateVi(item.submitted_at)}</div></div></div>
+    <div class="brand"><img src="/logo-ielts-tra-my.jpg"/><div class="brand-title"><span class="pill">${esc(skillText(item.skill))}</span><h1>${esc(item.topic_name ?? item.test_title ?? "Bài kiểm tra")}</h1><div class="muted">${dateVi(item.submitted_at)}</div></div></div>
     <div class="meta"><div><b>Học viên</b><br>${esc(item.student_name ?? "—")}</div><div><b>Mã HV</b><br>${esc(item.student_code ?? "—")}</div><div><b>Lớp</b><br>${esc(item.class_name ?? "—")}</div><div><b>Trạng thái</b><br>${item.status === "graded" ? "Đã chấm" : "Chờ chấm"}</div></div>
     <div class="section"><h2>Điểm</h2><div class="scores"><div class="score"><b>${bandOf(item) ?? "—"}</b><span>Band</span></div>${scores}</div><p class="muted">CEFR: <b>${esc(item.cefr ?? "—")}</b></p></div>
     <div class="section"><h2>Đề bài</h2><div class="box">${esc(item.prompt || item.test_title || item.topic_name || "Chưa có đề bài lưu trong hệ thống.")}</div></div>
@@ -990,8 +985,8 @@ function dateVi(value: string) {
 function dateShort(value: string) {
   return new Date(value).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
 }
-function skillLabel(skill?: string | null) {
-  return SKILL_LABEL[skill ?? ""] ?? "Khác";
+function skillText(skill?: string | null) {
+  return skill ? skillLabel(skill) : "Khác";
 }
 function keyOf(item: ProgressItem, fallback: number) {
   return item.submission_id ?? `${item.submitted_at}-${item.topic_name ?? ""}-${fallback}`;

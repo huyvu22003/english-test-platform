@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getTest, submitExam } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
+import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
+import { fmtTime, isAnswered, formatError } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
 import type { AnswerMap, PublicQuestion, PublicTest } from "../../lib/types";
 
@@ -14,17 +16,6 @@ const TFNG_OPTIONS: { value: string; label: string }[] = [
   { value: "false", label: "FALSE / NO" },
   { value: "notgiven", label: "NOT GIVEN" },
 ];
-
-function fmt(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
-function isAnswered(value: string | string[] | undefined): boolean {
-  if (Array.isArray(value)) return value.length > 0;
-  return typeof value === "string" && value.trim().length > 0;
-}
 
 export default function ExamPage() {
   const { testId = "" } = useParams();
@@ -48,7 +39,6 @@ export default function ExamPage() {
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [essay, setEssay] = useState("");
-  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
@@ -56,11 +46,6 @@ export default function ExamPage() {
   const ac = useAntiCheat(started);
   const isWriting = data.data?.topic.skill === "writing";
   const wordCount = useMemo(() => essay.trim().split(/\s+/).filter(Boolean).length, [essay]);
-
-  // Không có thông tin học sinh -> quay lại màn nhập.
-  useEffect(() => {
-    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
-  }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
@@ -102,23 +87,19 @@ export default function ExamPage() {
           replace: true,
         });
       } catch (e) {
-        setSubmitErr(e instanceof Error ? e.message : String(e));
+        setSubmitErr(formatError(e));
         setSubmitting(false);
       }
     },
     [submitting, data.data, isWriting, answers, wordCount, testId, meta, ac.violations, ac.log, essay, nav],
   );
 
-  // Đồng hồ đếm ngược — hết giờ tự nộp.
+  const timer = useCountdownTimer(() => void doSubmit("timeout"));
+  const secondsLeft = timer.secondsLeft;
+
   useEffect(() => {
-    if (!started || secondsLeft === null) return;
-    if (secondsLeft <= 0) {
-      void doSubmit("timeout");
-      return;
-    }
-    const id = window.setTimeout(() => setSecondsLeft((s) => (s === null ? null : s - 1)), 1000);
-    return () => window.clearTimeout(id);
-  }, [started, secondsLeft, doSubmit]);
+    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
+  }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   useEffect(() => {
     if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
@@ -179,7 +160,7 @@ export default function ExamPage() {
             onClick={async () => {
               await ac.enterFullscreen();
               startedAtRef.current = new Date().toISOString();
-              setSecondsLeft(test.time_limit_min * 60);
+              timer.start(test.time_limit_min * 60);
               setStarted(true);
             }}
           >
@@ -204,7 +185,7 @@ export default function ExamPage() {
             </span>
           )}
           <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
-            ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
+            ⏱ {secondsLeft !== null ? fmtTime(secondsLeft) : "--:--"}
           </span>
         </div>
       </div>

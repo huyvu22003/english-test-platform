@@ -4,21 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getTest, submitPlacement } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
+import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
+import { fmtTime, isAnswered, formatError } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
 import { QuestionView } from "./ExamPage";
 import type { AnswerMap, PublicTest } from "../../lib/types";
-
-function fmt(sec: number): string {
-  const m = Math.floor(sec / 60);
-  return `${m}:${String(sec % 60).padStart(2, "0")}`;
-}
-
-function isAnswered(value: string | string[] | undefined): boolean {
-  if (Array.isArray(value)) return value.length > 0;
-  return typeof value === "string" && value.trim().length > 0;
-}
 
 export default function PlacementExamPage() {
   const { testId = "" } = useParams();
@@ -41,15 +33,10 @@ export default function PlacementExamPage() {
   const data = useAsync<PublicTest>(() => getTest(testId), [testId]);
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<AnswerMap>({});
-  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
   const ac = useAntiCheat(started);
-
-  useEffect(() => {
-    if (!meta.name || !meta.email) nav("/", { replace: true });
-  }, [meta.name, meta.email, nav]);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
@@ -82,22 +69,19 @@ export default function PlacementExamPage() {
           replace: true,
         });
       } catch (e) {
-        setSubmitErr(e instanceof Error ? e.message : String(e));
+        setSubmitErr(formatError(e));
         setSubmitting(false);
       }
     },
     [submitting, data.data, answers, testId, meta, ac.violations, ac.log, nav],
   );
 
+  const timer = useCountdownTimer(() => void doSubmit("timeout"));
+  const secondsLeft = timer.secondsLeft;
+
   useEffect(() => {
-    if (!started || secondsLeft === null) return;
-    if (secondsLeft <= 0) {
-      void doSubmit("timeout");
-      return;
-    }
-    const id = window.setTimeout(() => setSecondsLeft((s) => (s === null ? null : s - 1)), 1000);
-    return () => window.clearTimeout(id);
-  }, [started, secondsLeft, doSubmit]);
+    if (!meta.name || !meta.email) nav("/", { replace: true });
+  }, [meta.name, meta.email, nav]);
 
   useEffect(() => {
     if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
@@ -151,7 +135,7 @@ export default function PlacementExamPage() {
             onClick={async () => {
               await ac.enterFullscreen();
               startedAtRef.current = new Date().toISOString();
-              setSecondsLeft(test.time_limit_min * 60);
+              timer.start(test.time_limit_min * 60);
               setStarted(true);
             }}
           >
@@ -175,7 +159,7 @@ export default function PlacementExamPage() {
             </span>
           )}
           <span className={`timer ${secondsLeft !== null && secondsLeft < 60 ? "danger" : ""}`}>
-            ⏱ {secondsLeft !== null ? fmt(secondsLeft) : "--:--"}
+            ⏱ {secondsLeft !== null ? fmtTime(secondsLeft) : "--:--"}
           </span>
         </div>
       </div>
