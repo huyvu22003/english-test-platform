@@ -233,7 +233,7 @@ export default function StudentHome() {
   }
 
   return (
-    <div className="wrap student-shell">
+    <main id="main" className="wrap student-shell" tabIndex={-1}>
       {accessToast && (
         <div className="access-toast" role="status" aria-live="polite" key={accessToast.id}>
           <span className="access-toast-icon">!</span>
@@ -548,6 +548,6 @@ export default function StudentHome() {
           </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

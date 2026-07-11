@@ -2,6 +2,7 @@ import { lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
 import ErrorBoundary from "./components/ErrorBoundary";
+import ScrollToTop from "./components/ScrollToTop";
 import { Skeleton } from "./components/common";
 
 const StudentHome = lazy(() => import("./pages/student/StudentHome"));
@@ -66,6 +67,10 @@ export default function App() {
     <ErrorBoundary>
       <AuthProvider>
         <BrowserRouter>
+          <ScrollToTop />
+          <a href="#main" className="skip-link">
+            Chuyển đến nội dung chính
+          </a>
           <Suspense fallback={<Loading />}>
             <Routes>
               {/* Học sinh */}
