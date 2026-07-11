@@ -20,6 +20,21 @@ where category = 'regular'
     or exists (select 1 from tests t where t.topic_id = topics.id and t.purpose = 'placement')
   );
 
+-- Tạo khung topic xếp lớp đủ kỹ năng để giáo viên thêm đề A/B/C vào đúng chỗ.
+insert into topics(name, skill, category, active, sort_order)
+select v.name, v.skill, 'placement', true, v.sort_order
+from (values
+  ('XẾP LỚP IELTS - Đọc', 'reading', 31),
+  ('XẾP LỚP IELTS - Nghe', 'listening', 32),
+  ('XẾP LỚP IELTS - Viết', 'writing', 33)
+) as v(name, skill, sort_order)
+where not exists (
+  select 1 from topics t
+  where t.category = 'placement'
+    and t.skill = v.skill
+    and lower(t.name) = lower(v.name)
+);
+
 -- Danh sách đề luyện tập không trả đề placement nữa, tránh lẫn vào block Đọc/Nghe/Writing thường.
 create or replace function rpc_list_exams()
 returns jsonb
