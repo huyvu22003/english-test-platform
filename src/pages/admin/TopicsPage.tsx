@@ -298,8 +298,13 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
   }
   async function removeTopic() {
     if (!confirm(`Xóa chủ đề "${topic.name}" và toàn bộ đề/câu hỏi bên trong?`)) return;
-    await deleteTopic(topic.id);
-    onChanged();
+    try {
+      setErr(null);
+      await deleteTopic(topic.id);
+      onChanged();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
   }
   async function addTest() {
     const t = await saveTest({
@@ -314,8 +319,14 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
   }
   async function removeTest(id: string) {
     if (!confirm("Xóa đề này và toàn bộ câu hỏi?")) return;
-    await deleteTest(id);
-    tests.reload();
+    try {
+      setErr(null);
+      await deleteTest(id);
+      tests.reload();
+      onChanged();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
   }
 
   const testCount = tests.data?.length ?? 0;

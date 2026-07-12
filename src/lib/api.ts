@@ -372,6 +372,8 @@ export async function saveTopic(t: Partial<Topic>): Promise<Topic> {
 }
 
 export async function deleteTopic(id: string): Promise<void> {
+  const tests = unwrap<{ id: string }[]>(await db().from("tests").select("id").eq("topic_id", id));
+  await deleteTestsByIds(tests.map((t) => t.id));
   const { error } = await db().from("topics").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }
@@ -393,7 +395,41 @@ export async function saveTest(t: Partial<Test>): Promise<Test> {
 }
 
 export async function deleteTest(id: string): Promise<void> {
-  const { error } = await db().from("tests").delete().eq("id", id);
+  await deleteTestsByIds([id]);
+}
+
+async function deleteTestsByIds(testIds: string[]): Promise<void> {
+  if (testIds.length === 0) return;
+
+  const sessions = unwrap<{ id: string }[]>(
+    await db().from("exam_sessions").select("id").in("test_id", testIds),
+  );
+  const sessionIds = sessions.map((s) => s.id);
+
+  if (sessionIds.length > 0) {
+    {
+      const { error } = await db().from("submissions").delete().in("session_id", sessionIds);
+      if (error) throw new Error(error.message);
+    }
+    {
+      const { error } = await db().from("exam_sessions").delete().in("id", sessionIds);
+      if (error) throw new Error(error.message);
+    }
+  }
+
+  {
+    const { error } = await db().from("submissions").delete().in("test_id", testIds);
+    if (error) throw new Error(error.message);
+  }
+  {
+    const { error } = await db().from("questions").delete().in("test_id", testIds);
+    if (error) throw new Error(error.message);
+  }
+  {
+    const { error } = await db().from("passages").delete().in("test_id", testIds);
+    if (error) throw new Error(error.message);
+  }
+  const { error } = await db().from("tests").delete().in("id", testIds);
   if (error) throw new Error(error.message);
 }
 
