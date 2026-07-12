@@ -2375,6 +2375,34 @@ td.cell-weak {
 .learning-list {
   min-width: 0;
 }
+.placement-topic-list {
+  display: grid;
+  gap: 14px;
+}
+.placement-topic-choice {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(236, 236, 241, 0.9);
+  box-shadow: var(--shadow);
+}
+.placement-topic-choice-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.placement-topic-choice-head > div {
+  min-width: 0;
+}
+.placement-test-row {
+  box-shadow: none;
+  margin-bottom: 8px;
+}
+.placement-test-row:last-child {
+  margin-bottom: 0;
+}
 .intensive-picker .field {
   margin-bottom: 12px;
 }

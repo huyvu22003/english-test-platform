@@ -79,7 +79,24 @@ export default function StudentHome() {
   const totalIntensiveTests = intensiveExamTopics.reduce((sum, topic) => sum + topic.tests.length, 0);
   const totalPracticeTests = practiceExams.reduce((sum, topic) => sum + topic.tests.length, 0);
   const totalWritingPrompts = normalWritingTopics.reduce((sum, topic) => sum + topic.num_prompts, 0);
-  const firstPlacement = placements.data?.[0];
+  const placementTopics = useMemo(() => {
+    const grouped = new Map<string, { topicId: string; topicName: string; skill: PlacementItem["skill"]; tests: PlacementItem[] }>();
+    for (const item of placements.data ?? []) {
+      const topicId = item.topic_id;
+      const existing = grouped.get(topicId);
+      if (existing) {
+        existing.tests.push(item);
+        continue;
+      }
+      grouped.set(topicId, {
+        topicId,
+        topicName: item.topic_name?.trim() || "Đề xếp lớp",
+        skill: item.skill,
+        tests: [item],
+      });
+    }
+    return Array.from(grouped.values());
+  }, [placements.data]);
 
   useEffect(() => {
     const saved = loadStudentIdentity();
@@ -267,10 +284,10 @@ export default function StudentHome() {
               học viên IELTS Ms. Trà My.
             </p>
             <div className="hero-cta">
-              {firstPlacement && (
-                <button className="btn primary hero-btn" onClick={() => startPlacement(firstPlacement)}>
-                  🎯 Làm bài xếp lớp
-                </button>
+              {placementTopics.length > 0 && (
+                <a className="btn primary hero-btn" href="#placement-tests">
+                  🎯 Chọn đề xếp lớp
+                </a>
               )}
               <Link className="btn hero-btn ghost-light" to="/exam-room">
                 🔐 Vào phòng thi
@@ -393,28 +410,41 @@ export default function StudentHome() {
         <span className="muted small">Xếp lớp · luyện tập · theo dõi tiến bộ</span>
       </div>
 
-      {placements.data && placements.data.length > 0 && (
-        <section className="learning-block placement-block">
+      {placementTopics.length > 0 && (
+        <section className="learning-block placement-block" id="placement-tests">
           <div className="skill-card skill-card-placement">
             <div className="skill-icon">🎯</div>
             <div>
               <span className="eyebrow">Placement</span>
               <h3>Kiểm tra xếp lớp</h3>
-              <p>Tự chấm ra CEFR, giúp giáo viên định hướng lớp phù hợp.</p>
+              <p>Chọn đúng đề cần làm trong topic xếp lớp, hệ thống lưu kết quả để giáo viên đánh giá năng lực.</p>
             </div>
           </div>
-          <div className="learning-list">
-            {placements.data.map((p) => (
-              <div className="premium-test-row" key={p.test_id}>
-                <div>
-                  <strong>{p.title}</strong> <SkillBadge skill={p.skill} />
-                  <span className="meta-line">
-                    {p.skill === "writing" ? "Bài viết chấm tay" : `${p.num_q} câu tự chấm`} · {p.time_limit_min} phút
-                  </span>
+          <div className="learning-list placement-topic-list">
+            {placementTopics.map((topic) => (
+              <div className="placement-topic-choice" key={topic.topicId}>
+                <div className="placement-topic-choice-head">
+                  <div>
+                    <strong>{topic.topicName}</strong>
+                    <span className="meta-line">
+                      {topic.tests.length} đề · {topic.skill === "writing" ? "giáo viên chấm tay" : "tự chấm sau khi nộp"}
+                    </span>
+                  </div>
+                  <SkillBadge skill={topic.skill} />
                 </div>
-                <button className="btn primary" onClick={() => startPlacement(p)}>
-                  Làm bài
-                </button>
+                {topic.tests.map((p) => (
+                  <div className="premium-test-row compact placement-test-row" key={p.test_id}>
+                    <div>
+                      <strong>{p.title}</strong>
+                      <span className="meta-line">
+                        {p.skill === "writing" ? "Bài viết chấm tay" : `${p.num_q} câu tự chấm`} · {p.time_limit_min} phút
+                      </span>
+                    </div>
+                    <button className="btn primary" onClick={() => startPlacement(p)}>
+                      Làm bài
+                    </button>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
