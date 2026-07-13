@@ -19,8 +19,8 @@ npm run build        # tsc --noEmit && vite build
 npm run lint         # eslint src/
 npm run format       # prettier --write src/
 npm run format:check # prettier --check src/
-npm test             # vitest run (51 tests)
-npm run test:watch   # vitest watch mode
+npm test             # NODE_ENV=test vitest run (51 tests)
+npm run test:watch   # NODE_ENV=test vitest watch mode
 ```
 
 ## Project structure
@@ -56,7 +56,7 @@ src/
       DiagnosticsPage.tsx    # System diagnostics
       AdminLayout.tsx        # Sidebar layout wrapper
     student/                 # Student-facing pages
-      StudentHome.tsx        # Landing page
+      StudentHome.tsx        # Landing page (placement topic chooser)
       ExamPage.tsx           # Reading/listening exam (exports QuestionView)
       WritingExamPage.tsx    # Writing exam (intensive flow)
       SessionExamPage.tsx    # Session-based exam (server-synced timer)
@@ -82,6 +82,8 @@ supabase/
 - **Anti-cheat**: Fullscreen lock, tab-change detection, copy/paste blocking, violation counter with auto-submit threshold
 - **Server time sync**: `SessionExamPage` uses `serverOffsetMs` to sync countdown with server clock
 - **Supabase null fallback**: If env vars missing, `supabase = null` and app runs in demo mode
+- **Cascade delete**: `deleteTopic()` and `deleteTest()` in `api.ts` cascade-delete child records (sessions, submissions, questions, passages) before removing the parent
+- **Placement topic grouping**: `StudentHome` groups placement tests by topic so students choose which test to take within each placement topic
 
 ## Conventions
 
