@@ -1397,6 +1397,46 @@ code {
   margin: 4px 0 0;
 }
 
+.placement-results-page .placement-filter-card {
+  margin-bottom: 16px;
+}
+.placement-results-table td {
+  vertical-align: top;
+}
+.placement-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.placement-detail-card {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(236, 236, 241, 0.95);
+}
+.placement-detail-head,
+.placement-result-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.placement-result-line {
+  margin-top: 10px;
+  margin-bottom: 0;
+  font-size: 13px;
+  font-weight: 800;
+}
+.placement-level-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
 /* Progress dashboard */
 .progress-wrap {
   max-width: 1100px;
@@ -2375,26 +2415,66 @@ td.cell-weak {
 .learning-list {
   min-width: 0;
 }
-.placement-topic-list {
+.placement-topic-list,
+.placement-suite-list {
   display: grid;
   gap: 14px;
 }
-.placement-topic-choice {
+.placement-topic-choice,
+.placement-suite-choice {
   padding: 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(236, 236, 241, 0.9);
   box-shadow: var(--shadow);
 }
-.placement-topic-choice-head {
+.placement-topic-choice-head,
+.placement-suite-head {
   display: flex;
   align-items: start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 10px;
 }
-.placement-topic-choice-head > div {
+.placement-topic-choice-head > div,
+.placement-suite-head > div {
   min-width: 0;
+}
+.placement-suite-sections {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.placement-skill-column {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(122, 43, 143, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.62);
+}
+.placement-skill-column.missing {
+  display: flex;
+  align-items: center;
+  min-height: 86px;
+  border-style: dashed;
+  background: rgba(248, 250, 252, 0.7);
+}
+.placement-skill-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.placement-suite-warning {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #9a3412;
+  background: #fffbeb;
+  border: 1px solid #fed7aa;
+  font-size: 13px;
+  font-weight: 800;
 }
 .placement-test-row {
   box-shadow: none;
@@ -2514,7 +2594,9 @@ td.cell-weak {
   .hero-grid,
   .identity-card,
   .learning-block,
-  .quick-guide-grid {
+  .quick-guide-grid,
+  .placement-suite-sections,
+  .placement-detail-grid {
     grid-template-columns: 1fr;
   }
   .hero-stats {

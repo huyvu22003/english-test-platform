@@ -12,6 +12,7 @@ import type {
   PickedPrompt,
   PlacementItem,
   PlacementResult,
+  PlacementSubmission,
   Profile,
   ProgressItem,
   PublicTest,
@@ -206,6 +207,16 @@ export async function submitPlacement(args: {
     p_started_at: args.startedAt,
   });
   return unwrap(res) as PlacementResult;
+}
+
+export async function listPlacementSubmissions(): Promise<PlacementSubmission[]> {
+  const rows = unwrap<PlacementSubmission[]>(
+    await db()
+      .from("submissions")
+      .select("*, tests(prompt,title,version_label,purpose,topics(name,skill,category))")
+      .order("submitted_at", { ascending: false }),
+  );
+  return rows;
 }
 
 // ---------- Phase F: buổi thi / mã thi ----------

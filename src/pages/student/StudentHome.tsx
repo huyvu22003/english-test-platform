@@ -14,9 +14,10 @@ import {
 } from "../../lib/studentSession";
 import { useAsync } from "../../lib/useAsync";
 import { isConfigured } from "../../lib/supabase";
+import { groupPlacementSuites } from "../../lib/placement";
 import { ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/common";
 import Logo from "../../components/Logo";
-import type { ExamListItem, PlacementItem, WritingTopic } from "../../lib/types";
+import type { ExamListItem, PlacementItem, Skill, WritingTopic } from "../../lib/types";
 
 const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
 
@@ -79,24 +80,7 @@ export default function StudentHome() {
   const totalIntensiveTests = intensiveExamTopics.reduce((sum, topic) => sum + topic.tests.length, 0);
   const totalPracticeTests = practiceExams.reduce((sum, topic) => sum + topic.tests.length, 0);
   const totalWritingPrompts = normalWritingTopics.reduce((sum, topic) => sum + topic.num_prompts, 0);
-  const placementTopics = useMemo(() => {
-    const grouped = new Map<string, { topicId: string; topicName: string; skill: PlacementItem["skill"]; tests: PlacementItem[] }>();
-    for (const item of placements.data ?? []) {
-      const topicId = item.topic_id;
-      const existing = grouped.get(topicId);
-      if (existing) {
-        existing.tests.push(item);
-        continue;
-      }
-      grouped.set(topicId, {
-        topicId,
-        topicName: item.topic_name?.trim() || "Đề xếp lớp",
-        skill: item.skill,
-        tests: [item],
-      });
-    }
-    return Array.from(grouped.values());
-  }, [placements.data]);
+  const placementSuites = useMemo(() => groupPlacementSuites(placements.data ?? []), [placements.data]);
 
   useEffect(() => {
     const saved = loadStudentIdentity();
@@ -284,7 +268,7 @@ export default function StudentHome() {
               học viên IELTS Ms. Trà My.
             </p>
             <div className="hero-cta">
-              {placementTopics.length > 0 && (
+              {placementSuites.length > 0 && (
                 <a className="btn primary hero-btn" href="#placement-tests">
                   🎯 Chọn đề xếp lớp
                 </a>
@@ -410,41 +394,69 @@ export default function StudentHome() {
         <span className="muted small">Xếp lớp · luyện tập · theo dõi tiến bộ</span>
       </div>
 
-      {placementTopics.length > 0 && (
+      {placementSuites.length > 0 && (
         <section className="learning-block placement-block" id="placement-tests">
           <div className="skill-card skill-card-placement">
             <div className="skill-icon">🎯</div>
             <div>
               <span className="eyebrow">Placement</span>
-              <h3>Kiểm tra xếp lớp</h3>
-              <p>Chọn đúng đề cần làm trong topic xếp lớp, hệ thống lưu kết quả để giáo viên đánh giá năng lực.</p>
+              <h3>Kiểm tra xếp lớp đa kỹ năng</h3>
+              <p>Làm lần lượt Reading, Listening và Writing trong cùng một bộ để giáo viên có đủ dữ liệu xếp lớp.</p>
             </div>
           </div>
-          <div className="learning-list placement-topic-list">
-            {placementTopics.map((topic) => (
-              <div className="placement-topic-choice" key={topic.topicId}>
-                <div className="placement-topic-choice-head">
+          <div className="learning-list placement-suite-list">
+            {placementSuites.map((suite) => (
+              <div className="placement-suite-choice" key={suite.key}>
+                <div className="placement-suite-head">
                   <div>
-                    <strong>{topic.topicName}</strong>
+                    <strong>{suite.label}</strong>
                     <span className="meta-line">
-                      {topic.tests.length} đề · {topic.skill === "writing" ? "giáo viên chấm tay" : "tự chấm sau khi nộp"}
+                      {suite.itemCount} phần · {suite.totalMinutes} phút · {suite.totalQuestions} câu tự chấm
                     </span>
                   </div>
-                  <SkillBadge skill={topic.skill} />
+                  <span className={suite.isComplete ? "pill ok small" : "pill off small"}>
+                    {suite.isComplete ? "Đủ 3 kỹ năng" : "Chưa đủ bộ"}
+                  </span>
                 </div>
-                {topic.tests.map((p) => (
-                  <div className="premium-test-row compact placement-test-row" key={p.test_id}>
-                    <div>
-                      <strong>{p.title}</strong>
-                      <span className="meta-line">
-                        {p.skill === "writing" ? "Bài viết chấm tay" : `${p.num_q} câu tự chấm`} · {p.time_limit_min} phút
-                      </span>
+                <div className="placement-suite-sections">
+                  {suite.sections.map((section) => (
+                    <div className="placement-skill-column" key={section.skill}>
+                      <div className="placement-skill-title">
+                        <SkillBadge skill={section.skill} />
+                        <span className="muted small">{placementSkillHint(section.skill)}</span>
+                      </div>
+                      {section.items.map((p) => (
+                        <div className="premium-test-row compact placement-test-row" key={p.test_id}>
+                          <div>
+                            <strong>{p.title}</strong>
+                            <span className="meta-line">
+                              {p.skill === "writing" ? "Bài viết chấm tay" : `${p.num_q} câu tự chấm`} ·{" "}
+                              {p.time_limit_min} phút
+                            </span>
+                          </div>
+                          <button className="btn primary" onClick={() => startPlacement(p)}>
+                            Làm phần này
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <button className="btn primary" onClick={() => startPlacement(p)}>
-                      Làm bài
-                    </button>
+                  ))}
+                  {(["reading", "listening", "writing"] as Skill[])
+                    .filter((skill) => !suite.sections.some((section) => section.skill === skill))
+                    .map((skill) => (
+                      <div className="placement-skill-column missing" key={skill}>
+                        <div className="placement-skill-title">
+                          <SkillBadge skill={skill} />
+                          <span className="muted small">Chưa có đề trong bộ này</span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+                {!suite.isComplete && (
+                  <div className="placement-suite-warning">
+                    Admin cần bổ sung đủ Reading, Listening và Writing để bộ đề đánh giá trọn vẹn.
                   </div>
-                ))}
+                )}
               </div>
             ))}
           </div>
@@ -580,4 +592,11 @@ export default function StudentHome() {
       </section>
     </main>
   );
+}
+
+function placementSkillHint(skill: Skill): string {
+  if (skill === "writing") return "giáo viên chấm";
+  if (skill === "listening") return "nghe hiểu";
+  if (skill === "reading") return "đọc hiểu";
+  return skillLabel(skill);
 }

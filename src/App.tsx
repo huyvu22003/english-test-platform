@@ -26,6 +26,7 @@ const ImportPage = lazy(() => import("./pages/admin/ImportPage"));
 const SessionsPage = lazy(() => import("./pages/admin/SessionsPage"));
 const OperationsPage = lazy(() => import("./pages/admin/OperationsPage"));
 const StaffPage = lazy(() => import("./pages/admin/StaffPage"));
+const PlacementResultsPage = lazy(() => import("./pages/admin/PlacementResultsPage"));
 
 function Loading() {
   return (
@@ -141,6 +142,14 @@ export default function App() {
                     <RequireAdmin>
                       <RosterPage />
                     </RequireAdmin>
+                  }
+                />
+                <Route
+                  path="placement-results"
+                  element={
+                    <RequireGrading>
+                      <PlacementResultsPage />
+                    </RequireGrading>
                   }
                 />
                 <Route

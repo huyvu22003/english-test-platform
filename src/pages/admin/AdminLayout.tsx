@@ -75,6 +75,11 @@ export default function AdminLayout() {
             </NavLink>
           )}
           {(canGrade || isAdmin) && (
+            <NavLink to="/admin/placement-results" className={({ isActive }) => (isActive ? "active" : "")}>
+              Kết quả xếp lớp
+            </NavLink>
+          )}
+          {(canGrade || isAdmin) && (
             <NavLink to="/admin/diagnostics" className={({ isActive }) => (isActive ? "active" : "")}>
               Chẩn đoán
             </NavLink>

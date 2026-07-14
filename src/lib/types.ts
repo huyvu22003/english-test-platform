@@ -238,6 +238,7 @@ export interface PlacementItem {
   topic_id: string;
   test_id: string;
   title: string;
+  version_label?: string | null;
   topic_name?: string | null;
   topic_category?: "regular" | "intensive_2026" | "placement" | null;
   skill: Skill;
@@ -256,6 +257,21 @@ export interface PlacementResult {
   submission_id: string;
   cefr: Cefr | null; // null = chưa đạt A1
   detail: PlacementLevelStat[];
+}
+
+export interface PlacementSubmission extends Submission {
+  result_detail?: PlacementLevelStat[] | null;
+  tests?: {
+    prompt: string | null;
+    title: string | null;
+    version_label?: string | null;
+    purpose?: string | null;
+    topics?: {
+      name: string | null;
+      skill: Skill | null;
+      category?: "regular" | "intensive_2026" | "placement" | null;
+    } | null;
+  } | null;
 }
 
 // ---------- Phase F — Buổi thi / mã thi ----------
