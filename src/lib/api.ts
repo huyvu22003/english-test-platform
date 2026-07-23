@@ -101,13 +101,14 @@ export async function pickPrompt(topicId: string, testId?: string | null): Promi
       time_limit_min: picked.test.time_limit_min,
       min_words: picked.test.min_words,
       topic_name: picked.topic.name,
+      passages: picked.passages ?? [],
     };
   }
 
   const res = await db().rpc("rpc_pick_prompt", { p_topic_id: topicId });
-  const data = unwrap(res) as PickedPrompt | null;
+  const data = unwrap(res) as (PickedPrompt & { passages?: Passage[] }) | null;
   if (!data) throw new Error("Chủ đề này chưa có đề nào đang mở.");
-  return data;
+  return { ...data, passages: data.passages ?? [] };
 }
 
 export async function submitWriting(args: {

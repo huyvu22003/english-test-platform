@@ -168,6 +168,7 @@ export default function WritingExamPage() {
           <>
             <strong>{wordCount}</strong>/{p.min_words} từ
           </>,
+          <>{p.passages.length} tư liệu</>,
           <>
             {ac.violations}/{MAX_ALLOWED_VIOLATIONS} vi phạm
           </>,
@@ -176,8 +177,27 @@ export default function WritingExamPage() {
 
       <div className="card passage exam-material-card">
         <div className="muted small">ĐỀ BÀI</div>
-        <div className="passage-body">{p.prompt}</div>
+        {p.prompt && <div className="passage-body">{p.prompt}</div>}
       </div>
+
+      {p.passages.map((passage) => (
+        <div className="card passage exam-material-card" key={passage.id}>
+          {passage.kind === "audio" && passage.media_url && (
+            <audio
+              controls
+              controlsList="nodownload"
+              preload="metadata"
+              src={passage.media_url}
+              style={{ width: "100%" }}
+              onContextMenu={(e) => e.preventDefault()}
+            />
+          )}
+          {passage.kind === "reading" && passage.body && <div className="passage-body">{passage.body}</div>}
+          {passage.kind === "reading" && passage.media_url && (
+            <img src={passage.media_url} alt="Tư liệu đề bài" style={{ maxWidth: "100%", borderRadius: 8 }} />
+          )}
+        </div>
+      ))}
 
       <div className="card exam-workspace-card">
         <textarea

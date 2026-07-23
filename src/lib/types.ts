@@ -161,6 +161,7 @@ export interface PickedPrompt {
   time_limit_min: number;
   min_words: number;
   topic_name: string;
+  passages: Passage[];
 }
 
 export interface ProgressItem {
