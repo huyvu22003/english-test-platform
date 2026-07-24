@@ -131,6 +131,9 @@ export default function PlacementExamPage() {
               Chế độ toàn màn hình; rời tab/sao chép bị ghi nhận. Vi phạm{" "}
               <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong> sẽ bị dừng bài.
             </li>
+            {!ac.fullscreenSupported && (
+              <li>Thiết bị này không hỗ trợ toàn màn hình; bài vẫn chạy và hệ thống ghi nhận rời tab/mất focus.</li>
+            )}
           </ul>
           <button
             className="btn primary big exam-start-button"

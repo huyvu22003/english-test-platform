@@ -155,6 +155,9 @@ export default function SessionExamPage() {
               Chế độ <strong>toàn màn hình</strong>, ghi nhật ký vi phạm.{" "}
               <strong>Tự dừng khi vi phạm ≥ {stopAtViolations} lần.</strong>
             </li>
+            {!ac.fullscreenSupported && (
+              <li>Thiết bị này không hỗ trợ toàn màn hình; bài vẫn chạy và hệ thống ghi nhận rời tab/mất focus.</li>
+            )}
             <li>Chỉ được nộp theo quy định của buổi thi.</li>
           </ul>
           <button

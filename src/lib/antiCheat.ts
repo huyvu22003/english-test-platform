@@ -8,7 +8,8 @@ export interface AntiCheat {
   violations: number;
   log: string; // mỗi dòng: "HH:mm:ss — lý do"
   warning: string | null;
-  enterFullscreen: () => Promise<void>;
+  fullscreenSupported: boolean;
+  enterFullscreen: () => Promise<boolean>;
 }
 
 export const MAX_ALLOWED_VIOLATIONS = 2; // từ 2 lần sẽ dừng/nộp bài thi
@@ -22,6 +23,7 @@ const RECORD_COOLDOWN_MS = 1500; // một hành động rời màn hình có th�
 export function useAntiCheat(active: boolean): AntiCheat {
   const [violations, setViolations] = useState(0);
   const [warning, setWarning] = useState<string | null>(null);
+  const [fullscreenSupported] = useState(() => document.fullscreenEnabled !== false);
   const logRef = useRef<string[]>([]);
   const [log, setLog] = useState("");
   const warnTimer = useRef<number | undefined>(undefined);
@@ -46,14 +48,24 @@ export function useAntiCheat(active: boolean): AntiCheat {
   }, []);
 
   const enterFullscreen = useCallback(async () => {
+    if (!fullscreenSupported) {
+      setWarning(
+        "Trình duyệt này không hỗ trợ toàn màn hình. Bài vẫn bắt đầu, hệ thống tiếp tục ghi nhận rời tab/mất focus.",
+      );
+      return false;
+    }
     try {
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
       }
+      return true;
     } catch {
-      // một số trình duyệt/máy không cho fullscreen — vẫn ghi log các vi phạm khác.
+      setWarning(
+        "Không thể bật toàn màn hình trên thiết bị này. Bài vẫn bắt đầu, hệ thống tiếp tục ghi nhận rời tab/mất focus.",
+      );
+      return false;
     }
-  }, []);
+  }, [fullscreenSupported]);
 
   useEffect(() => {
     if (!active) return;
@@ -112,5 +124,5 @@ export function useAntiCheat(active: boolean): AntiCheat {
     };
   }, [active, record]);
 
-  return { violations, log, warning, enterFullscreen };
+  return { violations, log, warning, fullscreenSupported, enterFullscreen };
 }

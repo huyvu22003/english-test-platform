@@ -131,6 +131,9 @@ export default function WritingExamPage() {
             <li>
               Bài chạy ở chế độ <strong>toàn màn hình</strong>; rời tab/sao chép/dán đều bị <strong>ghi nhận</strong>.
             </li>
+            {!ac.fullscreenSupported && (
+              <li>Thiết bị này không hỗ trợ toàn màn hình; bài vẫn chạy và hệ thống ghi nhận rời tab/mất focus.</li>
+            )}
             <li>
               Nếu vi phạm <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.
             </li>

@@ -553,12 +553,25 @@ code {
   justify-content: space-between;
   margin-bottom: 14px;
 }
+.exam-bar > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .exam-bar-right {
   display: flex;
   align-items: center;
   gap: 14px;
+  flex-shrink: 0;
 }
 .timer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 82px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: var(--plum);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -582,6 +595,7 @@ code {
 .passage-body {
   white-space: pre-wrap;
   line-height: 1.7;
+  overflow-wrap: anywhere;
 }
 .essay {
   width: 100%;
@@ -738,9 +752,20 @@ code {
 .exam-material-card {
   background: linear-gradient(145deg, #fff, #fffaf7);
 }
+.exam-material-card audio,
+.exam-material-card img {
+  display: block;
+  width: 100%;
+}
+.exam-material-card img {
+  max-height: min(72vh, 760px);
+  object-fit: contain;
+  border-radius: 8px;
+}
 .exam-workspace-card textarea.essay {
   min-height: 420px;
   line-height: 1.75;
+  resize: vertical;
 }
 .exam-question-card {
   transition:
@@ -3247,22 +3272,30 @@ td.cell-weak {
 
   /* Taking exams on phones */
   .exam {
-    padding-bottom: 88px;
+    padding-bottom: calc(116px + env(safe-area-inset-bottom));
   }
   .exam-bar {
     top: 0;
-    border-radius: 0 0 16px 16px;
+    border-radius: 0;
     margin: -14px -12px 12px;
-    padding: 10px 12px;
+    padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
     align-items: flex-start;
     flex-direction: column;
     gap: 8px;
+    box-shadow: 0 10px 24px rgba(42, 15, 61, 0.08);
   }
   .session-entry-head {
     flex-direction: column;
   }
   .exam-progress-strip {
     position: static;
+    gap: 6px;
+  }
+  .exam-progress-strip span {
+    flex: 1 1 120px;
+    justify-content: center;
+    min-height: 34px;
+    text-align: center;
   }
   .exam-start-meta,
   .exam-submit-panel {
@@ -3278,15 +3311,30 @@ td.cell-weak {
     flex-wrap: wrap;
   }
   .timer {
+    min-width: 96px;
     font-size: 18px;
+  }
+  .exam-material-card {
+    padding: 14px;
+  }
+  .exam-material-card audio {
+    min-height: 44px;
+  }
+  .exam-material-card img {
+    max-height: 62vh;
   }
   .passage-body {
     font-size: 15px;
     line-height: 1.72;
+    max-height: 58vh;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
+  .exam-workspace-card textarea.essay,
   .essay {
-    min-height: 340px;
+    min-height: min(52vh, 430px);
     font-size: 16px;
+    line-height: 1.65;
   }
   .question.card {
     padding: 14px;
@@ -3299,10 +3347,20 @@ td.cell-weak {
     max-width: none;
   }
   .btn.big {
-    position: sticky;
-    bottom: 10px;
-    z-index: 4;
     box-shadow: 0 14px 30px rgba(236, 58, 43, 0.28);
+  }
+  .exam-submit-panel {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    width: auto;
+    margin: 0;
+    border-radius: 8px;
+  }
+  .exam-submit-panel .btn.big {
+    position: static;
+    width: 100%;
   }
 
   /* Admin shell */
