@@ -8,6 +8,8 @@ interface ResultState {
   result?: SubmitResult;
   placement?: PlacementResult;
   session?: SessionSubmitResult;
+  placementPart?: boolean;
+  placementWriting?: boolean;
   name?: string;
   topic?: string;
   auto?: boolean;
@@ -42,17 +44,9 @@ export default function ResultPage() {
         ) : st.session ? (
           <SessionView res={st.session} />
         ) : st.placement ? (
-          <PlacementView res={st.placement} />
+          <PlacementView res={st.placement} placementPart={st.placementPart === true} />
         ) : st.writing ? (
-          <p className="big-note">
-            Bài viết đã được lưu. <strong>Giáo viên sẽ chấm tay</strong> (4 tiêu chí IELTS) và phản hồi sau.
-            <br />
-            Xem điểm &amp; tiến bộ ở mục{" "}
-            <Link className="link" to="/progress">
-              Xem tiến bộ
-            </Link>
-            .
-          </p>
+          <WritingDoneNote placementWriting={st.placementWriting === true} />
         ) : st.result ? (
           <div className="score-box">
             <div className="score-main">
@@ -101,7 +95,7 @@ function SessionView({ res }: { res: SessionSubmitResult }) {
   return <p className="big-note">Đã ghi nhận bài thi của bạn. Điểm sẽ được công bố theo quy định của buổi thi.</p>;
 }
 
-function PlacementView({ res }: { res: PlacementResult }) {
+function PlacementView({ res, placementPart }: { res: PlacementResult; placementPart?: boolean }) {
   return (
     <div>
       <div className="score-box">
@@ -109,6 +103,15 @@ function PlacementView({ res }: { res: PlacementResult }) {
         <div className="score-main">{res.cefr ?? "< A1"}</div>
         {!res.cefr && <p className="muted">Chưa đạt ngưỡng mức A1 — nên bắt đầu từ lớp nền tảng.</p>}
       </div>
+      {placementPart && (
+        <div className="placement-next-step">
+          <strong>Tiếp tục bộ xếp lớp</strong>
+          <p>
+            Đây mới là kết quả của một phần. Quay lại trang chủ để làm tiếp Reading, Listening và Writing trong cùng bộ;
+            giáo viên sẽ xem bảng tổng hợp đủ kỹ năng trước khi chốt lớp.
+          </p>
+        </div>
+      )}
       {res.detail.length > 0 && (
         <table className="table level-detail">
           <thead>
@@ -134,5 +137,31 @@ function PlacementView({ res }: { res: PlacementResult }) {
         </table>
       )}
     </div>
+  );
+}
+
+function WritingDoneNote({ placementWriting }: { placementWriting: boolean }) {
+  if (placementWriting) {
+    return (
+      <div className="placement-next-step">
+        <strong>Writing xếp lớp đã được lưu</strong>
+        <p>
+          Phần Writing cần giáo viên chấm tay. Học sinh nên quay lại trang chủ làm tiếp Reading và Listening trong cùng
+          bộ; admin sẽ thấy trạng thái <strong>Writing chờ chấm</strong> ở trang Kết quả xếp lớp.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <p className="big-note">
+      Bài viết đã được lưu. <strong>Giáo viên sẽ chấm tay</strong> (4 tiêu chí IELTS) và phản hồi sau.
+      <br />
+      Xem điểm &amp; tiến bộ ở mục{" "}
+      <Link className="link" to="/progress">
+        Xem tiến bộ
+      </Link>
+      .
+    </p>
   );
 }

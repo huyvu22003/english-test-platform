@@ -11,7 +11,7 @@ import { EmptyState, ErrorBox, SkillBadge, Spinner } from "../../components/comm
 import { AdminPageHeader } from "../../components/AdminPageHeader";
 import type { PlacementSubmission } from "../../lib/types";
 
-type FilterStatus = "all" | "complete" | "incomplete";
+type FilterStatus = "all" | "complete" | "incomplete" | "pending_writing";
 
 export default function PlacementResultsPage() {
   const subs = useAsync<PlacementSubmission[]>(listPlacementSubmissions, []);
@@ -25,6 +25,7 @@ export default function PlacementResultsPage() {
       reports.filter((r) => {
         if (status === "complete" && r.missingSkills.length > 0) return false;
         if (status === "incomplete" && r.missingSkills.length === 0) return false;
+        if (status === "pending_writing" && (!r.skills.writing || r.skills.writing.status === "graded")) return false;
         if (q.trim()) {
           const hay = `${r.studentName} ${r.studentEmail}`.toLowerCase();
           if (!hay.includes(q.trim().toLowerCase())) return false;
@@ -118,6 +119,7 @@ export default function PlacementResultsPage() {
               <option value="all">Tất cả</option>
               <option value="complete">Đủ dữ liệu xếp lớp</option>
               <option value="incomplete">Còn thiếu kỹ năng</option>
+              <option value="pending_writing">Writing chờ chấm</option>
             </select>
           </label>
         </div>

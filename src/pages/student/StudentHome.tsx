@@ -139,10 +139,20 @@ export default function StudentHome() {
     }
     saveStudentIdentity(identity ?? guestIdentity(name, email));
     if (item.skill === "writing") {
-      nav(`/writing/${item.topic_id}?test=${item.test_id}`, { state: routeState() });
+      nav(`/writing/${item.topic_id}?test=${item.test_id}`, {
+        state: {
+          ...routeState(),
+          placement: true,
+        },
+      });
       return;
     }
-    nav(`/placement/${item.test_id}`, { state: routeState() });
+    nav(`/placement/${item.test_id}`, {
+      state: {
+        ...routeState(),
+        placement: true,
+      },
+    });
   }
 
   async function loginByCode() {

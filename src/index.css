@@ -792,6 +792,24 @@ code {
   font-size: 17px;
   margin: 18px 0;
 }
+.placement-next-step {
+  max-width: 620px;
+  margin: 18px auto;
+  padding: 14px 16px;
+  text-align: left;
+  border: 1px solid rgba(30, 144, 117, 0.22);
+  border-radius: 8px;
+  background: rgba(236, 253, 245, 0.72);
+}
+.placement-next-step strong {
+  display: block;
+  color: #116149;
+}
+.placement-next-step p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
 
 /* admin shell */
 .admin {

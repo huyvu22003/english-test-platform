@@ -22,6 +22,7 @@ export default function WritingExamPage() {
     email?: string;
     studentCode?: string | null;
     studentMode?: string;
+    placement?: boolean;
   };
   const meta = {
     name: routeMeta.name ?? savedIdentity?.name,
@@ -67,6 +68,7 @@ export default function WritingExamPage() {
         nav("/result", {
           state: {
             writing: true,
+            placementWriting: routeMeta.placement === true,
             name: meta.name,
             topic: data.data.topic_name,
             auto: reason !== "manual",

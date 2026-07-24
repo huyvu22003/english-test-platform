@@ -62,6 +62,7 @@ export default function PlacementExamPage() {
         nav("/result", {
           state: {
             placement: res,
+            placementPart: true,
             name: meta.name,
             topic: data.data?.topic.name,
             auto: reason !== "manual",
