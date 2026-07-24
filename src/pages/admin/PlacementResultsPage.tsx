@@ -182,33 +182,35 @@ function PlacementReportRow({
   return (
     <>
       <tr>
-        <td>
+        <td data-label="Học viên">
           <strong>{report.studentName}</strong>
           <div className="muted small">{report.studentEmail || "Chưa có email"}</div>
         </td>
-        <td>{skillResult(report.skills.reading)}</td>
-        <td>{skillResult(report.skills.listening)}</td>
-        <td>{skillResult(report.skills.writing)}</td>
-        <td>{skillResult(report.skills.use_of_english)}</td>
-        <td>
+        <td data-label="Reading">{skillResult(report.skills.reading)}</td>
+        <td data-label="Listening">{skillResult(report.skills.listening)}</td>
+        <td data-label="Writing">{skillResult(report.skills.writing)}</td>
+        <td data-label="UoE">{skillResult(report.skills.use_of_english)}</td>
+        <td data-label="Trạng thái">
           <span className={report.missingSkills.length === 0 ? "ok-text" : "pill off small"}>
             {report.statusLabel}
           </span>
           <div className="muted small">{report.confidenceLabel}</div>
         </td>
-        <td>
+        <td data-label="Lớp đề xuất">
           <strong>{report.recommendedLevel}</strong>
           <div className="muted small placement-basis">{report.decisionBasis}</div>
         </td>
-        <td className="small">{report.latestAt ? new Date(report.latestAt).toLocaleString("vi-VN") : "—"}</td>
-        <td>
+        <td className="small" data-label="Cập nhật">
+          {report.latestAt ? new Date(report.latestAt).toLocaleString("vi-VN") : "—"}
+        </td>
+        <td className="grading-row-action">
           <button className="btn ghost small" type="button" onClick={onToggle}>
             {open ? "Đóng" : "Chi tiết"}
           </button>
         </td>
       </tr>
       {open && (
-        <tr className="detail-row">
+        <tr className="detail-row grading-detail-row">
           <td colSpan={9}>
             <div className="placement-detail-grid">
               {report.submissions.map((s) => {

@@ -1245,6 +1245,9 @@ code {
 .grading-table-card td:last-child {
   text-align: right;
 }
+.grading-row-action {
+  white-space: nowrap;
+}
 .grading-table-card tbody tr.has-viol > td {
   background: #fff7ed;
 }
@@ -1385,6 +1388,9 @@ code {
   bottom: 0;
   padding-top: 10px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.98) 28%);
+}
+.grading-save-actions .btn {
+  min-height: 42px;
 }
 .grading-essay-box {
   padding: 14px;
@@ -1900,6 +1906,9 @@ code {
   width: min(720px, 100%);
   margin: 0;
   box-shadow: var(--shadow-lg);
+}
+.correction-compose-modal textarea {
+  min-height: 96px;
 }
 .modal-mini-head {
   display: flex;
@@ -3538,11 +3547,91 @@ td.cell-weak {
   }
 
   /* Writing grading */
+  .grading-table-card,
+  .placement-results-table {
+    overflow: visible;
+  }
+  .grading-table-card .table,
+  .placement-results-table .table {
+    min-width: 0;
+  }
+  .grading-table-card thead,
+  .placement-results-table thead {
+    display: none;
+  }
+  .grading-table-card tbody,
+  .placement-results-table tbody {
+    display: grid;
+    gap: 12px;
+    padding: 10px;
+  }
+  .grading-table-card tr,
+  .placement-results-table tr {
+    display: grid;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .grading-table-card td,
+  .placement-results-table td {
+    display: grid;
+    grid-template-columns: minmax(92px, 0.42fr) minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    border-bottom: 1px solid var(--line);
+    padding: 10px 12px;
+    overflow-wrap: anywhere;
+  }
+  .grading-table-card td::before,
+  .placement-results-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .grading-table-card td:empty::before,
+  .placement-results-table td:empty::before,
+  .grading-table-card .grading-row-action::before,
+  .placement-results-table .grading-row-action::before,
+  .grading-detail-row > td::before {
+    content: none;
+  }
+  .grading-table-card .grading-row-action,
+  .placement-results-table .grading-row-action {
+    display: block;
+    text-align: left;
+  }
+  .grading-row-action .btn {
+    width: 100%;
+  }
+  .grading-detail-row {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+  .grading-detail-row > td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
   .grading-workspace {
     grid-template-columns: 1fr;
   }
   .grading-score-panel {
     position: static;
+  }
+  .grading-score-card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+  .grading-score-card textarea {
+    min-height: 180px;
   }
   .grading-essay-head {
     align-items: stretch;
@@ -3564,6 +3653,38 @@ td.cell-weak {
   }
   .quick-feedback-row .btn {
     flex: 1 1 100%;
+  }
+  .grading-save-actions {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    z-index: 30;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    margin: 0;
+    padding: 10px;
+    border: 1px solid rgba(122, 43, 143, 0.14);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(10px);
+  }
+  .grading-save-actions .btn {
+    width: 100%;
+  }
+  .grading-save-actions .btn.danger {
+    min-width: 92px;
+  }
+  .grading-detail-row .grading-score-card {
+    margin-bottom: calc(74px + env(safe-area-inset-bottom));
+  }
+  .placement-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .placement-detail-card {
+    border-radius: 12px;
   }
   .correction-compose-backdrop,
   .grading-guide-backdrop,
@@ -3719,6 +3840,25 @@ td.cell-weak {
   }
   .detail-row > td {
     min-width: 680px;
+  }
+  .grading-table-card .table,
+  .placement-results-table .table {
+    min-width: 0;
+  }
+  .grading-detail-row > td {
+    min-width: 0;
+  }
+  .grading-save-actions {
+    left: 0;
+    right: 0;
+    bottom: env(safe-area-inset-bottom);
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 16px 16px 0 0;
+  }
+  .grading-save-actions .btn {
+    flex: initial;
   }
   .progress-modal-backdrop,
   .grading-guide-backdrop,
@@ -3953,6 +4093,18 @@ main:focus-visible {
   .criteria-delta,
   .progress-skill-card {
     background: var(--panel);
+  }
+  .grading-table-card tr,
+  .placement-results-table tr,
+  .grading-score-card,
+  .placement-detail-card {
+    background: var(--panel);
+  }
+  .grading-detail-row {
+    background: transparent;
+  }
+  .grading-save-actions {
+    background: rgba(30, 26, 36, 0.96);
   }
   .criteria-chart,
   .band-chart {

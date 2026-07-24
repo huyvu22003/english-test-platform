@@ -552,13 +552,15 @@ function Row({
   return (
     <>
       <tr className={s.violations ? "has-viol" : ""}>
-        <td className="small">{new Date(s.submitted_at).toLocaleString("vi-VN")}</td>
-        <td>
+        <td className="small" data-label="Nộp lúc">
+          {new Date(s.submitted_at).toLocaleString("vi-VN")}
+        </td>
+        <td data-label="Học sinh">
           {s.student_name}
           <div className="muted small">{s.student_email}</div>
         </td>
-        <td>{s.topic_name}</td>
-        <td>
+        <td data-label="Chủ đề">{s.topic_name}</td>
+        <td data-label="Phụ trách">
           {isAdmin ? (
             <select
               className="compact-select"
@@ -576,24 +578,24 @@ function Row({
             <span className="small">{teacherName(s.assigned_to)}</span>
           )}
         </td>
-        <td>{s.overall_band ?? "—"}</td>
-        <td>{s.cefr ?? "—"}</td>
-        <td>
+        <td data-label="Band">{s.overall_band ?? "—"}</td>
+        <td data-label="CEFR">{s.cefr ?? "—"}</td>
+        <td data-label="Trạng thái">
           {s.status === "graded" ? (
             <span className="ok-text">{statusLabel()}</span>
           ) : (
             <span className="pill off small">{statusLabel()}</span>
           )}
         </td>
-        <td>{s.violations ? <span className="viol">{s.violations}</span> : "0"}</td>
-        <td>
+        <td data-label="Vi phạm">{s.violations ? <span className="viol">{s.violations}</span> : "0"}</td>
+        <td className="grading-row-action">
           <button className="btn ghost small" onClick={onToggle}>
             {open ? "Đóng" : "Chấm"}
           </button>
         </td>
       </tr>
       {open && (
-        <tr className="detail-row">
+        <tr className="detail-row grading-detail-row">
           <td colSpan={9}>
             <div className="grading-workspace">
               <div className="grading-main-column">
