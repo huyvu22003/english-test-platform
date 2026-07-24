@@ -1000,6 +1000,13 @@ code {
 .session-card.is-closed::before {
   background: var(--accent);
 }
+.session-card.session-state-scheduled::before {
+  background: #2563eb;
+}
+.session-card.session-state-locked::before,
+.session-card.session-state-missing_test::before {
+  background: var(--danger);
+}
 .session-card-head {
   align-items: flex-start;
 }
@@ -1037,12 +1044,48 @@ code {
   background: #ffedd5;
   color: #c2410c;
 }
+.status-badge.scheduled {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
 .status-badge.locked {
   background: #fee2e2;
   color: var(--danger);
 }
 .session-test-name {
   margin-top: 4px;
+}
+.session-share-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e9d5ff;
+  border-radius: 12px;
+  background: #fbf7ff;
+}
+.session-share-box b {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+.session-share-box span {
+  display: block;
+  max-width: min(620px, 64vw);
+  color: var(--ink);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.session-share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 .session-meta-grid {
   display: grid;
@@ -3331,6 +3374,19 @@ td.cell-weak {
   }
   .session-actions {
     width: 100%;
+  }
+  .session-share-box {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .session-share-box span {
+    max-width: 100%;
+  }
+  .session-share-actions {
+    justify-content: stretch;
+  }
+  .session-share-actions .btn {
+    flex: 1 1 120px;
   }
   .authoring-tabs {
     overflow-x: auto;

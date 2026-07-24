@@ -1,7 +1,7 @@
 // Vào PHÒNG THI bằng MÃ THI: nhập mã + tên + email → kiểm tra buổi thi mở →
 // chuyển sang trang làm bài của buổi thi.
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { sessionByCode, studentByCode } from "../../lib/api";
 import {
   identityFromStudentCode,
@@ -14,7 +14,9 @@ import { ErrorBox } from "../../components/common";
 
 export default function SessionEntryPage() {
   const nav = useNavigate();
-  const [code, setCode] = useState("");
+  const loc = useLocation();
+  const initialCode = new URLSearchParams(loc.search).get("code")?.trim().toUpperCase() ?? "";
+  const [code, setCode] = useState(initialCode);
   const [studentCode, setStudentCode] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

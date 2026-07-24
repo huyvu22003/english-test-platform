@@ -19,6 +19,21 @@ function toIso(v: string): string | null {
   return v ? new Date(v).toISOString() : null;
 }
 
+type SessionState = "scheduled" | "open" | "closed" | "locked" | "missing_test";
+
+function sessionState(s: ExamSession, test?: TestWithTopic): { key: SessionState; label: string; tone: string } {
+  if (!test) return { key: "missing_test", label: "Thiếu đề", tone: "locked" };
+  if (test.active === false) return { key: "locked", label: "Đề bị khóa", tone: "locked" };
+
+  const now = Date.now();
+  const openAt = s.open_at ? new Date(s.open_at).getTime() : null;
+  const closeAt = s.close_at ? new Date(s.close_at).getTime() : null;
+
+  if (openAt && now < openAt) return { key: "scheduled", label: "Sắp mở", tone: "scheduled" };
+  if (closeAt && now > closeAt) return { key: "closed", label: "Đã đóng", tone: "closed" };
+  return { key: "open", label: "Đang mở", tone: "open" };
+}
+
 export default function SessionsPage() {
   const sessions = useAsync<ExamSession[]>(listSessions, []);
   const tests = useAsync<TestWithTopic[]>(listAllTests, []);
@@ -28,11 +43,14 @@ export default function SessionsPage() {
 
   const sessionRows = sessions.data ?? [];
   const submissionRows = submissions.data ?? [];
-  const openSessions = sessionRows.filter((s) => {
-    const now = Date.now();
-    return (
-      (!s.open_at || now >= new Date(s.open_at).getTime()) && (!s.close_at || now <= new Date(s.close_at).getTime())
-    );
+  const testsById = useMemo(() => new Map((tests.data ?? []).map((t) => [t.id, t])), [tests.data]);
+  const openSessions = sessionRows.filter((s) => sessionState(s, testsById.get(s.test_id ?? "")).key === "open").length;
+  const scheduledSessions = sessionRows.filter(
+    (s) => sessionState(s, testsById.get(s.test_id ?? "")).key === "scheduled",
+  ).length;
+  const blockedSessions = sessionRows.filter((s) => {
+    const state = sessionState(s, testsById.get(s.test_id ?? "")).key;
+    return state === "closed" || state === "locked" || state === "missing_test";
   }).length;
 
   return (
@@ -48,9 +66,10 @@ export default function SessionsPage() {
         statsAriaLabel="Tổng quan buổi thi"
         stats={[
           { label: "Tổng buổi thi", value: sessionRows.length },
-          { label: "Đang trong thời gian mở", value: openSessions },
+          { label: "Đang mở", value: openSessions },
+          { label: "Sắp mở", value: scheduledSessions },
+          { label: "Đã đóng/khóa", value: blockedSessions },
           { label: "Bài nộp", value: submissionRows.length },
-          { label: "Lớp trong roster", value: classes.data?.length ?? 0 },
         ]}
       />
 
@@ -285,6 +304,13 @@ function SessionRow({
   const test = useMemo(() => tests.find((t) => t.id === s.test_id), [tests, s.test_id]);
   const className = useMemo(() => classes.find((c) => c.id === s.class_id)?.name ?? null, [classes, s.class_id]);
   const sessionSubs = useMemo(() => submissions.filter((x) => x.session_id === s.id), [submissions, s.id]);
+  const [copied, setCopied] = useState<"code" | "link" | null>(null);
+  const state = sessionState(s, test);
+  const accessCode = s.access_code ?? "";
+  const examLink =
+    typeof window === "undefined"
+      ? `/exam-room?code=${encodeURIComponent(accessCode)}`
+      : `${window.location.origin}/exam-room?code=${encodeURIComponent(accessCode)}`;
 
   async function remove() {
     if (!confirm(`Xóa buổi thi "${s.name}"?`)) return;
@@ -321,25 +347,46 @@ function SessionRow({
     }
   }
 
-  const now = Date.now();
-  const open =
-    (!s.open_at || now >= new Date(s.open_at).getTime()) && (!s.close_at || now <= new Date(s.close_at).getTime());
-  const canUse = open && test?.active !== false;
+  async function copyText(text: string, kind: "code" | "link") {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(kind);
+      window.setTimeout(() => setCopied(null), 1600);
+    } catch {
+      onErr("Không copy được tự động. Hãy copy thủ công mã/link đang hiển thị.");
+    }
+  }
+
+  const canUse = state.key === "open";
   return (
-    <div className={`card sub session-card ${canUse ? "is-open" : "is-closed"}`}>
+    <div className={`card sub session-card session-state-${state.key} ${canUse ? "is-open" : "is-closed"}`}>
       <div className="q-row-head session-card-head">
         <div className="session-main">
           <div className="session-title-line">
             <strong>{s.name}</strong>
-            <span className="pill code-pill">{s.access_code}</span>
-            {canUse ? (
-              <span className="status-badge open">Đang mở</span>
-            ) : (
-              <span className="status-badge closed">Đóng/chưa mở</span>
-            )}
-            {test?.active === false && <span className="status-badge locked">Đề đang khóa</span>}
+            <span className="pill code-pill">{accessCode || "Chưa có mã"}</span>
+            <span className={`status-badge ${state.tone}`}>{state.label}</span>
           </div>
           <div className="muted small session-test-name">{test ? testLabel(test) : "(đề đã xóa?)"}</div>
+          <div className="session-share-box">
+            <div>
+              <b>Link vào phòng</b>
+              <span>{examLink}</span>
+            </div>
+            <div className="session-share-actions">
+              <button
+                className="btn small"
+                type="button"
+                disabled={!accessCode}
+                onClick={() => copyText(accessCode, "code")}
+              >
+                {copied === "code" ? "Đã copy mã" : "Copy mã"}
+              </button>
+              <button className="btn small" type="button" onClick={() => copyText(examLink, "link")}>
+                {copied === "link" ? "Đã copy link" : "Copy link"}
+              </button>
+            </div>
+          </div>
           <div className="session-meta-grid">
             <span>
               <b>Mở</b>
