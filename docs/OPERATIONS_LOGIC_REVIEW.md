@@ -1,15 +1,16 @@
 # OPERATIONS LOGIC REVIEW — Trung tâm tiếng Anh
 
-Cập nhật: 2026-07-10
+Cập nhật: 2026-07-24
 
 Mục tiêu review: kiểm tra logic vận hành của hệ thống theo góc nhìn một trung tâm tiếng Anh dùng thật: quản lý học viên/lớp, tạo buổi thi, học sinh làm bài, giáo viên chấm, học sinh xem tiến bộ, admin theo dõi tồn đọng.
 
-## Cập nhật sau khi xử lý ưu tiên 2026-07-10
+## Cập nhật sau khi xử lý ưu tiên 2026-07-24
 
 - Đã siết `Tổng quan vận hành` theo phạm vi quyền client-side giống `Hàng đợi chấm & Điểm`: admin xem toàn hệ thống; teacher/grader chỉ tính bài được giao hoặc bài thuộc lớp phụ trách mà dữ liệu hiện tại cho phép thấy.
 - Đã thêm bộ lọc vận hành theo lớp, trạng thái tồn bài và giáo viên phụ trách.
 - Đã chuẩn hóa thao tác trạng thái trong màn chấm bài: `Nhận chấm`, `Gửi review`, `Đưa về đang chấm`, và `Lưu điểm & chấm xong`.
-- Chưa xác nhận lại production DB ở lượt này vì môi trường hiện không có Supabase CLI trong PATH. Cần kiểm tra bằng Supabase SQL/CLI nếu muốn xác nhận tuyệt đối production đã chạy đủ migration.
+- Đã bổ sung link từ cảnh báo vận hành sang Roster filter tương ứng, kiểm tra roster thiếu/trùng mã/email, quality gate trước import, dashboard lớp trong Chẩn đoán, và mobile card view cho các bảng admin chính ở Operations/Roster/Diagnostics.
+- Đã xác nhận production DB bằng Supabase Management API: `class_teachers`, `profiles.active`, `exam_sessions.class_id`, `rpc_session_by_code_for_student`, `rpc_student_by_code` đều có; Edge Function `create-staff-account` trả `OPTIONS 200`.
 
 ## Kết luận nhanh
 
@@ -40,7 +41,7 @@ Logic lõi hiện đúng hướng cho trung tâm tiếng Anh quy mô nhỏ/vừa
 - [x] Học viên có mã, họ tên, email, lớp.
 - [x] Buổi thi có thể giới hạn theo lớp.
 - [x] Học sinh vào phòng thi bằng mã học viên, không cho guest vào phòng thi.
-- [ ] Cần cảnh báo trùng email/trùng mã học viên ngay trên UI trước khi lưu.
+- [x] Cần cảnh báo trùng email/trùng mã học viên ngay trên UI trước khi lưu.
 - [ ] Cần màn import roster hàng loạt riêng nếu trung tâm nhập danh sách lớp lớn.
 
 ### 3. Buổi thi và mã thi
@@ -50,8 +51,8 @@ Logic lõi hiện đúng hướng cho trung tâm tiếng Anh quy mô nhỏ/vừa
 - [x] Có ngưỡng tự nộp khi vi phạm.
 - [x] Có tùy chọn hiện điểm ngay cho bài tự chấm.
 - [x] Có xuất bảng điểm theo buổi thi.
-- [ ] Cần trạng thái rõ hơn: Sắp mở / Đang mở / Đã đóng / Đề bị khóa.
-- [ ] Cần nút sao chép link/mã thi để gửi giáo viên/học viên nhanh.
+- [x] Cần trạng thái rõ hơn: Sắp mở / Đang mở / Đã đóng / Đề bị khóa.
+- [x] Cần nút sao chép link/mã thi để gửi giáo viên/học viên nhanh.
 - [ ] Chưa có nhiều mã/phiên bản đề trong cùng một buổi thi.
 
 ### 4. Luồng học sinh
@@ -60,9 +61,9 @@ Logic lõi hiện đúng hướng cho trung tâm tiếng Anh quy mô nhỏ/vừa
 - [x] Writing có đếm từ và chống gian lận mức răn đe.
 - [x] MCQ/Placement tự chấm server-side, không lộ đáp án xuống client.
 - [x] Progress chỉ hiển thị bài đã chấm.
-- [ ] Cần làm rõ sau khi nộp Writing: bài đang chờ chấm, khi nào xem được kết quả.
+- [x] Cần làm rõ sau khi nộp Writing: bài đang chờ chấm, khi nào xem được kết quả.
 - [ ] Cần luồng quên mã học viên/liên hệ giáo viên.
-- [ ] Cần kiểm tra kỹ mobile cho phòng thi dài, đặc biệt audio/reading + thanh timer.
+- [x] Cần kiểm tra kỹ mobile cho phòng thi dài, đặc biệt audio/reading + thanh timer.
 
 ### 5. Luồng chấm bài
 
@@ -85,7 +86,7 @@ Logic lõi hiện đúng hướng cho trung tâm tiếng Anh quy mô nhỏ/vừa
 - [x] Có danh sách bài cần xử lý gần nhất và thao tác Chấm nhanh.
 - [x] Đã thêm filter theo lớp, giáo viên và trạng thái tồn bài.
 - [x] Đã thêm phân loại tồn bài: chưa giao, đã giao, quá 36 giờ, cần review.
-- [ ] Nên đưa cảnh báo "học viên chưa email/mã" thành link sang Roster với filter tương ứng.
+- [x] Nên đưa cảnh báo "học viên chưa email/mã" thành link sang Roster với filter tương ứng.
 
 ### 7. Nội dung đề và import
 
@@ -93,30 +94,30 @@ Logic lõi hiện đúng hướng cho trung tâm tiếng Anh quy mô nhỏ/vừa
 - [x] Có import CSV cho đề viết và trắc nghiệm.
 - [x] Có phân quyền content editor.
 - [ ] Chưa tách ngân hàng item để tái sử dụng câu hỏi giữa nhiều đề.
-- [ ] Cần preview chất lượng đề sau import: thiếu đáp án, thiếu level, câu trùng.
+- [x] Cần preview chất lượng đề sau import: thiếu đáp án, thiếu level, câu trùng.
 
 ### 8. Báo cáo và tiến bộ
 
 - [x] Student Progress có band/CEFR, biểu đồ Writing và nhận xét khích lệ.
 - [x] Có export Excel/bảng điểm cho hàng đợi và buổi thi.
-- [ ] Cần dashboard lớp cho giáo viên: trung bình, học viên yếu, tiêu chí Writing yếu nhất.
+- [x] Cần dashboard lớp cho giáo viên: trung bình, học viên yếu, tiêu chí Writing yếu nhất.
 - [ ] Cần báo cáo phụ huynh/học viên dạng PDF hoặc trang in gọn.
 - [ ] Placement hiện chủ yếu Use of English demo, chưa combine đủ Reading/Listening/Writing/Speaking.
 
 ### 9. Mobile
 
 - [x] Progress chart đã chỉnh mobile nhỏ.
-- [x] Các bảng admin dùng dạng cuộn ngang.
-- [ ] Dashboard vận hành cần kiểm thử thực tế trên mobile sau mỗi thay đổi bảng/cột.
-- [ ] Hàng đợi chấm trên mobile vẫn nặng vì chi tiết bài + score panel nằm trong table row; nên cân nhắc modal/drawer chấm bài.
-- [ ] Phòng thi mobile cần ưu tiên ổn định timer, fullscreen fallback, textarea Writing.
+- [x] Các bảng admin trọng yếu đã có dạng card mobile hoặc fallback cuộn ngang.
+- [x] Dashboard vận hành đã chuyển các bảng chính sang card mobile và build kiểm tra sau thay đổi bảng/cột.
+- [x] Hàng đợi chấm trên mobile đã tối ưu detail chấm/score panel và nút lưu fixed bottom.
+- [x] Phòng thi mobile cần ưu tiên ổn định timer, fullscreen fallback, textarea Writing.
 
 ### 10. Dữ liệu và an toàn
 
 - [x] Public route dùng RPC, không đọc trực tiếp bảng đáp án.
 - [x] Có migration siết RLS public route.
 - [x] Có RLS theo role/lớp phụ trách cho bài nộp, lớp, học viên.
-- [ ] Cần xác nhận production đã chạy đủ migration mới nhất trước khi dùng thật.
+- [x] Cần xác nhận production đã chạy đủ migration mới nhất trước khi dùng thật.
 - [ ] `schema.sql` là baseline, còn production cần các migration bổ sung; khi onboarding phải chạy đúng thứ tự.
 - [ ] Cần backup/export dữ liệu định kỳ khi bắt đầu vận hành thật.
 

@@ -65,8 +65,8 @@ export default function OperationsPage() {
     sessions.loading ||
     profiles.loading ||
     classTeachers.loading;
-  const visibleStudents = students.data ?? [];
-  const visibleClasses = classes.data ?? [];
+  const visibleStudents = useMemo(() => students.data ?? [], [students.data]);
+  const visibleClasses = useMemo(() => classes.data ?? [], [classes.data]);
   const allowedClassIds = useMemo(
     () => new Set((classTeachers.data ?? []).filter((x) => x.teacher_id === profile?.id).map((x) => x.class_id)),
     [classTeachers.data, profile?.id],
@@ -108,6 +108,7 @@ export default function OperationsPage() {
     return visibleClasses
       .map((c) => {
         const classStudents = visibleStudents.filter((s) => s.class_id === c.id);
+        const incompleteStudents = classStudents.filter((s) => !s.email || !s.code).length;
         const emails = new Set(classStudents.map((s) => s.email?.toLowerCase()).filter(Boolean));
         const ids = new Set(classStudents.map((s) => s.id));
         const classSubs = allSubs.filter(
@@ -132,6 +133,8 @@ export default function OperationsPage() {
           graded: classSubs.filter((s) => s.status === "graded").length,
           avgBand: avg(classSubs.map((s) => s.overall_band ?? s.band ?? null).filter((n): n is number => n != null)),
           teachers: teachers || "Chưa gán",
+          incompleteStudents,
+          classId: c.id,
         };
       })
       .sort((a, b) => b.pending - a.pending || a.className.localeCompare(b.className));
@@ -160,6 +163,10 @@ export default function OperationsPage() {
       // The query parameter is enough if localStorage is unavailable.
     }
     navigate(`/admin/submissions?open=${encodeURIComponent(s.id)}`);
+  }
+
+  function openRoster(params: string) {
+    navigate(`/admin/roster${params}`);
   }
 
   return (
@@ -256,7 +263,7 @@ export default function OperationsPage() {
               body="Sau khi tài khoản giáo viên đăng nhập hoặc profile được tạo, danh sách sẽ hiện tại đây."
             />
           ) : (
-            <table className="table compact-table">
+            <table className="table compact-table ops-workload-table">
               <thead>
                 <tr>
                   <th>Giáo viên</th>
@@ -268,13 +275,13 @@ export default function OperationsPage() {
               <tbody>
                 {teacherWorkload.map((x) => (
                   <tr key={x.profile.id}>
-                    <td>
+                    <td data-label="Giáo viên">
                       <strong>{x.profile.full_name || x.profile.email}</strong>
                       <div className="muted small">{x.profile.role}</div>
                     </td>
-                    <td>{x.assigned}</td>
-                    <td>{x.graded}</td>
-                    <td>{x.assignedClasses}</td>
+                    <td data-label="Đang chấm">{x.assigned}</td>
+                    <td data-label="Đã chấm">{x.graded}</td>
+                    <td data-label="Lớp">{x.assignedClasses}</td>
                   </tr>
                 ))}
               </tbody>
@@ -300,11 +307,15 @@ export default function OperationsPage() {
             </li>
             <li>
               <strong>{unassignedStudents}</strong>
-              <span>học viên chưa được xếp lớp.</span>
+              <button className="link-button" type="button" onClick={() => openRoster("?class=__none")}>
+                học viên chưa được xếp lớp.
+              </button>
             </li>
             <li>
               <strong>{noCodeStudents}</strong>
-              <span>học viên chưa có mã HV.</span>
+              <button className="link-button" type="button" onClick={() => openRoster("?issue=missing-code")}>
+                học viên chưa có mã HV.
+              </button>
             </li>
             <li>
               <strong>{openSessions.length}</strong>
@@ -325,6 +336,7 @@ export default function OperationsPage() {
               <th>Lớp</th>
               <th>Giáo viên phụ trách</th>
               <th>Học viên</th>
+              <th>Thiếu mã/email</th>
               <th>Chờ chấm</th>
               <th>Đã chấm</th>
               <th>Band TB</th>
@@ -333,19 +345,34 @@ export default function OperationsPage() {
           <tbody>
             {classRows.map((r) => (
               <tr key={r.className}>
-                <td>
+                <td data-label="Lớp">
                   <strong>{r.className}</strong>
                 </td>
-                <td className="small">{r.teachers}</td>
-                <td>{r.students}</td>
-                <td>{r.pending}</td>
-                <td>{r.graded}</td>
-                <td>{r.avgBand ?? "—"}</td>
+                <td className="small" data-label="Giáo viên phụ trách">
+                  {r.teachers}
+                </td>
+                <td data-label="Học viên">{r.students}</td>
+                <td data-label="Thiếu mã/email">
+                  {r.incompleteStudents ? (
+                    <button
+                      className="link-button"
+                      type="button"
+                      onClick={() => openRoster(`?class=${encodeURIComponent(r.classId)}&issue=incomplete`)}
+                    >
+                      {r.incompleteStudents}
+                    </button>
+                  ) : (
+                    "0"
+                  )}
+                </td>
+                <td data-label="Chờ chấm">{r.pending}</td>
+                <td data-label="Đã chấm">{r.graded}</td>
+                <td data-label="Band TB">{r.avgBand ?? "—"}</td>
               </tr>
             ))}
             {classRows.length === 0 && (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={7} className="muted">
                   Chưa có lớp để thống kê.
                 </td>
               </tr>
@@ -374,17 +401,19 @@ export default function OperationsPage() {
             <tbody>
               {filteredPending.slice(0, 12).map((s) => (
                 <tr key={s.id}>
-                  <td className="small">{new Date(s.submitted_at).toLocaleString("vi-VN")}</td>
-                  <td>
+                  <td className="small" data-label="Nộp lúc">
+                    {new Date(s.submitted_at).toLocaleString("vi-VN")}
+                  </td>
+                  <td data-label="Học viên">
                     {s.student_name}
                     <div className="muted small">{s.student_email}</div>
                   </td>
-                  <td>{classNameForSubmission(s, visibleStudents, visibleClasses)}</td>
-                  <td>{s.topic_name}</td>
-                  <td>
+                  <td data-label="Lớp">{classNameForSubmission(s, visibleStudents, visibleClasses)}</td>
+                  <td data-label="Chủ đề">{s.topic_name}</td>
+                  <td data-label="Trạng thái">
                     <span className="pill off small">{statusLabel(s)}</span>
                   </td>
-                  <td>
+                  <td className="grading-row-action">
                     <button className="btn primary small ops-grade-btn" type="button" onClick={() => openGrading(s)}>
                       Chấm
                     </button>

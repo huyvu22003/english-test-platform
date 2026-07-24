@@ -1172,9 +1172,41 @@ code {
 }
 .roster-toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 190px;
+  grid-template-columns: minmax(220px, 1fr) 190px 220px;
   gap: 10px;
-  min-width: min(520px, 100%);
+  min-width: min(760px, 100%);
+}
+.roster-quality-card {
+  padding: 16px;
+}
+.roster-quality-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+.roster-quality-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.roster-quality-item span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+.roster-quality-item strong {
+  color: var(--plum);
+  font-size: 24px;
+  line-height: 1;
+}
+.roster-attention-row td {
+  background: #fff8f3;
 }
 .roster-panel {
   height: 100%;
@@ -2807,6 +2839,20 @@ td.cell-weak {
   gap: 8px;
   margin: -4px 0 10px;
 }
+.link-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--brand);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0;
+  text-align: left;
+}
+.link-button:hover {
+  text-decoration: underline;
+}
 .compact-select {
   min-height: 34px;
   padding: 6px 8px;
@@ -2844,6 +2890,9 @@ td.cell-weak {
 .ops-alert-list span {
   color: var(--muted);
   font-weight: 700;
+  font-size: 13px;
+}
+.ops-alert-list .link-button {
   font-size: 13px;
 }
 .ops-table-card {
@@ -3027,6 +3076,41 @@ td.cell-weak {
   border-top: 1px solid var(--line);
   background: #fafafe;
 }
+.import-quality-box {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fafafe;
+}
+.import-quality-box.ok {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+.import-quality-box.warn {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+.import-quality-box.error {
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+.import-quality-box strong,
+.import-quality-box span {
+  display: block;
+}
+.import-quality-box ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.import-quality-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 .import-submit {
   margin-bottom: 14px;
 }
@@ -3064,8 +3148,37 @@ td.cell-weak {
   margin-bottom: 0;
 }
 .diagnostics-summary-card,
+.diagnostics-class-card,
 .diagnostics-table-card {
   border-color: rgba(122, 43, 143, 0.12);
+}
+.diagnostics-class-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.diagnostics-class-item {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.diagnostics-class-item span {
+  font-weight: 800;
+}
+.diagnostics-class-item strong {
+  color: var(--brand);
+  font-size: 28px;
+  line-height: 1;
+}
+.diagnostics-class-item small {
+  color: var(--muted);
+  line-height: 1.35;
 }
 .diagnostics-summary-card .crit-card {
   border-radius: 16px;
@@ -3438,6 +3551,10 @@ td.cell-weak {
     grid-template-columns: 1fr;
     min-width: 0;
   }
+  .roster-quality-grid,
+  .diagnostics-class-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .grading-head-actions {
     width: 100%;
     justify-content: stretch;
@@ -3548,25 +3665,45 @@ td.cell-weak {
 
   /* Writing grading */
   .grading-table-card,
-  .placement-results-table {
+  .placement-results-table,
+  .ops-table-card,
+  .ops-workload-table,
+  .roster-table-card,
+  .diagnostics-table-card {
     overflow: visible;
   }
   .grading-table-card .table,
-  .placement-results-table .table {
+  .placement-results-table .table,
+  .ops-table-card .table,
+  .ops-workload-table,
+  .roster-table-card .table,
+  .diagnostics-table-card .table {
     min-width: 0;
   }
   .grading-table-card thead,
-  .placement-results-table thead {
+  .placement-results-table thead,
+  .ops-table-card thead,
+  .ops-workload-table thead,
+  .roster-table-card thead,
+  .diagnostics-table-card thead {
     display: none;
   }
   .grading-table-card tbody,
-  .placement-results-table tbody {
+  .placement-results-table tbody,
+  .ops-table-card tbody,
+  .ops-workload-table tbody,
+  .roster-table-card tbody,
+  .diagnostics-table-card tbody {
     display: grid;
     gap: 12px;
     padding: 10px;
   }
   .grading-table-card tr,
-  .placement-results-table tr {
+  .placement-results-table tr,
+  .ops-table-card tr,
+  .ops-workload-table tr,
+  .roster-table-card tr,
+  .diagnostics-table-card tr {
     display: grid;
     gap: 8px;
     border: 1px solid var(--line);
@@ -3576,7 +3713,11 @@ td.cell-weak {
     overflow: hidden;
   }
   .grading-table-card td,
-  .placement-results-table td {
+  .placement-results-table td,
+  .ops-table-card td,
+  .ops-workload-table td,
+  .roster-table-card td,
+  .diagnostics-table-card td {
     display: grid;
     grid-template-columns: minmax(92px, 0.42fr) minmax(0, 1fr);
     gap: 10px;
@@ -3586,7 +3727,11 @@ td.cell-weak {
     overflow-wrap: anywhere;
   }
   .grading-table-card td::before,
-  .placement-results-table td::before {
+  .placement-results-table td::before,
+  .ops-table-card td::before,
+  .ops-workload-table td::before,
+  .roster-table-card td::before,
+  .diagnostics-table-card td::before {
     content: attr(data-label);
     color: var(--muted);
     font-size: 12px;
@@ -3594,15 +3739,34 @@ td.cell-weak {
   }
   .grading-table-card td:empty::before,
   .placement-results-table td:empty::before,
+  .ops-table-card td:empty::before,
+  .ops-workload-table td:empty::before,
+  .roster-table-card td:empty::before,
+  .diagnostics-table-card td:empty::before,
   .grading-table-card .grading-row-action::before,
   .placement-results-table .grading-row-action::before,
+  .ops-table-card .grading-row-action::before,
+  .roster-table-card .grading-row-action::before,
   .grading-detail-row > td::before {
     content: none;
   }
   .grading-table-card .grading-row-action,
-  .placement-results-table .grading-row-action {
+  .placement-results-table .grading-row-action,
+  .ops-table-card .grading-row-action,
+  .roster-table-card .grading-row-action {
     display: block;
     text-align: left;
+  }
+  .ops-table-card th:last-child,
+  .ops-table-card td:last-child,
+  .roster-table th:last-child,
+  .roster-table td:last-child,
+  .diagnostics-table-card th:nth-child(n + 2),
+  .diagnostics-table-card td:nth-child(n + 2),
+  .diagnostics-table-card th:last-child,
+  .diagnostics-table-card td:last-child {
+    text-align: left;
+    white-space: normal;
   }
   .grading-row-action .btn {
     width: 100%;
@@ -3842,11 +4006,19 @@ td.cell-weak {
     min-width: 680px;
   }
   .grading-table-card .table,
-  .placement-results-table .table {
+  .placement-results-table .table,
+  .ops-table-card .table,
+  .roster-table-card .table,
+  .diagnostics-table-card .table {
     min-width: 0;
   }
   .grading-detail-row > td {
     min-width: 0;
+  }
+  .roster-quality-grid,
+  .diagnostics-class-grid,
+  .import-mode-tabs {
+    grid-template-columns: 1fr;
   }
   .grading-save-actions {
     left: 0;

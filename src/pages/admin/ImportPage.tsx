@@ -8,6 +8,13 @@ import { ErrorBox } from "../../components/common";
 import type { QType, Skill, Topic } from "../../lib/types";
 
 type Mode = "writing" | "mcq";
+type QualitySeverity = "error" | "warn";
+
+interface QualityIssue {
+  severity: QualitySeverity;
+  row: number;
+  message: string;
+}
 
 const WRITING_COLS = ["topic", "prompt", "time_limit_min", "min_words"];
 const MCQ_COLS = [
@@ -190,6 +197,99 @@ function Preview({ rows, cols }: { rows: Record<string, string>[]; cols: string[
   );
 }
 
+function QualityBox({ issues }: { issues: QualityIssue[] }) {
+  const errors = issues.filter((i) => i.severity === "error");
+  const warns = issues.filter((i) => i.severity === "warn");
+  if (issues.length === 0) {
+    return (
+      <div className="import-quality-box ok">
+        <strong>File hợp lệ để nhập</strong>
+        <span>Không thấy lỗi bắt buộc hoặc cảnh báo trùng trong dữ liệu preview.</span>
+      </div>
+    );
+  }
+  return (
+    <div className={`import-quality-box ${errors.length ? "error" : "warn"}`}>
+      <div className="import-quality-head">
+        <strong>{errors.length ? "Cần sửa trước khi nhập" : "Nên rà lại trước khi nhập"}</strong>
+        <span>
+          {errors.length} lỗi · {warns.length} cảnh báo
+        </span>
+      </div>
+      <ul>
+        {issues.slice(0, 10).map((issue, idx) => (
+          <li key={`${issue.row}-${idx}`}>
+            <span className={issue.severity === "error" ? "viol" : "warn-text"}>{issue.severity}</span> Dòng {issue.row}
+            : {issue.message}
+          </li>
+        ))}
+      </ul>
+      {issues.length > 10 && <p className="muted small">Còn {issues.length - 10} cảnh báo/lỗi khác.</p>}
+    </div>
+  );
+}
+
+function validateWritingRows(rows: Record<string, string>[]): QualityIssue[] {
+  const issues: QualityIssue[] = [];
+  const seen = new Map<string, number>();
+  rows.forEach((r, idx) => {
+    const row = idx + 2;
+    const topic = (r.topic ?? "").trim();
+    const prompt = (r.prompt ?? "").trim();
+    if (!topic) issues.push({ severity: "error", row, message: "Thiếu topic." });
+    if (!prompt) issues.push({ severity: "error", row, message: "Thiếu prompt." });
+    if (prompt && prompt.length < 30)
+      issues.push({ severity: "warn", row, message: "Prompt quá ngắn, nên kiểm tra lại." });
+    const timeLimit = Number(r.time_limit_min);
+    if (r.time_limit_min && (!Number.isFinite(timeLimit) || timeLimit < 5))
+      issues.push({ severity: "warn", row, message: "time_limit_min có vẻ không hợp lệ." });
+    const key = `${topic.toLowerCase()}||${prompt.toLowerCase()}`;
+    if (topic && prompt) {
+      const first = seen.get(key);
+      if (first) issues.push({ severity: "warn", row, message: `Trùng đề với dòng ${first}.` });
+      else seen.set(key, row);
+    }
+  });
+  return issues;
+}
+
+function validateMcqRows(rows: Record<string, string>[]): QualityIssue[] {
+  const issues: QualityIssue[] = [];
+  const seen = new Map<string, number>();
+  rows.forEach((r, idx) => {
+    const row = idx + 2;
+    const topic = (r.topic ?? "").trim();
+    const qtype = (r.qtype ?? "").trim().toLowerCase() as QType;
+    const prompt = (r.prompt ?? "").trim();
+    const correct = (r.correct ?? "").trim();
+    const skill = (r.skill ?? "use_of_english").trim() as Skill;
+    const options = [r.option1, r.option2, r.option3, r.option4].map((o) => (o ?? "").trim()).filter(Boolean);
+    if (!topic) issues.push({ severity: "error", row, message: "Thiếu topic." });
+    if (!prompt) issues.push({ severity: "error", row, message: "Thiếu prompt." });
+    if (!QTYPES.includes(qtype)) issues.push({ severity: "error", row, message: "qtype không hợp lệ." });
+    if (!correct) issues.push({ severity: "error", row, message: "Thiếu correct." });
+    if (!["writing", "reading", "listening", "use_of_english"].includes(skill))
+      issues.push({ severity: "error", row, message: "skill không hợp lệ." });
+    if ((qtype === "single" || qtype === "multi") && options.length < 2)
+      issues.push({ severity: "error", row, message: "Câu single/multi cần ít nhất 2 option." });
+    if (qtype === "single" && correct && options.length > 0 && !options.includes(correct))
+      issues.push({ severity: "warn", row, message: "correct không khớp option nào." });
+    if (qtype === "tfng" && correct && !["true", "false", "notgiven"].includes(correct.toLowerCase()))
+      issues.push({ severity: "warn", row, message: "tfng nên dùng true/false/notgiven." });
+    if (!(r.cefr_level ?? "").trim()) issues.push({ severity: "warn", row, message: "Thiếu CEFR level." });
+    const points = Number(r.points || 1);
+    if (!Number.isFinite(points) || points <= 0)
+      issues.push({ severity: "warn", row, message: "points không hợp lệ." });
+    const key = `${topic.toLowerCase()}||${(r.test_title ?? "").trim().toLowerCase()}||${prompt.toLowerCase()}`;
+    if (topic && prompt) {
+      const first = seen.get(key);
+      if (first) issues.push({ severity: "warn", row, message: `Câu hỏi trùng dòng ${first}.` });
+      else seen.set(key, row);
+    }
+  });
+  return issues;
+}
+
 interface TemplateExcelArgs {
   filename: string;
   title: string;
@@ -275,6 +375,11 @@ function WritingImport() {
 
   async function run() {
     if (!st.rows) return;
+    const quality = validateWritingRows(st.rows);
+    if (quality.some((i) => i.severity === "error")) {
+      setSt({ ...st, error: "File còn lỗi bắt buộc. Sửa các dòng báo đỏ trước khi nhập.", result: null, busy: false });
+      return;
+    }
     setSt({ ...st, busy: true, error: null, result: null });
     try {
       const resolve = await topicResolver();
@@ -339,6 +444,7 @@ function WritingImport() {
       {st.error && <ErrorBox msg={st.error} />}
       {st.rows && (
         <>
+          <QualityBox issues={validateWritingRows(st.rows)} />
           <Preview rows={st.rows} cols={WRITING_COLS} />
           <button className="btn primary import-submit" disabled={st.busy} onClick={run}>
             {st.busy ? "Đang nhập…" : `Nhập ${st.rows.length} dòng`}
@@ -406,6 +512,11 @@ function McqImport() {
 
   async function run() {
     if (!st.rows) return;
+    const quality = validateMcqRows(st.rows);
+    if (quality.some((i) => i.severity === "error")) {
+      setSt({ ...st, error: "File còn lỗi bắt buộc. Sửa các dòng báo đỏ trước khi nhập.", result: null, busy: false });
+      return;
+    }
     setSt({ ...st, busy: true, error: null, result: null });
     try {
       const resolve = await topicResolver();
@@ -518,6 +629,7 @@ function McqImport() {
       {st.error && <ErrorBox msg={st.error} />}
       {st.rows && (
         <>
+          <QualityBox issues={validateMcqRows(st.rows)} />
           <Preview rows={st.rows} cols={MCQ_COLS} />
           <button className="btn primary import-submit" disabled={st.busy} onClick={run}>
             {st.busy ? "Đang nhập…" : `Nhập ${st.rows.length} dòng`}

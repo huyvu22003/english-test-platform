@@ -43,6 +43,36 @@ export default function DiagnosticsPage() {
     return graded.filter((s) => s.student_email && emailClass.get(s.student_email.toLowerCase()) === classId);
   }, [graded, classId, emailClass]);
 
+  const classDashboard = useMemo(() => {
+    return (classes.data ?? [])
+      .map((c) => {
+        const classStudents = (students.data ?? []).filter((s) => s.class_id === c.id);
+        const emails = new Set(classStudents.map((s) => s.email?.toLowerCase()).filter(Boolean));
+        const rows = graded.filter((s) => !!s.student_email && emails.has(s.student_email.toLowerCase()));
+        const crit = CRIT.map((item) => ({
+          ...item,
+          value: avg(rows.map((s) => s[item.key] as number).filter((n): n is number => n != null)),
+        }));
+        const weak = crit
+          .filter((item) => item.value != null)
+          .sort((a, b) => (a.value as number) - (b.value as number))[0];
+        const overall = avg(rows.map((s) => s.overall_band as number).filter((n): n is number => n != null));
+        const activeStudents = new Set(rows.map((s) => (s.student_email ?? s.student_name ?? "").toLowerCase())).size;
+        const needSupport = rows.filter((s) => (s.overall_band ?? 9) < 5.5).length;
+        return {
+          id: c.id,
+          name: c.name,
+          students: classStudents.length,
+          activeStudents,
+          submissions: rows.length,
+          overall,
+          weak,
+          needSupport,
+        };
+      })
+      .sort((a, b) => b.needSupport - a.needSupport || (a.overall ?? 99) - (b.overall ?? 99));
+  }, [classes.data, students.data, graded]);
+
   // Trung bình toàn lớp theo từng tiêu chí
   const classAvg = CRIT.map((c) => ({
     ...c,
@@ -132,6 +162,29 @@ export default function DiagnosticsPage() {
       {loading && <Spinner />}
       {subs.error && <ErrorBox msg={subs.error} />}
 
+      {classDashboard.length > 0 && (
+        <div className="card diagnostics-class-card">
+          <div className="card-title-row compact">
+            <div>
+              <h3>Dashboard lớp</h3>
+              <p className="muted small">Ưu tiên các lớp có nhiều bài dưới band 5.5 hoặc tiêu chí yếu rõ.</p>
+            </div>
+          </div>
+          <div className="diagnostics-class-grid">
+            {classDashboard.slice(0, 6).map((row) => (
+              <button className="diagnostics-class-item" key={row.id} type="button" onClick={() => setClassId(row.id)}>
+                <span>{row.name}</span>
+                <strong>{row.overall ?? "—"}</strong>
+                <small>
+                  {row.activeStudents}/{row.students} HV có bài · yếu {row.weak?.short ?? "—"} · {row.needSupport} bài
+                  cần hỗ trợ
+                </small>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tổng quan lớp */}
       <div className="card diagnostics-summary-card">
         <div className="card-title-row compact">
@@ -181,18 +234,24 @@ export default function DiagnosticsPage() {
             <tbody>
               {perStudent.map((p, i) => (
                 <tr key={i}>
-                  <td>{p.name}</td>
-                  <td>{p.count}</td>
-                  <td>
+                  <td data-label="Học viên">{p.name}</td>
+                  <td data-label="Bài">{p.count}</td>
+                  <td data-label="Overall">
                     <strong>{p.overall ?? "—"}</strong>
                   </td>
-                  <td>{p.cefr ?? "—"}</td>
+                  <td data-label="CEFR">{p.cefr ?? "—"}</td>
                   {p.crit.map((c) => (
-                    <td key={c.key} className={p.weak && c.short === p.weak.short ? "cell-weak" : ""}>
+                    <td
+                      key={c.key}
+                      data-label={c.short}
+                      className={p.weak && c.short === p.weak.short ? "cell-weak" : ""}
+                    >
                       {c.value ?? "—"}
                     </td>
                   ))}
-                  <td className="small">{p.weak?.label ?? "—"}</td>
+                  <td className="small" data-label="Điểm yếu">
+                    {p.weak?.label ?? "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>
