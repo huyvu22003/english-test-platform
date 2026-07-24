@@ -41,6 +41,7 @@ src/
     useCountdownTimer.ts     # Exam countdown hook (duration + server-synced deadline)
     antiCheat.ts             # Fullscreen lock + violation tracking
     gradeReport.ts           # ExcelJS-based grade report export
+    placement.ts             # Placement suite grouping, CEFR scoring, multi-skill reports
     csv.ts, storage.ts, studentSession.ts
   pages/
     admin/                   # Teacher/admin pages
@@ -53,6 +54,7 @@ src/
       RosterPage.tsx         # Student roster & classes
       StaffPage.tsx          # Staff accounts & permissions
       ImportPage.tsx         # CSV import
+      PlacementResultsPage.tsx # Multi-skill placement results dashboard
       DiagnosticsPage.tsx    # System diagnostics
       AdminLayout.tsx        # Sidebar layout wrapper
     student/                 # Student-facing pages

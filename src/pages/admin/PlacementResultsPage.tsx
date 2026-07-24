@@ -191,9 +191,7 @@ function PlacementReportRow({
         <td data-label="Writing">{skillResult(report.skills.writing)}</td>
         <td data-label="UoE">{skillResult(report.skills.use_of_english)}</td>
         <td data-label="Trạng thái">
-          <span className={report.missingSkills.length === 0 ? "ok-text" : "pill off small"}>
-            {report.statusLabel}
-          </span>
+          <span className={report.missingSkills.length === 0 ? "ok-text" : "pill off small"}>{report.statusLabel}</span>
           <div className="muted small">{report.confidenceLabel}</div>
         </td>
         <td data-label="Lớp đề xuất">
