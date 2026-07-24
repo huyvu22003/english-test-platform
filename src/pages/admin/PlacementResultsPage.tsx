@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { listPlacementSubmissions } from "../../lib/api";
 import {
   placementReports,
+  placementScoreLabel,
   skillOfPlacementSubmission,
   type PlacementStudentReport,
 } from "../../lib/placement";
@@ -22,8 +23,8 @@ export default function PlacementResultsPage() {
   const rows = useMemo(
     () =>
       reports.filter((r) => {
-        if (status === "complete" && r.completedSkills < 3) return false;
-        if (status === "incomplete" && r.completedSkills >= 3) return false;
+        if (status === "complete" && r.missingSkills.length > 0) return false;
+        if (status === "incomplete" && r.missingSkills.length === 0) return false;
         if (q.trim()) {
           const hay = `${r.studentName} ${r.studentEmail}`.toLowerCase();
           if (!hay.includes(q.trim().toLowerCase())) return false;
@@ -33,7 +34,7 @@ export default function PlacementResultsPage() {
     [reports, q, status],
   );
 
-  const complete = reports.filter((r) => r.completedSkills >= 3).length;
+  const complete = reports.filter((r) => r.missingSkills.length === 0).length;
   const pendingWriting = reports.filter((r) => r.skills.writing && r.skills.writing.status !== "graded").length;
   const readyRate = reports.length ? Math.round((complete / reports.length) * 100) : 0;
 
@@ -44,9 +45,11 @@ export default function PlacementResultsPage() {
       "Reading",
       "Listening",
       "Writing",
+      "Use of English",
       "Ky nang da lam",
       "Trang thai",
       "Lop de xuat",
+      "Can cu",
       "Cap nhat luc",
     ];
     const body = rows.map((r) => [
@@ -55,9 +58,11 @@ export default function PlacementResultsPage() {
       skillResult(r.skills.reading),
       skillResult(r.skills.listening),
       skillResult(r.skills.writing),
-      String(r.completedSkills),
+      skillResult(r.skills.use_of_english),
+      `${r.requiredSkillsDone}/3 chính${r.skills.use_of_english ? " + UoE" : ""}`,
       r.statusLabel,
       r.recommendedLevel,
+      r.decisionBasis,
       r.latestAt ? new Date(r.latestAt).toLocaleString("vi-VN") : "",
     ]);
     const csv = [header, ...body]
@@ -97,8 +102,8 @@ export default function PlacementResultsPage() {
           <div>
             <h3>Bộ lọc xếp lớp</h3>
             <p className="muted small">
-              Đang hiển thị {rows.length}/{reports.length} học viên. Học viên cần đủ ít nhất Reading, Listening và
-              Writing để xếp lớp chắc hơn.
+              Đang hiển thị {rows.length}/{reports.length} học viên. Kết luận chắc nhất khi đủ Reading, Listening,
+              Writing; Use of English là dữ liệu bổ trợ.
             </p>
           </div>
         </div>
@@ -139,6 +144,7 @@ export default function PlacementResultsPage() {
                 <th>Reading</th>
                 <th>Listening</th>
                 <th>Writing</th>
+                <th>UoE</th>
                 <th>Trạng thái</th>
                 <th>Lớp đề xuất</th>
                 <th>Cập nhật</th>
@@ -181,11 +187,16 @@ function PlacementReportRow({
         <td>{skillResult(report.skills.reading)}</td>
         <td>{skillResult(report.skills.listening)}</td>
         <td>{skillResult(report.skills.writing)}</td>
+        <td>{skillResult(report.skills.use_of_english)}</td>
         <td>
-          <span className={report.completedSkills >= 3 ? "ok-text" : "pill off small"}>{report.statusLabel}</span>
+          <span className={report.missingSkills.length === 0 ? "ok-text" : "pill off small"}>
+            {report.statusLabel}
+          </span>
+          <div className="muted small">{report.confidenceLabel}</div>
         </td>
         <td>
           <strong>{report.recommendedLevel}</strong>
+          <div className="muted small placement-basis">{report.decisionBasis}</div>
         </td>
         <td className="small">{report.latestAt ? new Date(report.latestAt).toLocaleString("vi-VN") : "—"}</td>
         <td>
@@ -196,7 +207,7 @@ function PlacementReportRow({
       </tr>
       {open && (
         <tr className="detail-row">
-          <td colSpan={8}>
+          <td colSpan={9}>
             <div className="placement-detail-grid">
               {report.submissions.map((s) => {
                 const skill = skillOfPlacementSubmission(s);
@@ -208,7 +219,7 @@ function PlacementReportRow({
                     </div>
                     <strong>{s.tests?.title || s.topic_name || "Bài xếp lớp"}</strong>
                     <div className="placement-result-line">
-                      {skillResult(s)}
+                      {placementScoreLabel(s)}
                       {s.violations ? <span className="viol">{s.violations} vi phạm</span> : <span>0 vi phạm</span>}
                     </div>
                     {skill === "writing" && s.status !== "graded" && (
@@ -236,9 +247,5 @@ function PlacementReportRow({
 
 function skillResult(row?: PlacementSubmission | null): string {
   if (!row) return "—";
-  if (row.tests?.topics?.skill === "writing" || skillOfPlacementSubmission(row) === "writing") {
-    if (row.status !== "graded") return "Chờ chấm";
-    return row.overall_band != null ? `Band ${row.overall_band}` : row.cefr || "Đã chấm";
-  }
-  return row.cefr || "< A1";
+  return placementScoreLabel(row);
 }

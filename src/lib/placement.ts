@@ -28,7 +28,11 @@ export interface PlacementStudentReport {
   submissions: PlacementSubmission[];
   skills: Partial<Record<Skill, PlacementSubmission>>;
   completedSkills: number;
+  requiredSkillsDone: number;
+  missingSkills: Skill[];
   recommendedLevel: string;
+  decisionBasis: string;
+  confidenceLabel: string;
   statusLabel: string;
 }
 
@@ -119,7 +123,10 @@ export function placementReports(rows: PlacementSubmission[]): PlacementStudentR
         if (!skills[skill]) skills[skill] = row;
       }
       const completedSkills = Object.keys(skills).length;
+      const missingSkills = (["reading", "listening", "writing"] as Skill[]).filter((skill) => !skills[skill]);
+      const requiredSkillsDone = 3 - missingSkills.length;
       const recommendedLevel = recommendPlacementLevel(skills);
+      const decisionBasis = placementDecisionBasis(skills);
       return {
         key,
         studentName: sorted[0]?.student_name || "Chưa rõ tên",
@@ -128,13 +135,22 @@ export function placementReports(rows: PlacementSubmission[]): PlacementStudentR
         submissions: sorted,
         skills,
         completedSkills,
+        requiredSkillsDone,
+        missingSkills,
         recommendedLevel,
+        decisionBasis,
+        confidenceLabel:
+          missingSkills.length === 0
+            ? skills.use_of_english
+              ? "Đủ 3 kỹ năng + UoE"
+              : "Đủ 3 kỹ năng chính"
+            : `Thiếu ${missingSkills.map(skillLabel).join(", ")}`,
         statusLabel:
-          completedSkills >= 3
+          missingSkills.length === 0
             ? "Đủ dữ liệu xếp lớp"
-            : completedSkills === 2
+            : requiredSkillsDone === 2
               ? "Thiếu 1 kỹ năng"
-              : completedSkills === 1
+              : requiredSkillsDone === 1
                 ? "Mới có 1 kỹ năng"
                 : "Chưa có dữ liệu",
       };
@@ -156,6 +172,25 @@ export function recommendPlacementLevel(skills: Partial<Record<Skill, PlacementS
   if (lowest === "B2") return "B2 / IELTS 5.5-6.5";
   if (lowest === "C1") return "C1 / IELTS 7.0+";
   return "C2 / Advanced";
+}
+
+export function placementDecisionBasis(skills: Partial<Record<Skill, PlacementSubmission>>): string {
+  const parts = PLACEMENT_SKILL_ORDER.map((skill) => {
+    const row = skills[skill];
+    if (!row) return null;
+    return `${skillLabel(skill)} ${placementScoreLabel(row)}`;
+  }).filter(Boolean);
+  if (parts.length === 0) return "Chưa có bài xếp lớp.";
+  return `Lấy mức thấp nhất trong các kỹ năng đã có: ${parts.join(" · ")}.`;
+}
+
+export function placementScoreLabel(row: PlacementSubmission): string {
+  const skill = skillOfPlacementSubmission(row);
+  if (skill === "writing") {
+    if (row.status !== "graded") return "chờ chấm";
+    if (row.overall_band != null) return `Band ${row.overall_band}`;
+  }
+  return row.cefr || "< A1";
 }
 
 function inferVersionFromText(text?: string | null): string | null {

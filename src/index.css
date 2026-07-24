@@ -1446,6 +1446,11 @@ code {
 .placement-results-table td {
   vertical-align: top;
 }
+.placement-basis {
+  max-width: 280px;
+  margin-top: 3px;
+  line-height: 1.4;
+}
 .placement-detail-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
