@@ -2,7 +2,7 @@
 // trắc nghiệm (single/multi/tfng/fill); nộp qua rpc_submit (chấm ở server).
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getTest, submitExam } from "../../lib/api";
+import { getServerNow, getTest, submitExam } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
@@ -163,7 +163,7 @@ export default function ExamPage() {
             className="btn primary big exam-start-button"
             onClick={async () => {
               await ac.enterFullscreen();
-              startedAtRef.current = new Date().toISOString();
+              startedAtRef.current = await getServerNow();
               timer.start(test.time_limit_min * 60);
               setStarted(true);
             }}

@@ -2,7 +2,7 @@
 // Tái dùng QuestionView (render câu hỏi) từ ExamPage; chấm ở server (rpc_submit_placement).
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getTest, submitPlacement } from "../../lib/api";
+import { getServerNow, getTest, submitPlacement } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
@@ -139,7 +139,7 @@ export default function PlacementExamPage() {
             className="btn primary big exam-start-button"
             onClick={async () => {
               await ac.enterFullscreen();
-              startedAtRef.current = new Date().toISOString();
+              startedAtRef.current = await getServerNow();
               timer.start(test.time_limit_min * 60);
               setStarted(true);
             }}

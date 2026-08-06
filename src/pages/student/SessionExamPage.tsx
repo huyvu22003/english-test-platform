@@ -164,8 +164,8 @@ export default function SessionExamPage() {
             className="btn primary big exam-start-button"
             onClick={async () => {
               await ac.enterFullscreen();
-              startedAtRef.current = new Date().toISOString();
               const serverNowMs = Date.now() + serverOffsetMs;
+              startedAtRef.current = new Date(serverNowMs).toISOString();
               const durationDeadlineMs = serverNowMs + test.time_limit_min * 60_000;
               const closeMs = meta.closeAt ? new Date(meta.closeAt).getTime() : Number.POSITIVE_INFINITY;
               const nextDeadlineMs = Math.min(

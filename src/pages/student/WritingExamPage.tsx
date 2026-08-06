@@ -2,7 +2,7 @@
 // cho luồng Học tăng cường, hiển thị đề bài, đếm giờ + khóa chống gian lận.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { pickPrompt, submitWriting } from "../../lib/api";
+import { getServerNow, pickPrompt, submitWriting } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
@@ -145,7 +145,7 @@ export default function WritingExamPage() {
             className="btn primary big exam-start-button"
             onClick={async () => {
               await ac.enterFullscreen();
-              startedAtRef.current = new Date().toISOString();
+              startedAtRef.current = await getServerNow();
               timer.start(p.time_limit_min * 60);
               setStarted(true);
             }}

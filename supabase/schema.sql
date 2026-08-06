@@ -247,6 +247,11 @@ language sql security definer set search_path = public as $$
   );
 $$;
 
+create or replace function rpc_server_now()
+returns timestamptz language sql stable security definer set search_path = public as $$
+  select now();
+$$;
+
 -- Chấm điểm Ở SERVER + lưu bài nộp. So khớp theo qtype, đáp án chuẩn hóa (etp_norm).
 --   single/tfng: khớp đúng 1 giá trị · multi: trùng tập hợp · fill: khớp 1 trong nhiều đáp án.
 -- Bài Viết (skill=writing): không có câu trắc nghiệm -> score/max=0, lưu essay để GV chấm tay.
@@ -320,6 +325,7 @@ $$;
 -- Cho phép anon gọi các RPC học sinh (KHÔNG cấp quyền đọc bảng questions cho anon).
 grant execute on function rpc_list_exams() to anon, authenticated;
 grant execute on function rpc_get_test(uuid) to anon, authenticated;
+grant execute on function rpc_server_now() to anon, authenticated;
 grant execute on function rpc_submit(uuid, text, text, jsonb, int, text, timestamptz, text) to anon, authenticated;
 
 
@@ -853,6 +859,7 @@ revoke execute on all functions in schema public from public;
 
 grant execute on function rpc_list_exams() to anon, authenticated;
 grant execute on function rpc_get_test(uuid) to anon, authenticated;
+grant execute on function rpc_server_now() to anon, authenticated;
 grant execute on function rpc_submit(uuid, text, text, jsonb, int, text, timestamptz, text) to anon, authenticated;
 grant execute on function rpc_list_writing_topics() to anon, authenticated;
 grant execute on function rpc_pick_prompt(uuid) to anon, authenticated;

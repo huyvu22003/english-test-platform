@@ -60,6 +60,17 @@ export async function getTest(testId: string): Promise<PublicTest> {
   return data;
 }
 
+export async function getServerNow(): Promise<string> {
+  try {
+    const res = await db().rpc("rpc_server_now");
+    const data = unwrap(res) as string | null;
+    if (data) return data;
+  } catch (e) {
+    console.warn("Falling back to device time because server time is unavailable.", e);
+  }
+  return new Date().toISOString();
+}
+
 export async function submitExam(args: {
   testId: string;
   name: string;
