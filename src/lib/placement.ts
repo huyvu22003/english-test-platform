@@ -37,7 +37,8 @@ export interface PlacementStudentReport {
 }
 
 export function placementSuiteKey(item: Pick<PlacementItem, "version_label" | "title" | "topic_name">): string {
-  const raw = item.version_label?.trim() || inferVersionFromText(item.title) || inferVersionFromText(item.topic_name ?? "");
+  const raw =
+    item.version_label?.trim() || inferVersionFromText(item.title) || inferVersionFromText(item.topic_name ?? "");
   return raw ? raw.toUpperCase() : "default";
 }
 

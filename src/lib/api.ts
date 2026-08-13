@@ -424,9 +424,7 @@ export async function deleteTest(id: string): Promise<void> {
 async function deleteTestsByIds(testIds: string[]): Promise<void> {
   if (testIds.length === 0) return;
 
-  const sessions = unwrap<{ id: string }[]>(
-    await db().from("exam_sessions").select("id").in("test_id", testIds),
-  );
+  const sessions = unwrap<{ id: string }[]>(await db().from("exam_sessions").select("id").in("test_id", testIds));
   const sessionIds = sessions.map((s) => s.id);
 
   if (sessionIds.length > 0) {
