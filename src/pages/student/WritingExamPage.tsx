@@ -7,7 +7,7 @@ import { useAsync } from "../../lib/useAsync";
 import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
-import { formatError } from "../../lib/utils";
+import { formatError, countWords } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
 import { ExamBar, ExamSubmitPanel } from "../../components/ExamLayout";
 import type { PickedPrompt } from "../../lib/types";
@@ -24,12 +24,15 @@ export default function WritingExamPage() {
     studentMode?: string;
     placement?: boolean;
   };
-  const meta = {
-    name: routeMeta.name ?? savedIdentity?.name,
-    email: routeMeta.email ?? savedIdentity?.email,
-    studentCode: routeMeta.studentCode ?? savedIdentity?.code ?? null,
-    studentMode: routeMeta.studentMode ?? savedIdentity?.mode,
-  };
+  const meta = useMemo(
+    () => ({
+      name: routeMeta.name ?? savedIdentity?.name,
+      email: routeMeta.email ?? savedIdentity?.email,
+      studentCode: routeMeta.studentCode ?? savedIdentity?.code ?? null,
+      studentMode: routeMeta.studentMode ?? savedIdentity?.mode,
+    }),
+    [routeMeta.name, routeMeta.email, routeMeta.studentCode, routeMeta.studentMode, savedIdentity],
+  );
   const selectedTestId = new URLSearchParams(loc.search).get("test");
 
   const data = useAsync<PickedPrompt>(() => pickPrompt(topicId, selectedTestId), [topicId, selectedTestId]);
@@ -40,7 +43,7 @@ export default function WritingExamPage() {
   const startedAtRef = useRef<string>("");
   const ac = useAntiCheat(started);
 
-  const wordCount = useMemo(() => essay.trim().split(/\s+/).filter(Boolean).length, [essay]);
+  const wordCount = useMemo(() => countWords(essay), [essay]);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
@@ -81,7 +84,7 @@ export default function WritingExamPage() {
         setSubmitting(false);
       }
     },
-    [submitting, data.data, wordCount, meta, essay, ac.violations, ac.log, nav],
+    [submitting, data.data, wordCount, meta, essay, ac.violations, ac.log, nav, routeMeta.placement],
   );
 
   const timer = useCountdownTimer(() => void doSubmit("timeout"));
