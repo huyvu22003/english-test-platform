@@ -32,9 +32,10 @@ Deno.serve(async (req) => {
   } | null;
 
   const mime = payload?.mime ?? "";
+  const baseMime = mime.split(";")[0]?.trim().toLowerCase() ?? "";
   const size = payload?.size ?? 0;
 
-  if (!ALLOWED_MIME.includes(mime)) {
+  if (!ALLOWED_MIME.includes(baseMime)) {
     return json({ error: `Loại file không hỗ trợ: ${mime}` }, 400);
   }
   if (size <= 0 || size > MAX_SIZE) {
@@ -45,7 +46,7 @@ Deno.serve(async (req) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const ext = mime === "audio/mpeg" ? "mp3" : mime.split("/")[1] ?? "webm";
+  const ext = baseMime === "audio/mpeg" ? "mp3" : baseMime.split("/")[1] ?? "webm";
   const day = new Date().toISOString().slice(0, 10);
   const rand = Math.random().toString(36).slice(2, 10);
   const path = `${day}/${rand}.${ext}`;

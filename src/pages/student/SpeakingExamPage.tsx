@@ -69,8 +69,8 @@ export default function SpeakingExamPage() {
       setSubmitErr(null);
       try {
         const mime = audioBlob.type || "audio/webm";
-        const { path, signed_url, token } = await getSpeakingUploadUrl(mime, audioBlob.size);
-        await uploadSpeakingAudio(audioBlob, signed_url, token);
+        const { path, token } = await getSpeakingUploadUrl(mime, audioBlob.size);
+        await uploadSpeakingAudio(audioBlob, path, token);
         await submitSpeaking({
           testId: data.data.test_id,
           name: meta.name ?? "",
@@ -118,12 +118,10 @@ export default function SpeakingExamPage() {
     setMicError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
-          ? "audio/ogg;codecs=opus"
-          : "audio/webm";
-      const recorder = new MediaRecorder(stream, { mimeType });
+      const mimeType = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4", "audio/wav"].find((type) =>
+        MediaRecorder.isTypeSupported(type),
+      );
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       chunksRef.current = [];
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);

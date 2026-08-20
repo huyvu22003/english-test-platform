@@ -28,17 +28,14 @@ export async function uploadMedia(file: File): Promise<string> {
   return supabase.storage.from("media").getPublicUrl(path).data.publicUrl;
 }
 
-export async function uploadSpeakingAudio(blob: Blob, signedUrl: string, token: string): Promise<void> {
-  const res = await fetch(signedUrl, {
-    method: "PUT",
-    headers: {
-      "Content-Type": blob.type || "audio/webm",
-      ...(token ? { "x-upsert": "false" } : {}),
-    },
-    body: blob,
+export async function uploadSpeakingAudio(blob: Blob, path: string, token: string): Promise<void> {
+  if (!supabase) throw new Error("Chưa cấu hình Supabase (.env). Xem docs/SETUP.md.");
+  if (!token) throw new Error("Không nhận được token upload.");
+
+  const { error } = await supabase.storage.from("speaking").uploadToSignedUrl(path, token, blob, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: blob.type || "audio/webm",
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Upload thất bại (${res.status}): ${text}`);
-  }
+  if (error) throw new Error(error.message);
 }
