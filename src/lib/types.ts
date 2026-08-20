@@ -146,6 +146,8 @@ export interface Submission {
   transcript: string | null;
   score_fc: number | null;
   score_pronunciation: number | null;
+  ai_error?: string | null;
+  ai_attempted_at?: string | null;
   // Đề bài (join từ bảng tests) — hiện khi GV chấm. Có thể null nếu đề đã xóa.
   tests?: { prompt: string | null; title: string | null } | null;
 }
@@ -194,6 +196,10 @@ export interface ProgressItem {
   score_cc?: number | null;
   score_lr?: number | null;
   score_gra?: number | null;
+  // Speaking
+  score_fc?: number | null;
+  score_pronunciation?: number | null;
+  transcript?: string | null;
 }
 
 // Speaking topic/prompt (reuse WritingTopic shape for topics, PickedPrompt for prompt)

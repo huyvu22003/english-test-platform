@@ -196,6 +196,16 @@ export async function submitSpeaking(args: {
   return unwrap(res) as { submission_id: string };
 }
 
+// Giáo viên (authenticated) tạo signed READ URL ngắn hạn để nghe lại audio Speaking.
+// Bucket 'speaking' private + policy "speaking teacher read" cho authenticated ->
+// GV đã đăng nhập tạo được URL client-side; học sinh (anon) thì không.
+export async function getSpeakingSignedUrl(audioPath: string, expiresInSec = 600): Promise<string> {
+  const { data, error } = await db().storage.from("speaking").createSignedUrl(audioPath, expiresInSec);
+  if (error) throw new Error(error.message);
+  if (!data?.signedUrl) throw new Error("Không tạo được đường dẫn nghe audio.");
+  return data.signedUrl;
+}
+
 export async function getProgress(args: { email?: string; name?: string; code?: string }): Promise<ProgressItem[]> {
   const res = await db().rpc("rpc_get_progress", {
     p_email: args.email?.trim() || null,
