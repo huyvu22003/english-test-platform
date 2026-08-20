@@ -54,6 +54,9 @@ export default function AdminLayout() {
               <NavLink to="/admin/topics/listening" className={({ isActive }) => (isActive ? "active" : "")}>
                 Đề Nghe
               </NavLink>
+              <NavLink to="/admin/topics/speaking" className={({ isActive }) => (isActive ? "active" : "")}>
+                Đề Nói
+              </NavLink>
               <NavLink to="/admin/topics/placement" className={({ isActive }) => (isActive ? "active" : "")}>
                 Đề xếp lớp
               </NavLink>

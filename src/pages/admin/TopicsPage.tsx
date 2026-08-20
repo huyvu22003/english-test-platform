@@ -102,7 +102,7 @@ export default function TopicsPage() {
         ? SKILL_META[fixedSkill]
         : {
             title: "Ngân hàng đề",
-            desc: "Xem tổng quan tất cả chủ đề/đề thi. Nên vào Đề Viết, Đề Đọc hoặc Đề Nghe để soạn cho đúng loại.",
+            desc: "Xem tổng quan tất cả chủ đề/đề thi. Nên vào từng kỹ năng để soạn cho đúng loại.",
             cta: "+ Thêm chủ đề",
           };
 
@@ -110,6 +110,7 @@ export default function TopicsPage() {
   const writingCount = allTopics.filter((t) => t.skill === "writing" && !isIntensiveTopic(t)).length;
   const readingCount = allTopics.filter((t) => t.skill === "reading").length;
   const listeningCount = allTopics.filter((t) => t.skill === "listening").length;
+  const speakingCount = allTopics.filter((t) => t.skill === "speaking").length;
   const intensiveCount = allTopics.filter((t) => t.skill === "writing" && isIntensiveTopic(t)).length;
   const placementCount = allTopics.filter((t) => isPlacementTopic(t)).length;
 
@@ -157,6 +158,7 @@ export default function TopicsPage() {
           { label: "Đề Viết", value: writingCount },
           { label: "Đề Đọc", value: readingCount },
           { label: "Đề Nghe", value: listeningCount },
+          { label: "Đề Nói", value: speakingCount },
           { label: "Tăng cường", value: intensiveCount },
           { label: "Xếp lớp", value: placementCount },
         ]}
@@ -171,6 +173,9 @@ export default function TopicsPage() {
         </Link>
         <Link to="/admin/topics/listening" className={fixedSkill === "listening" ? "active" : ""}>
           Đề Nghe
+        </Link>
+        <Link to="/admin/topics/speaking" className={fixedSkill === "speaking" ? "active" : ""}>
+          Đề Nói
         </Link>
         <Link to="/admin/topics/placement" className={isPlacement ? "active" : ""}>
           Đề xếp lớp
@@ -212,6 +217,7 @@ export default function TopicsPage() {
               <select value={skill} onChange={(e) => setSkill(e.target.value as Skill)}>
                 <option value="reading">Đọc</option>
                 <option value="listening">Nghe</option>
+                {!isPlacement && <option value="speaking">Nói</option>}
                 {isPlacement && <option value="writing">Viết</option>}
                 <option value="use_of_english">Use of English</option>
                 {!isPlacement && <option value="writing">Viết</option>}
