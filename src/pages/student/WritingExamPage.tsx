@@ -158,7 +158,7 @@ export default function WritingExamPage() {
   }
 
   return (
-    <div className="wrap exam">
+    <div className="wrap exam writing-exam">
       <ExamBar
         title={
           <>
@@ -180,56 +180,62 @@ export default function WritingExamPage() {
         ]}
       />
 
-      <div className="card passage exam-material-card">
-        <div className="muted small">ĐỀ BÀI</div>
-        {p.prompt && <div className="passage-body">{p.prompt}</div>}
-      </div>
+      <div className="writing-split-workspace">
+        <section className="writing-material-pane" aria-label="Đề bài và tư liệu">
+          <div className="card passage exam-material-card">
+            <div className="muted small">ĐỀ BÀI</div>
+            {p.prompt && <div className="passage-body">{p.prompt}</div>}
+          </div>
 
-      {p.passages.map((passage) => (
-        <div className="card passage exam-material-card" key={passage.id}>
-          {passage.kind === "audio" && passage.media_url && (
-            <audio
-              controls
-              controlsList="nodownload"
-              preload="metadata"
-              src={passage.media_url}
-              style={{ width: "100%" }}
-              onContextMenu={(e) => e.preventDefault()}
+          {p.passages.map((passage) => (
+            <div className="card passage exam-material-card" key={passage.id}>
+              {passage.kind === "audio" && passage.media_url && (
+                <audio
+                  controls
+                  controlsList="nodownload"
+                  preload="metadata"
+                  src={passage.media_url}
+                  style={{ width: "100%" }}
+                  onContextMenu={(e) => e.preventDefault()}
+                />
+              )}
+              {passage.kind === "reading" && passage.body && <div className="passage-body">{passage.body}</div>}
+              {passage.kind === "reading" && passage.media_url && (
+                <img src={passage.media_url} alt="Tư liệu đề bài" style={{ maxWidth: "100%", borderRadius: 8 }} />
+              )}
+            </div>
+          ))}
+        </section>
+
+        <section className="writing-answer-pane" aria-label="Bài làm">
+          <div className="card exam-workspace-card">
+            <textarea
+              className="essay"
+              value={essay}
+              onChange={(e) => setEssay(e.target.value)}
+              placeholder="Viết bài của bạn ở đây…"
+              rows={18}
             />
-          )}
-          {passage.kind === "reading" && passage.body && <div className="passage-body">{passage.body}</div>}
-          {passage.kind === "reading" && passage.media_url && (
-            <img src={passage.media_url} alt="Tư liệu đề bài" style={{ maxWidth: "100%", borderRadius: 8 }} />
-          )}
-        </div>
-      ))}
+            <div className={`muted wc ${wordCount < p.min_words ? "" : "ok-text"}`}>
+              Số từ: <strong>{wordCount}</strong> / tối thiểu {p.min_words}
+            </div>
+          </div>
 
-      <div className="card exam-workspace-card">
-        <textarea
-          className="essay"
-          value={essay}
-          onChange={(e) => setEssay(e.target.value)}
-          placeholder="Viết bài của bạn ở đây…"
-          rows={18}
-        />
-        <div className={`muted wc ${wordCount < p.min_words ? "" : "ok-text"}`}>
-          Số từ: <strong>{wordCount}</strong> / tối thiểu {p.min_words}
-        </div>
+          {submitErr && <ErrorBox msg={submitErr} />}
+          {wordCount < p.min_words && (
+            <p className="warn-text">Bài chưa đạt tối thiểu {p.min_words} từ — vẫn có thể nộp nhưng nên viết thêm.</p>
+          )}
+          <ExamSubmitPanel
+            meta={
+              <>
+                Số từ hiện tại: {wordCount}/{p.min_words}.
+              </>
+            }
+            submitting={submitting}
+            onSubmit={() => doSubmit("manual")}
+          />
+        </section>
       </div>
-
-      {submitErr && <ErrorBox msg={submitErr} />}
-      {wordCount < p.min_words && (
-        <p className="warn-text">Bài chưa đạt tối thiểu {p.min_words} từ — vẫn có thể nộp nhưng nên viết thêm.</p>
-      )}
-      <ExamSubmitPanel
-        meta={
-          <>
-            Số từ hiện tại: {wordCount}/{p.min_words}.
-          </>
-        }
-        submitting={submitting}
-        onSubmit={() => doSubmit("manual")}
-      />
     </div>
   );
 }

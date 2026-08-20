@@ -744,6 +744,30 @@ code {
   color: var(--plum);
   font-size: 16px;
 }
+.writing-exam {
+  max-width: 1240px;
+}
+.writing-split-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+  gap: 16px;
+  align-items: start;
+}
+.writing-material-pane,
+.writing-answer-pane {
+  min-width: 0;
+}
+.writing-material-pane {
+  display: grid;
+  gap: 14px;
+}
+.writing-answer-pane {
+  position: sticky;
+  top: 134px;
+  display: grid;
+  gap: 12px;
+  max-height: calc(100vh - 154px);
+}
 .exam-material-card,
 .exam-workspace-card,
 .exam-question-card {
@@ -766,6 +790,13 @@ code {
   min-height: 420px;
   line-height: 1.75;
   resize: vertical;
+}
+.writing-answer-pane .exam-workspace-card textarea.essay {
+  min-height: clamp(360px, calc(100vh - 306px), 640px);
+}
+.writing-answer-pane .exam-submit-panel {
+  position: static;
+  margin-top: 0;
 }
 .exam-question-card {
   transition:
@@ -3419,6 +3450,20 @@ td.cell-weak {
     min-height: 34px;
     text-align: center;
   }
+  .writing-exam {
+    max-width: 880px;
+  }
+  .writing-split-workspace {
+    display: block;
+  }
+  .writing-material-pane {
+    display: block;
+  }
+  .writing-answer-pane {
+    position: static;
+    display: block;
+    max-height: none;
+  }
   .exam-start-meta,
   .exam-submit-panel {
     grid-template-columns: 1fr;
@@ -3438,6 +3483,9 @@ td.cell-weak {
   }
   .exam-material-card {
     padding: 14px;
+  }
+  .writing-material-pane .exam-material-card {
+    margin-bottom: 14px;
   }
   .exam-material-card audio {
     min-height: 44px;
@@ -3479,6 +3527,10 @@ td.cell-weak {
     width: auto;
     margin: 0;
     border-radius: 8px;
+  }
+  .writing-answer-pane .exam-submit-panel {
+    position: fixed;
+    margin: 0;
   }
   .exam-submit-panel .btn.big {
     position: static;
