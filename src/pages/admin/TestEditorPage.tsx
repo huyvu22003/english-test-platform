@@ -37,6 +37,9 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
   const isIntensive = topic.data?.category === "intensive_2026";
   const isPlacement = topic.data?.category === "placement" || test.purpose === "placement";
   const isWriting = skill === "writing";
+  const isSpeaking = skill === "speaking";
+  // Đề dạng "prompt": học sinh làm theo đề bài (viết/nói), KHÔNG cần câu hỏi trắc nghiệm.
+  const isPromptBased = isWriting || isSpeaking;
   const hasPrompt = Boolean(test.prompt?.trim());
   const hasQuestions = (questions.data?.length ?? 0) > 0;
   const hasPassage = (passages.data?.length ?? 0) > 0;
@@ -45,7 +48,7 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
     ? "/admin/topics/intensive"
     : isPlacement
       ? "/admin/topics/placement"
-      : skill && ["writing", "reading", "listening"].includes(skill)
+      : skill && ["writing", "reading", "listening", "speaking"].includes(skill)
         ? `/admin/topics/${skill}`
         : "/admin/topics";
   const backLabel = isIntensive
@@ -58,7 +61,9 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
           ? "Đề Đọc"
           : skill === "listening"
             ? "Đề Nghe"
-            : "Ngân hàng đề";
+            : skill === "speaking"
+              ? "Đề Nói"
+              : "Ngân hàng đề";
 
   return (
     <div className="admin-page test-editor-page">
@@ -107,10 +112,23 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
           <li className={test.active ? "ok-text" : "warn-text"}>
             {test.active ? "✓ Đề đang mở" : "• Đề đang khóa — học sinh chưa thấy"}
           </li>
-          {isWriting ? (
-            <li className={hasPrompt ? "ok-text" : "warn-text"}>
-              {hasPrompt ? "✓ Đã có prompt Writing" : "• Chưa có prompt Writing"}
-            </li>
+          {isPromptBased ? (
+            <>
+              <li className={hasPrompt ? "ok-text" : "warn-text"}>
+                {isSpeaking
+                  ? hasPrompt
+                    ? "✓ Đã có câu hỏi Speaking"
+                    : "• Chưa có câu hỏi Speaking (nhập ở ô Đề bài)"
+                  : hasPrompt
+                    ? "✓ Đã có prompt Writing"
+                    : "• Chưa có prompt Writing"}
+              </li>
+              {isSpeaking && (
+                <li className={hasPassage ? "ok-text" : "muted"}>
+                  {hasPassage ? "✓ Đã có audio câu hỏi" : "• Audio câu hỏi (tùy chọn) — chưa có"}
+                </li>
+              )}
+            </>
           ) : (
             <>
               <li className={hasPassage ? "ok-text" : "warn-text"}>
@@ -124,25 +142,34 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
         </ul>
       </div>
 
-      <MetaForm test={test} onSaved={reloadTest} isWriting={isWriting} />
+      <MetaForm test={test} onSaved={reloadTest} isWriting={isWriting} isSpeaking={isSpeaking} />
 
-      <h2 className="section">Tư liệu (đoạn đọc / audio)</h2>
+      <h2 className="section">{isSpeaking ? "Audio câu hỏi (tùy chọn)" : "Tư liệu (đoạn đọc / audio)"}</h2>
+      {isSpeaking && (
+        <p className="muted small">
+          Thêm 1 audio để học sinh bấm loa nghe câu hỏi. Nếu không thêm, học sinh vẫn nói theo câu hỏi dạng chữ.
+        </p>
+      )}
       {passages.loading && <Spinner />}
       {passages.error && <ErrorBox msg={passages.error} />}
       {passages.data?.map((p) => (
         <PassageRow key={p.id} passage={p} onChanged={passages.reload} />
       ))}
-      {passages.data && passages.data.length === 0 && !isWriting && (
+      {passages.data && passages.data.length === 0 && !isPromptBased && (
         <EmptyState title="Chưa có tư liệu" body="Thêm đoạn đọc hoặc audio trước khi mở đề Đọc/Nghe cho học sinh." />
       )}
       <NewPassage
         testId={test.id}
         onAdded={passages.reload}
-        defaultKind={skill === "listening" ? "audio" : "reading"}
+        defaultKind={skill === "listening" || isSpeaking ? "audio" : "reading"}
       />
 
-      {skill === "writing" ? (
+      {isWriting ? (
         <p className="muted section">Đề Viết: học sinh nhập bài luận, không cần câu hỏi trắc nghiệm.</p>
+      ) : isSpeaking ? (
+        <p className="muted section">
+          Đề Nói: học sinh nghe/đọc câu hỏi rồi ghi âm trả lời. AI chấm tự động, không cần câu hỏi trắc nghiệm.
+        </p>
       ) : (
         <>
           <h2 className="section">Câu hỏi {skill ? `(${skillLabel(skill)})` : ""}</h2>
@@ -170,7 +197,17 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
 }
 
 // ---------- Thông tin đề ----------
-function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => void; isWriting: boolean }) {
+function MetaForm({
+  test,
+  onSaved,
+  isWriting,
+  isSpeaking,
+}: {
+  test: Test;
+  onSaved: () => void;
+  isWriting: boolean;
+  isSpeaking: boolean;
+}) {
   const [title, setTitle] = useState(test.title ?? "");
   const [prompt, setPrompt] = useState(test.prompt ?? "");
   const [version, setVersion] = useState(test.version_label);
@@ -214,14 +251,18 @@ function MetaForm({ test, onSaved, isWriting }: { test: Test; onSaved: () => voi
           <p className="muted small">Thiết lập tiêu đề, thời gian, mục đích và trạng thái hiển thị.</p>
         </div>
       </div>
-      {isWriting && (
+      {(isWriting || isSpeaking) && (
         <label className="field">
-          <span>Đề bài (prompt) — học sinh sẽ thấy</span>
+          <span>{isSpeaking ? "Câu hỏi Speaking — học sinh sẽ thấy" : "Đề bài (prompt) — học sinh sẽ thấy"}</span>
           <textarea
-            rows={4}
+            rows={isSpeaking ? 3 : 4}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="vd: Some people think that… Discuss both views and give your opinion."
+            placeholder={
+              isSpeaking
+                ? "vd: When was the last time you had a few days off?"
+                : "vd: Some people think that… Discuss both views and give your opinion."
+            }
           />
         </label>
       )}
