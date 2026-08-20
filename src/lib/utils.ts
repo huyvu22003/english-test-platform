@@ -23,6 +23,7 @@ const SKILL_LABELS: Record<Skill, string> = {
   reading: "Đọc",
   listening: "Nghe",
   use_of_english: "Use of English",
+  speaking: "Nói",
 };
 
 export function skillLabel(skill: Skill | string): string {
@@ -34,5 +35,6 @@ export function skillLabelEn(skill: string | undefined): string {
   if (skill === "reading") return "Reading";
   if (skill === "listening") return "Listening";
   if (skill === "use_of_english") return "Use of English";
+  if (skill === "speaking") return "Speaking";
   return skill ?? "";
 }

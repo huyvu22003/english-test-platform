@@ -301,6 +301,10 @@ textarea {
   background: #fdf0e3;
   color: #b45309;
 }
+.skill-speaking {
+  background: #f0e7ff;
+  color: #6d28d9;
+}
 
 /* messages */
 .loading-state {
@@ -4366,6 +4370,64 @@ main:focus-visible {
   img {
     opacity: 0.92;
   }
+}
+
+/* ======================== Speaking Exam ======================== */
+
+.speaking-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.speaking-prompt-area h2 { margin: 0 0 0.5rem; }
+.speaking-prompt-text { line-height: 1.7; margin-bottom: 1rem; }
+.speaking-recorder {
+  background: var(--card-bg, #fff);
+  border: 2px dashed var(--border, #e0e0e0);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+}
+.recorder-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.recorder-btn { font-size: 1.1rem; }
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--danger, #e53e3e);
+}
+.rec-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--danger, #e53e3e);
+  animation: rec-pulse 1s ease-in-out infinite;
+}
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.speaking-playback { width: 100%; max-width: 400px; margin-bottom: 0.5rem; }
+.speaking-rec-status { font-weight: 500; }
+.speaking-rec-status.recording { color: var(--danger, #e53e3e); }
+.speaking-rec-status.done { color: var(--ok, #38a169); }
+
+.skill-card-speaking {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.speaking-block .premium-topic-card .topic-spark {
+  font-size: 1.5rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

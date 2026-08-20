@@ -7,7 +7,7 @@ import { ErrorBox, SkillBadge, Spinner } from "../../components/common";
 import { AdminPageHeader } from "../../components/AdminPageHeader";
 import type { Skill, Test, Topic } from "../../lib/types";
 
-const AUTHORING_SKILLS: Skill[] = ["writing", "reading", "listening"];
+const AUTHORING_SKILLS: Skill[] = ["writing", "reading", "listening", "speaking"];
 const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
 const PLACEMENT_TOPIC_NAME = "XẾP LỚP IELTS";
 
@@ -57,6 +57,12 @@ const SKILL_META: Record<Skill, { label: string; title: string; desc: string; ct
     title: "Use of English",
     desc: "Quản lý câu hỏi ngữ pháp/từ vựng.",
     cta: "+ Thêm chủ đề",
+  },
+  speaking: {
+    label: "Nói",
+    title: "Đề Nói",
+    desc: "Quản lý chủ đề Speaking, prompt bài nói, thời gian ghi âm.",
+    cta: "+ Thêm chủ đề Nói",
   },
 };
 

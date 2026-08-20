@@ -12,6 +12,7 @@ const WritingExamPage = lazy(() => import("./pages/student/WritingExamPage"));
 const PlacementExamPage = lazy(() => import("./pages/student/PlacementExamPage"));
 const ResultPage = lazy(() => import("./pages/student/ResultPage"));
 const ProgressPage = lazy(() => import("./pages/student/ProgressPage"));
+const SpeakingExamPage = lazy(() => import("./pages/student/SpeakingExamPage"));
 const SessionEntryPage = lazy(() => import("./pages/student/SessionEntryPage"));
 const SessionExamPage = lazy(() => import("./pages/student/SessionExamPage"));
 
@@ -77,6 +78,7 @@ export default function App() {
               {/* Học sinh */}
               <Route path="/" element={<StudentHome />} />
               <Route path="/writing/:topicId" element={<WritingExamPage />} />
+              <Route path="/speaking/:topicId" element={<SpeakingExamPage />} />
               <Route path="/placement/:testId" element={<PlacementExamPage />} />
               <Route path="/exam/:testId" element={<ExamPage />} />
               <Route path="/exam-room" element={<SessionEntryPage />} />

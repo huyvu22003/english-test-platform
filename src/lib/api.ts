@@ -20,6 +20,7 @@ import type {
   SessionByCode,
   SessionSubmitResult,
   Skill,
+  SpeakingTopic,
   Student,
   StudentByCode,
   Submission,
@@ -136,6 +137,55 @@ export async function submitWriting(args: {
     p_name: args.name,
     p_email: args.email,
     p_essay: args.essay,
+    p_violations: args.violations,
+    p_log: args.log,
+    p_started_at: args.startedAt,
+  });
+  return unwrap(res) as { submission_id: string };
+}
+
+// ---------- Speaking (học sinh, anon) ----------
+export async function listSpeakingTopics(): Promise<SpeakingTopic[]> {
+  const res = await db().rpc("rpc_list_speaking_topics");
+  return (unwrap(res) ?? []) as SpeakingTopic[];
+}
+
+export async function pickSpeakingPrompt(topicId: string): Promise<PickedPrompt> {
+  const res = await db().rpc("rpc_pick_speaking_prompt", { p_topic_id: topicId });
+  const data = unwrap(res) as (PickedPrompt & { passages?: Passage[] }) | null;
+  if (!data) throw new Error("Chủ đề này chưa có đề Speaking nào đang mở.");
+  return { ...data, passages: data.passages ?? [] };
+}
+
+export async function getSpeakingUploadUrl(mime: string, size: number): Promise<{ path: string; signed_url: string; token: string }> {
+  const res = await db().functions.invoke("create-speaking-upload", {
+    body: { mime, size },
+  });
+  if (res.error) throw new Error(res.error.message);
+  const data = res.data as { path?: string; signed_url?: string; token?: string; error?: string } | null;
+  if (data?.error) throw new Error(data.error);
+  if (!data?.path || !data?.signed_url) throw new Error("Không nhận được URL upload.");
+  return { path: data.path, signed_url: data.signed_url, token: data.token ?? "" };
+}
+
+export async function submitSpeaking(args: {
+  testId: string;
+  name: string;
+  email: string;
+  audioPath: string;
+  audioMime: string;
+  audioDurationSec: number;
+  violations: number;
+  log: string;
+  startedAt: string;
+}): Promise<{ submission_id: string }> {
+  const res = await db().rpc("rpc_submit_speaking", {
+    p_test_id: args.testId,
+    p_name: args.name,
+    p_email: args.email,
+    p_audio_path: args.audioPath,
+    p_audio_mime: args.audioMime,
+    p_audio_duration_sec: args.audioDurationSec,
     p_violations: args.violations,
     p_log: args.log,
     p_started_at: args.startedAt,
