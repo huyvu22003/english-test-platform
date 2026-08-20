@@ -52,8 +52,7 @@ export default function SpeakingExamPage() {
   const recTimerRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode)
-      nav("/", { replace: true });
+    if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
   }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   const doSubmit = useCallback(
@@ -235,7 +234,11 @@ export default function SpeakingExamPage() {
         warning={ac.warning}
         progressItems={[
           <span key="rec" className={`speaking-rec-status ${recState}`}>
-            {recState === "recording" ? `Đang ghi âm… ${fmtTime(recDuration)}` : recState === "done" ? `Đã thu ${fmtTime(recDuration)}` : "Chưa ghi âm"}
+            {recState === "recording"
+              ? `Đang ghi âm… ${fmtTime(recDuration)}`
+              : recState === "done"
+                ? `Đã thu ${fmtTime(recDuration)}`
+                : "Chưa ghi âm"}
           </span>,
         ]}
       />
@@ -247,9 +250,7 @@ export default function SpeakingExamPage() {
           {p.passages.map((ps) => (
             <div key={ps.id} className="passage-block">
               {ps.body && <div dangerouslySetInnerHTML={{ __html: ps.body }} />}
-              {ps.media_url && ps.kind === "audio" && (
-                <audio controls src={ps.media_url} className="audio-player" />
-              )}
+              {ps.media_url && ps.kind === "audio" && <audio controls src={ps.media_url} className="audio-player" />}
             </div>
           ))}
         </div>

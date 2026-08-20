@@ -221,7 +221,15 @@ function HistoryTable({
                 <td>{i.score_lr ?? "—"}</td>
                 <td>{i.score_gra ?? "—"}</td>
                 <td>{i.cefr ?? "—"}</td>
-                <td>{i.status === "graded" ? "Đã chấm" : i.status === "pending_ai" ? <span className="muted">Chờ AI chấm</span> : <span className="muted">Chờ chấm</span>}</td>
+                <td>
+                  {i.status === "graded" ? (
+                    "Đã chấm"
+                  ) : i.status === "pending_ai" ? (
+                    <span className="muted">Chờ AI chấm</span>
+                  ) : (
+                    <span className="muted">Chờ chấm</span>
+                  )}
+                </td>
               </tr>
             );
           })}

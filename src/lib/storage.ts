@@ -28,11 +28,7 @@ export async function uploadMedia(file: File): Promise<string> {
   return supabase.storage.from("media").getPublicUrl(path).data.publicUrl;
 }
 
-export async function uploadSpeakingAudio(
-  blob: Blob,
-  signedUrl: string,
-  token: string,
-): Promise<void> {
+export async function uploadSpeakingAudio(blob: Blob, signedUrl: string, token: string): Promise<void> {
   const res = await fetch(signedUrl, {
     method: "PUT",
     headers: {

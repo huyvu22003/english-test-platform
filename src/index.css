@@ -4382,8 +4382,13 @@ main:focus-visible {
   max-width: 800px;
   margin: 0 auto;
 }
-.speaking-prompt-area h2 { margin: 0 0 0.5rem; }
-.speaking-prompt-text { line-height: 1.7; margin-bottom: 1rem; }
+.speaking-prompt-area h2 {
+  margin: 0 0 0.5rem;
+}
+.speaking-prompt-text {
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
 .speaking-recorder {
   background: var(--card-bg, #fff);
   border: 2px dashed var(--border, #e0e0e0);
@@ -4397,7 +4402,9 @@ main:focus-visible {
   align-items: center;
   gap: 1rem;
 }
-.recorder-btn { font-size: 1.1rem; }
+.recorder-btn {
+  font-size: 1.1rem;
+}
 .recording-indicator {
   display: flex;
   align-items: center;
@@ -4407,19 +4414,35 @@ main:focus-visible {
   color: var(--danger, #e53e3e);
 }
 .rec-dot {
-  width: 14px; height: 14px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--danger, #e53e3e);
   animation: rec-pulse 1s ease-in-out infinite;
 }
 @keyframes rec-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
-.speaking-playback { width: 100%; max-width: 400px; margin-bottom: 0.5rem; }
-.speaking-rec-status { font-weight: 500; }
-.speaking-rec-status.recording { color: var(--danger, #e53e3e); }
-.speaking-rec-status.done { color: var(--ok, #38a169); }
+.speaking-playback {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 0.5rem;
+}
+.speaking-rec-status {
+  font-weight: 500;
+}
+.speaking-rec-status.recording {
+  color: var(--danger, #e53e3e);
+}
+.speaking-rec-status.done {
+  color: var(--ok, #38a169);
+}
 
 .skill-card-speaking {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

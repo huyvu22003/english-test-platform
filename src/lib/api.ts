@@ -157,7 +157,10 @@ export async function pickSpeakingPrompt(topicId: string): Promise<PickedPrompt>
   return { ...data, passages: data.passages ?? [] };
 }
 
-export async function getSpeakingUploadUrl(mime: string, size: number): Promise<{ path: string; signed_url: string; token: string }> {
+export async function getSpeakingUploadUrl(
+  mime: string,
+  size: number,
+): Promise<{ path: string; signed_url: string; token: string }> {
   const res = await db().functions.invoke("create-speaking-upload", {
     body: { mime, size },
   });

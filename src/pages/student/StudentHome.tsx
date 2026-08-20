@@ -610,7 +610,11 @@ export default function StudentHome() {
             {speakingTopics.error && <ErrorBox msg={speakingTopics.error} />}
             <div className="topic-grid premium-topic-grid">
               {speakingList.map((t) => (
-                <button className="topic-pick premium-topic-card" key={t.topic_id} onClick={() => startSpeaking(t.topic_id)}>
+                <button
+                  className="topic-pick premium-topic-card"
+                  key={t.topic_id}
+                  onClick={() => startSpeaking(t.topic_id)}
+                >
                   <span className="topic-spark">🎙</span>
                   <strong>{t.topic_name}</strong>
                   <span className="muted small">{t.num_prompts} đề · bốc ngẫu nhiên</span>
