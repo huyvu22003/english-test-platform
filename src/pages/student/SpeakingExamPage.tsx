@@ -8,7 +8,7 @@ import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
 import { formatError, fmtTime } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
-import { ExamBar, ExamSubmitPanel } from "../../components/ExamLayout";
+import { ExamBar } from "../../components/ExamLayout";
 import type { PickedPrompt } from "../../lib/types";
 
 type RecState = "idle" | "recording" | "paused" | "done";
@@ -50,6 +50,8 @@ export default function SpeakingExamPage() {
   const chunksRef = useRef<Blob[]>([]);
   const recStartRef = useRef(0);
   const recTimerRef = useRef<number | undefined>(undefined);
+  const questionAudioRef = useRef<HTMLAudioElement>(null);
+  const [questionPlaying, setQuestionPlaying] = useState(false);
 
   useEffect(() => {
     if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
@@ -222,6 +224,20 @@ export default function SpeakingExamPage() {
     );
   }
 
+  const questionAudio = p.passages.find((ps) => ps.kind === "audio" && ps.media_url)?.media_url ?? null;
+  const questionText = (p.prompt ?? p.title ?? "").replace(/<[^>]+>/g, "").trim();
+
+  function toggleQuestionAudio() {
+    const el = questionAudioRef.current;
+    if (!el) return;
+    if (el.paused) {
+      el.currentTime = 0;
+      void el.play();
+    } else {
+      el.pause();
+    }
+  }
+
   return (
     <div className="exam-shell speaking-exam">
       <ExamBar
@@ -241,60 +257,114 @@ export default function SpeakingExamPage() {
         ]}
       />
 
-      <div className="exam-body speaking-body">
-        <div className="speaking-prompt-area">
-          {p.title && <h2>{p.title}</h2>}
-          {p.prompt && <div className="speaking-prompt-text" dangerouslySetInnerHTML={{ __html: p.prompt }} />}
-          {p.passages.map((ps) => (
-            <div key={ps.id} className="passage-block">
-              {ps.body && <div dangerouslySetInnerHTML={{ __html: ps.body }} />}
-              {ps.media_url && ps.kind === "audio" && <audio controls src={ps.media_url} className="audio-player" />}
-            </div>
-          ))}
-        </div>
+      <div className="speaking-stage">
+        <div className="speaking-card">
+          <div className="speaking-question">
+            <button
+              type="button"
+              className={`speaking-audio-btn ${questionPlaying ? "playing" : ""}`}
+              onClick={toggleQuestionAudio}
+              disabled={!questionAudio}
+              aria-label={questionAudio ? "Nghe câu hỏi" : "Câu hỏi này không có audio"}
+              title={questionAudio ? "Nghe câu hỏi" : "Câu hỏi này không có audio"}
+            >
+              <SpeakerIcon />
+            </button>
+            <p className="speaking-question-text">{questionText || "(Chưa có nội dung câu hỏi)"}</p>
+          </div>
+          {questionAudio && (
+            <audio
+              ref={questionAudioRef}
+              src={questionAudio}
+              preload="auto"
+              hidden
+              onPlay={() => setQuestionPlaying(true)}
+              onPause={() => setQuestionPlaying(false)}
+              onEnded={() => setQuestionPlaying(false)}
+            />
+          )}
 
-        <div className="speaking-recorder">
-          {micError && <p className="warn-text">{micError}</p>}
+          <div className="speaking-recorder-zone">
+            {micError && <p className="warn-text">{micError}</p>}
 
-          <div className="recorder-controls">
             {recState === "idle" && (
-              <button className="btn primary big recorder-btn" onClick={startRecording}>
-                🎙 Bắt đầu ghi âm
+              <button className="btn primary big speaking-rec-btn" onClick={startRecording}>
+                <MicIcon /> Bắt đầu ghi âm
               </button>
             )}
+
             {recState === "recording" && (
-              <>
+              <div className="speaking-rec-live">
                 <div className="recording-indicator">
                   <span className="rec-dot" />
                   <span>Đang ghi âm… {fmtTime(recDuration)}</span>
                 </div>
-                <button className="btn danger big recorder-btn" onClick={stopRecording}>
+                <button className="btn danger big speaking-rec-btn" onClick={stopRecording}>
                   ⏹ Dừng ghi âm
                 </button>
-              </>
+              </div>
             )}
+
             {recState === "done" && (
-              <>
+              <div className="speaking-rec-done">
                 {audioUrl && <audio controls src={audioUrl} className="audio-player speaking-playback" />}
-                <p className="muted small">Thời lượng: {fmtTime(recDuration)}</p>
-                <button className="btn ghost small" onClick={resetRecording}>
-                  Thu lại
-                </button>
-              </>
+                <p className="muted small">Thời lượng bài nói: {fmtTime(recDuration)}</p>
+                <div className="speaking-done-actions">
+                  <button className="btn ghost" onClick={resetRecording} disabled={submitting}>
+                    Thu lại
+                  </button>
+                  <button className="btn primary big" onClick={() => void doSubmit("manual")} disabled={submitting}>
+                    {submitting ? "Đang tải lên & nộp…" : "Nộp bài nói"}
+                  </button>
+                </div>
+              </div>
             )}
+
+            {submitErr && <ErrorBox msg={submitErr} />}
           </div>
         </div>
       </div>
-
-      {submitErr && <ErrorBox msg={submitErr} />}
-
-      <ExamSubmitPanel
-        meta={<>Speaking · {meta.name}</>}
-        submitting={submitting}
-        onSubmit={() => void doSubmit("manual")}
-        submitLabel="Nộp bài nói"
-        submittingLabel="Đang tải lên & nộp bài…"
-      />
     </div>
+  );
+}
+
+function SpeakerIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M11 5 6 9H2v6h4l5 4V5z" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    </svg>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="23" />
+      <line x1="8" y1="23" x2="16" y2="23" />
+    </svg>
   );
 }
