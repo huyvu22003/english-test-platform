@@ -16,7 +16,7 @@ export default function AdminLayout() {
 
   return (
     <div className="admin">
-      <aside className="sidebar" role="complementary" aria-label="Thanh điều hướng quản trị">
+      <aside className="sidebar" role="navigation" aria-label="Thanh điều hướng quản trị">
         <div className="admin-mobile-head">
           <div className="brand">
             <Logo height={30} light />

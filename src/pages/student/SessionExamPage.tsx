@@ -7,7 +7,7 @@ import { useAsync } from "../../lib/useAsync";
 import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
-import { isAnswered, formatError } from "../../lib/utils";
+import { isAnswered, formatError, countWords } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
 import { ExamBar, ExamSubmitPanel } from "../../components/ExamLayout";
 import { QuestionView } from "./ExamPage";
@@ -30,14 +30,17 @@ export default function SessionExamPage() {
   const { sessionId = "" } = useParams();
   const nav = useNavigate();
   const savedIdentity = loadStudentIdentity();
-  const routeMeta = (useLocation().state ?? {}) as St;
-  const meta: St = {
-    ...routeMeta,
-    name: routeMeta.name ?? savedIdentity?.name,
-    email: routeMeta.email ?? savedIdentity?.email,
-    studentCode: routeMeta.studentCode ?? savedIdentity?.code ?? null,
-    studentMode: routeMeta.studentMode ?? savedIdentity?.mode,
-  };
+  const locState = useLocation().state;
+  const meta: St = useMemo(() => {
+    const rm = (locState ?? {}) as St;
+    return {
+      ...rm,
+      name: rm.name ?? savedIdentity?.name,
+      email: rm.email ?? savedIdentity?.email,
+      studentCode: rm.studentCode ?? savedIdentity?.code ?? null,
+      studentMode: rm.studentMode ?? savedIdentity?.mode,
+    };
+  }, [locState, savedIdentity]);
 
   const data = useAsync<PublicTest>(() => getTest(meta.testId ?? ""), [meta.testId]);
   const [started, setStarted] = useState(false);
@@ -56,7 +59,7 @@ export default function SessionExamPage() {
     return Number.isFinite(serverNowMs) ? serverNowMs - Date.now() : 0;
   }, [meta.serverNow]);
 
-  const wordCount = useMemo(() => essay.trim().split(/\s+/).filter(Boolean).length, [essay]);
+  const wordCount = useMemo(() => countWords(essay), [essay]);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {

@@ -1,4 +1,5 @@
 import type { Submission, WritingCorrection, WritingScores } from "../../lib/types";
+import { countWords } from "../../lib/utils";
 
 export type GradingDraft = {
   scores: WritingScores;
@@ -97,7 +98,7 @@ export function num(v: number | null | undefined): string {
 }
 
 export function wc(essay: string | null): number {
-  return essay ? essay.trim().split(/\s+/).filter(Boolean).length : 0;
+  return essay ? countWords(essay) : 0;
 }
 
 export function average(values: Array<number | null | undefined>): number | null {

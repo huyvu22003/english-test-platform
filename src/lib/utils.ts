@@ -14,6 +14,10 @@ export function formatError(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
+export function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
 const SKILL_LABELS: Record<Skill, string> = {
   writing: "Viết",
   reading: "Đọc",

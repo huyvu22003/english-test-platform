@@ -7,7 +7,7 @@ import { useAsync } from "../../lib/useAsync";
 import { useCountdownTimer } from "../../lib/useCountdownTimer";
 import { loadStudentIdentity } from "../../lib/studentSession";
 import { MAX_ALLOWED_VIOLATIONS, useAntiCheat } from "../../lib/antiCheat";
-import { isAnswered, formatError } from "../../lib/utils";
+import { isAnswered, formatError, countWords } from "../../lib/utils";
 import { ErrorBox, Spinner } from "../../components/common";
 import { ExamBar, ExamSubmitPanel } from "../../components/ExamLayout";
 import type { AnswerMap, PublicQuestion, PublicTest } from "../../lib/types";
@@ -29,12 +29,15 @@ export default function ExamPage() {
     studentCode?: string | null;
     studentMode?: string;
   };
-  const meta = {
-    name: routeMeta.name ?? savedIdentity?.name,
-    email: routeMeta.email ?? savedIdentity?.email,
-    studentCode: routeMeta.studentCode ?? savedIdentity?.code ?? null,
-    studentMode: routeMeta.studentMode ?? savedIdentity?.mode,
-  };
+  const meta = useMemo(
+    () => ({
+      name: routeMeta.name ?? savedIdentity?.name,
+      email: routeMeta.email ?? savedIdentity?.email,
+      studentCode: routeMeta.studentCode ?? savedIdentity?.code ?? null,
+      studentMode: routeMeta.studentMode ?? savedIdentity?.mode,
+    }),
+    [routeMeta.name, routeMeta.email, routeMeta.studentCode, routeMeta.studentMode, savedIdentity],
+  );
 
   const data = useAsync<PublicTest>(() => getTest(testId), [testId]);
   const [started, setStarted] = useState(false);
@@ -46,7 +49,7 @@ export default function ExamPage() {
 
   const ac = useAntiCheat(started);
   const isWriting = data.data?.topic.skill === "writing";
-  const wordCount = useMemo(() => essay.trim().split(/\s+/).filter(Boolean).length, [essay]);
+  const wordCount = useMemo(() => countWords(essay), [essay]);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {

@@ -1,6 +1,6 @@
 // Bài kiểm tra xếp lớp (placement): trắc nghiệm tự chấm ra CEFR theo ngưỡng.
 // Tái dùng QuestionView (render câu hỏi) từ ExamPage; chấm ở server (rpc_submit_placement).
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getServerNow, getTest, submitPlacement } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
@@ -24,12 +24,15 @@ export default function PlacementExamPage() {
     studentCode?: string | null;
     studentMode?: string;
   };
-  const meta = {
-    name: routeMeta.name ?? savedIdentity?.name,
-    email: routeMeta.email ?? savedIdentity?.email,
-    studentCode: routeMeta.studentCode ?? savedIdentity?.code ?? null,
-    studentMode: routeMeta.studentMode ?? savedIdentity?.mode,
-  };
+  const meta = useMemo(
+    () => ({
+      name: routeMeta.name ?? savedIdentity?.name,
+      email: routeMeta.email ?? savedIdentity?.email,
+      studentCode: routeMeta.studentCode ?? savedIdentity?.code ?? null,
+      studentMode: routeMeta.studentMode ?? savedIdentity?.mode,
+    }),
+    [routeMeta.name, routeMeta.email, routeMeta.studentCode, routeMeta.studentMode, savedIdentity],
+  );
 
   const data = useAsync<PublicTest>(() => getTest(testId), [testId]);
   const [started, setStarted] = useState(false);
