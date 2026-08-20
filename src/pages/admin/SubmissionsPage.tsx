@@ -10,6 +10,7 @@ import {
   listSubmissions,
   bandToCefr,
   updateSubmission,
+  getSpeakingSignedUrl,
 } from "../../lib/api";
 import { useAsync } from "../../lib/useAsync";
 import { EmptyState, ErrorBox, Spinner } from "../../components/common";
@@ -596,7 +597,14 @@ function Row({
           </button>
         </td>
       </tr>
-      {open && (
+      {open && s.audio_path && (
+        <tr className="detail-row grading-detail-row">
+          <td colSpan={9}>
+            <SpeakingGradingView s={s} onDelete={remove} />
+          </td>
+        </tr>
+      )}
+      {open && !s.audio_path && (
         <tr className="detail-row grading-detail-row">
           <td colSpan={9}>
             <div className="grading-workspace">
@@ -846,5 +854,130 @@ function Row({
         </tr>
       )}
     </>
+  );
+}
+
+// Bài Speaking: hiển thị read-only (AI chấm). Nghe lại audio qua signed URL,
+// xem transcript + 4 tiêu chí IELTS Speaking + nhận xét. KHÔNG dùng label Writing.
+const SPEAKING_CRITERIA: { key: "score_fc" | "score_lr" | "score_gra" | "score_pronunciation"; label: string }[] = [
+  { key: "score_fc", label: "Fluency & Coherence" },
+  { key: "score_lr", label: "Lexical Resource" },
+  { key: "score_gra", label: "Grammatical Range & Accuracy" },
+  { key: "score_pronunciation", label: "Pronunciation" },
+];
+
+function SpeakingGradingView({ s, onDelete }: { s: Submission; onDelete: () => void }) {
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioErr, setAudioErr] = useState<string | null>(null);
+  const [loadingAudio, setLoadingAudio] = useState(false);
+
+  useEffect(() => {
+    if (!s.audio_path) return;
+    let alive = true;
+    setLoadingAudio(true);
+    setAudioErr(null);
+    getSpeakingSignedUrl(s.audio_path)
+      .then((url) => {
+        if (alive) setAudioUrl(url);
+      })
+      .catch((e) => {
+        if (alive) setAudioErr(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (alive) setLoadingAudio(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [s.audio_path]);
+
+  const graded = s.status === "graded";
+
+  return (
+    <div className="grading-workspace speaking-grading">
+      <div className="grading-main-column">
+        <div className="prompt-quote">
+          <strong>Đề nói{s.tests?.title ? ` — ${s.tests.title}` : ""}</strong>
+          {s.tests?.prompt ? (
+            <p>{s.tests.prompt}</p>
+          ) : (
+            <p className="muted small">(đề không còn nội dung — chủ đề: {s.topic_name ?? "—"})</p>
+          )}
+        </div>
+
+        <div className="speaking-audio-box card sub">
+          <strong>Bản ghi âm của học viên</strong>
+          {loadingAudio && <p className="muted small">Đang tạo đường dẫn nghe…</p>}
+          {audioErr && <ErrorBox msg={audioErr} />}
+          {audioUrl && <audio controls src={audioUrl} className="audio-player" style={{ width: "100%" }} />}
+          {s.audio_duration_sec != null && (
+            <p className="muted small">Thời lượng: {Math.round(s.audio_duration_sec)}s</p>
+          )}
+        </div>
+
+        <div className="speaking-transcript-box card sub">
+          <strong>Transcript (AI)</strong>
+          {s.transcript ? (
+            <p className="speaking-transcript">{s.transcript}</p>
+          ) : (
+            <p className="muted small">Chưa có transcript.</p>
+          )}
+        </div>
+      </div>
+
+      <aside className="grading-score-panel">
+        <div className="grading-score-card">
+          <div className="grading-score-head">
+            <div>
+              <span className="eyebrow dark">Overall band</span>
+              <strong>{s.overall_band ?? "—"}</strong>
+            </div>
+            <span className="pill">{s.cefr ?? "—"}</span>
+          </div>
+
+          {!graded && (
+            <div className="speaking-status-note">
+              {s.ai_error ? (
+                <ErrorBox msg={`AI chấm lỗi: ${s.ai_error}`} />
+              ) : (
+                <p className="pill off small">Đang chờ AI chấm…</p>
+              )}
+              {s.ai_attempted_at && (
+                <p className="muted small">Lần chấm gần nhất: {new Date(s.ai_attempted_at).toLocaleString("vi-VN")}</p>
+              )}
+            </div>
+          )}
+
+          <div className="grade-grid speaking-grade-grid">
+            {SPEAKING_CRITERIA.map((c) => (
+              <div className="speaking-criterion" key={c.key}>
+                <span className="muted small">{c.label}</span>
+                <strong>{s[c.key] ?? "—"}</strong>
+              </div>
+            ))}
+          </div>
+
+          {s.feedback && (
+            <div className="speaking-feedback">
+              <span className="eyebrow dark">Nhận xét</span>
+              <p>{s.feedback}</p>
+            </div>
+          )}
+
+          {s.violation_log && (
+            <details className="viol-box">
+              <summary>Nhật ký vi phạm ({s.violations})</summary>
+              <pre>{s.violation_log}</pre>
+            </details>
+          )}
+
+          <div className="actions grading-save-actions">
+            <button className="btn ghost small danger" onClick={onDelete}>
+              Xóa bài
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
   );
 }

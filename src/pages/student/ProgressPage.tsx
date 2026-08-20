@@ -281,8 +281,18 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
             </section>
 
             <section className="detail-section">
-              <h3>Bài làm của học viên</h3>
-              {essayTextOf(item) ? (
+              <h3>{item.skill === "speaking" ? "Transcript bài nói (AI)" : "Bài làm của học viên"}</h3>
+              {item.skill === "speaking" ? (
+                item.transcript ? (
+                  <div className="detail-box prewrap">{item.transcript}</div>
+                ) : (
+                  <div className="detail-box muted">
+                    {item.status === "pending_ai"
+                      ? "Đang chờ AI tạo transcript và chấm điểm."
+                      : "Chưa có transcript cho bài nói này."}
+                  </div>
+                )
+              ) : essayTextOf(item) ? (
                 <>
                   <div className="detail-box prewrap essay-detail-box">
                     <HighlightedEssay
@@ -316,7 +326,10 @@ function SubmissionDetail({ item, onClose }: { item: ProgressItem; onClose: () =
           <div className="detail-column teacher-column">
             <section className="detail-section first">
               <h3>Điểm</h3>
-              <WritingScoreGrid item={item} />
+              {item.skill === "speaking" ? <SpeakingScoreGrid item={item} /> : <WritingScoreGrid item={item} />}
+              {item.skill === "speaking" && item.status === "pending_ai" && (
+                <div className="detail-box muted small">Bài nói đang chờ AI chấm. Kết quả sẽ hiện khi có.</div>
+              )}
               {item.score != null && item.max_score != null && (
                 <div className="detail-box">
                   Điểm tự chấm:{" "}
@@ -476,6 +489,26 @@ function WritingScoreGrid({ item }: { item: ProgressItem }) {
     ["CC", item.score_cc],
     ["LR", item.score_lr],
     ["GRA", item.score_gra],
+  ] as const;
+  if (scores.every(([, value]) => value == null)) return null;
+  return (
+    <div className="crit-cards compact">
+      {scores.map(([label, value]) => (
+        <div className="crit-card" key={label}>
+          <div className="crit-val">{value ?? "—"}</div>
+          <div className="crit-lbl">{label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SpeakingScoreGrid({ item }: { item: ProgressItem }) {
+  const scores = [
+    ["FC", item.score_fc],
+    ["LR", item.score_lr],
+    ["GRA", item.score_gra],
+    ["Pron", item.score_pronunciation],
   ] as const;
   if (scores.every(([, value]) => value == null)) return null;
   return (
