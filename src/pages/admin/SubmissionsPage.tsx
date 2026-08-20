@@ -31,7 +31,7 @@ import {
   writeStorage,
 } from "./gradingUtils";
 
-type StatusFilter = "all" | "submitted" | "assigned" | "in_review" | "graded";
+type StatusFilter = "all" | "submitted" | "assigned" | "in_review" | "graded" | "pending_ai";
 
 export default function SubmissionsPage() {
   const { profile, isAdmin } = useAuth();
@@ -195,6 +195,7 @@ export default function SubmissionsPage() {
               <option value="assigned">Đã giao</option>
               <option value="in_review">Cần review</option>
               <option value="graded">Đã chấm</option>
+              <option value="pending_ai">Chờ AI chấm</option>
             </select>
           </label>
           {isAdmin && (
@@ -546,6 +547,7 @@ function Row({
     if (s.status === "graded") return "Đã chấm";
     if (s.status === "assigned") return "Đã giao";
     if (s.status === "in_review") return "Cần review";
+    if (s.status === "pending_ai") return "Chờ AI chấm";
     return "Chờ chấm";
   }
 

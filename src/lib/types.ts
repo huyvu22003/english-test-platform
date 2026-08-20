@@ -1,7 +1,7 @@
 // Kiểu dữ liệu dùng chung — phản ánh các bảng trong supabase/schema.sql.
 // Giữ tối giản, chỉ những trường app dùng.
 
-export type Skill = "writing" | "reading" | "listening" | "use_of_english";
+export type Skill = "writing" | "reading" | "listening" | "use_of_english" | "speaking";
 export type QType = "single" | "multi" | "tfng" | "fill";
 export type Cefr = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 export type AdminRole = "owner" | "admin" | "teacher" | "grader" | "content_editor";
@@ -127,7 +127,7 @@ export interface Submission {
   started_at: string | null;
   submitted_at: string;
   // Phase A+B — chấm tay Writing
-  status: "submitted" | "assigned" | "in_review" | "graded";
+  status: "submitted" | "assigned" | "in_review" | "graded" | "pending_ai";
   student_id: string | null;
   assigned_to?: string | null;
   score_tr: number | null;
@@ -139,6 +139,13 @@ export interface Submission {
   feedback: string | null;
   writing_corrections?: WritingCorrection[] | null;
   graded_at: string | null;
+  // Speaking
+  audio_path: string | null;
+  audio_mime: string | null;
+  audio_duration_sec: number | null;
+  transcript: string | null;
+  score_fc: number | null;
+  score_pronunciation: number | null;
   // Đề bài (join từ bảng tests) — hiện khi GV chấm. Có thể null nếu đề đã xóa.
   tests?: { prompt: string | null; title: string | null } | null;
 }
@@ -182,11 +189,19 @@ export interface ProgressItem {
   band?: number | null;
   overall_band: number | null;
   cefr: string | null;
-  status: "submitted" | "graded";
+  status: "submitted" | "graded" | "pending_ai";
   score_tr?: number | null;
   score_cc?: number | null;
   score_lr?: number | null;
   score_gra?: number | null;
+}
+
+// Speaking topic/prompt (reuse WritingTopic shape for topics, PickedPrompt for prompt)
+export interface SpeakingTopic {
+  topic_id: string;
+  topic_name: string;
+  topic_category?: "regular" | "intensive_2026" | "placement" | null;
+  num_prompts: number;
 }
 
 // 4 tiêu chí IELTS Writing

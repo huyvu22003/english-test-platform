@@ -2,7 +2,7 @@
 // Đọc-Nghe dùng lại rpc_list_exams + ExamPage để chấm trắc nghiệm ở server, không lộ đáp án.
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listExams, listPlacements, listWritingTopics, studentByCode } from "../../lib/api";
+import { listExams, listPlacements, listSpeakingTopics, listWritingTopics, studentByCode } from "../../lib/api";
 import {
   clearStudentIdentity,
   guestIdentity,
@@ -17,7 +17,7 @@ import { isConfigured } from "../../lib/supabase";
 import { groupPlacementSuites } from "../../lib/placement";
 import { ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/common";
 import Logo from "../../components/Logo";
-import type { ExamListItem, PlacementItem, Skill, WritingTopic } from "../../lib/types";
+import type { ExamListItem, PlacementItem, Skill, SpeakingTopic, WritingTopic } from "../../lib/types";
 
 const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
 
@@ -58,6 +58,7 @@ export default function StudentHome() {
   const [selectedIntensiveTestId, setSelectedIntensiveTestId] = useState("");
   const [intensiveTouched, setIntensiveTouched] = useState(false);
   const topics = useAsync<WritingTopic[]>(listWritingTopics, []);
+  const speakingTopics = useAsync<SpeakingTopic[]>(listSpeakingTopics, []);
   const placements = useAsync<PlacementItem[]>(listPlacements, []);
   const exams = useAsync<ExamListItem[]>(listExams, []);
 
@@ -80,6 +81,8 @@ export default function StudentHome() {
   const totalIntensiveTests = intensiveExamTopics.reduce((sum, topic) => sum + topic.tests.length, 0);
   const totalPracticeTests = practiceExams.reduce((sum, topic) => sum + topic.tests.length, 0);
   const totalWritingPrompts = normalWritingTopics.reduce((sum, topic) => sum + topic.num_prompts, 0);
+  const speakingList = useMemo(() => speakingTopics.data ?? [], [speakingTopics.data]);
+  const totalSpeakingPrompts = speakingList.reduce((sum, t) => sum + t.num_prompts, 0);
   const placementSuites = useMemo(() => groupPlacementSuites(placements.data ?? []), [placements.data]);
 
   useEffect(() => {
@@ -224,6 +227,18 @@ export default function StudentHome() {
     nav(`/exam/${testId}`, { state: routeState() });
   }
 
+  function startSpeaking(topicId: string) {
+    setTouched(true);
+    setAccessMsg(null);
+    if (!ready) return;
+    if (!isStudent) {
+      showAccessDenied("Chế độ khách chỉ được làm bài xếp lớp. Vui lòng đăng nhập bằng mã học viên để vào Speaking.");
+      return;
+    }
+    saveStudentIdentity(identity ?? guestIdentity(name, email));
+    nav(`/speaking/${topicId}`, { state: routeState() });
+  }
+
   function continueAsGuest() {
     setTouched(true);
     if (!ready) return;
@@ -301,6 +316,12 @@ export default function StudentHome() {
               <strong>{totalWritingPrompts}</strong>
               <span>đề Writing</span>
             </div>
+            {totalSpeakingPrompts > 0 && (
+              <div className="mini-stat">
+                <strong>{totalSpeakingPrompts}</strong>
+                <span>đề Speaking</span>
+              </div>
+            )}
             <div className="mini-stat">
               <strong>{totalIntensiveTests}</strong>
               <span>đề tăng cường</span>
@@ -570,6 +591,36 @@ export default function StudentHome() {
                 </button>
               </div>
             )}
+          </div>
+        </section>
+      )}
+
+      {speakingList.length > 0 && (
+        <section className="learning-block speaking-block">
+          <div className="skill-card skill-card-speaking">
+            <div className="skill-icon">🎙</div>
+            <div>
+              <span className="eyebrow">Speaking</span>
+              <h3>Chủ đề luyện nói</h3>
+              <p>Bốc đề ngẫu nhiên, ghi âm trả lời và nộp bài — AI chấm tự động.</p>
+            </div>
+          </div>
+          <div className="learning-list">
+            {speakingTopics.loading && <Spinner />}
+            {speakingTopics.error && <ErrorBox msg={speakingTopics.error} />}
+            <div className="topic-grid premium-topic-grid">
+              {speakingList.map((t) => (
+                <button
+                  className="topic-pick premium-topic-card"
+                  key={t.topic_id}
+                  onClick={() => startSpeaking(t.topic_id)}
+                >
+                  <span className="topic-spark">🎙</span>
+                  <strong>{t.topic_name}</strong>
+                  <span className="muted small">{t.num_prompts} đề · bốc ngẫu nhiên</span>
+                </button>
+              ))}
+            </div>
           </div>
         </section>
       )}

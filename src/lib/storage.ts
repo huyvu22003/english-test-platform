@@ -27,3 +27,18 @@ export async function uploadMedia(file: File): Promise<string> {
 
   return supabase.storage.from("media").getPublicUrl(path).data.publicUrl;
 }
+
+export async function uploadSpeakingAudio(blob: Blob, signedUrl: string, token: string): Promise<void> {
+  const res = await fetch(signedUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": blob.type || "audio/webm",
+      ...(token ? { "x-upsert": "false" } : {}),
+    },
+    body: blob,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Upload thất bại (${res.status}): ${text}`);
+  }
+}

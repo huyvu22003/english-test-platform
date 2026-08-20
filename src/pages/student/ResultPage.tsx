@@ -5,6 +5,7 @@ import type { PlacementResult, SessionSubmitResult, SubmitResult } from "../../l
 
 interface ResultState {
   writing?: boolean;
+  speaking?: boolean;
   result?: SubmitResult;
   placement?: PlacementResult;
   session?: SessionSubmitResult;
@@ -19,7 +20,7 @@ interface ResultState {
 export default function ResultPage() {
   const loc = useLocation();
   const st = (loc.state ?? {}) as ResultState;
-  if (!st.writing && !st.result && !st.placement && !st.session) return <Navigate to="/" replace />;
+  if (!st.writing && !st.speaking && !st.result && !st.placement && !st.session) return <Navigate to="/" replace />;
 
   return (
     <div className="wrap">
@@ -45,6 +46,8 @@ export default function ResultPage() {
           <SessionView res={st.session} />
         ) : st.placement ? (
           <PlacementView res={st.placement} placementPart={st.placementPart === true} />
+        ) : st.speaking ? (
+          <SpeakingDoneNote />
         ) : st.writing ? (
           <WritingDoneNote placementWriting={st.placementWriting === true} />
         ) : st.result ? (
@@ -137,6 +140,20 @@ function PlacementView({ res, placementPart }: { res: PlacementResult; placement
         </table>
       )}
     </div>
+  );
+}
+
+function SpeakingDoneNote() {
+  return (
+    <p className="big-note">
+      Bài nói đã được lưu. <strong>Hệ thống AI sẽ chấm tự động</strong> và ghi nhận kết quả vào lịch sử.
+      <br />
+      Xem điểm &amp; tiến bộ ở mục{" "}
+      <Link className="link" to="/progress">
+        Xem tiến bộ
+      </Link>
+      .
+    </p>
   );
 }
 
