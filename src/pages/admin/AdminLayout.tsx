@@ -3,6 +3,8 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
 import Logo from "../../components/Logo";
+import HelpAssistant from "../../components/HelpAssistant";
+import { TEACHER_GUIDE } from "../../lib/helpContent";
 
 export default function AdminLayout() {
   const { session, profile, isAdmin, canManageContent, canGrade, signOut } = useAuth();
@@ -109,6 +111,7 @@ export default function AdminLayout() {
       <main id="main" className="content" tabIndex={-1}>
         <Outlet />
       </main>
+      <HelpAssistant guide={TEACHER_GUIDE} />
     </div>
   );
 }

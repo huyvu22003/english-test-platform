@@ -17,6 +17,8 @@ import { isConfigured } from "../../lib/supabase";
 import { groupPlacementSuites } from "../../lib/placement";
 import { ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/common";
 import Logo from "../../components/Logo";
+import HelpAssistant from "../../components/HelpAssistant";
+import { STUDENT_GUIDE } from "../../lib/helpContent";
 import type { ExamListItem, PlacementItem, Skill, SpeakingTopic, WritingTopic } from "../../lib/types";
 
 const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
@@ -651,6 +653,7 @@ export default function StudentHome() {
           </div>
         </div>
       </section>
+      <HelpAssistant guide={STUDENT_GUIDE} />
     </main>
   );
 }

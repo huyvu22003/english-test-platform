@@ -4575,6 +4575,157 @@ main:focus-visible {
   font-size: 1.5rem;
 }
 
+/* ==================== Help Assistant (trợ lý hướng dẫn) ==================== */
+.help-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.1rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--brand, #f2681f);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(242, 104, 31, 0.35);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.help-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(242, 104, 31, 0.45);
+}
+.help-fab-teacher {
+  background: #6d28d9;
+  box-shadow: 0 10px 26px rgba(109, 40, 217, 0.35);
+}
+.help-fab-teacher:hover {
+  box-shadow: 0 14px 32px rgba(109, 40, 217, 0.45);
+}
+.help-fab-label {
+  white-space: nowrap;
+}
+.help-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(20, 14, 8, 0.4);
+  display: flex;
+  justify-content: flex-end;
+}
+.help-panel {
+  width: min(440px, 100%);
+  height: 100%;
+  background: var(--card-bg, #fff);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  overflow-y: auto;
+  animation: help-slide-in 0.2s ease;
+}
+@keyframes help-slide-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.help-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.help-head h3 {
+  margin: 0.15rem 0 0;
+}
+.help-intro {
+  margin: 0.5rem 0 0.75rem;
+}
+.help-search {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border, #e0e0e0);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+.help-topics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.help-topic {
+  border: 1px solid var(--border, #ececec);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.help-topic.open {
+  border-color: var(--brand, #f2681f);
+}
+.help-topic-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.98rem;
+}
+.help-topic-icon {
+  font-size: 1.15rem;
+}
+.help-topic-title {
+  flex: 1;
+  font-weight: 600;
+}
+.help-topic-caret {
+  color: var(--muted, #999);
+}
+.help-topic-body {
+  padding: 0 0.95rem 0.9rem 0.95rem;
+}
+.help-steps {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+  line-height: 1.6;
+}
+.help-steps li {
+  margin-bottom: 0.35rem;
+}
+.help-tips {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0.6rem 0.75rem;
+  background: rgba(242, 104, 31, 0.08);
+  border-radius: 8px;
+  line-height: 1.55;
+}
+.help-tips li {
+  margin-bottom: 0.3rem;
+}
+.help-tips li:last-child {
+  margin-bottom: 0;
+}
+@media (max-width: 520px) {
+  .help-fab-label {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
