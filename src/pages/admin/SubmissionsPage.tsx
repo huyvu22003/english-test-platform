@@ -396,19 +396,43 @@ function Row({
   onToggle: () => void;
 }) {
   const initialDraft = useMemo(() => readGradingDraft(s.id), [s.id]);
+  // Gợi ý AI (bot OpenClaw) — chỉ dùng khi bài đang ở trạng thái 'suggested'.
+  const aiDraft = s.ai_status === "suggested" && s.ai_draft ? s.ai_draft : null;
+  const aiScores: WritingScores | null = aiDraft
+    ? { tr: aiDraft.score_tr, cc: aiDraft.score_cc, lr: aiDraft.score_lr, gra: aiDraft.score_gra }
+    : null;
+  const aiCorrections: WritingCorrection[] = useMemo(
+    () =>
+      (aiDraft?.corrections ?? []).map((c, i) => ({
+        id: `ai-${i}`,
+        original: c.original,
+        corrected: c.corrected,
+        note: c.note,
+      })),
+    [aiDraft],
+  );
   const [sc, setSc] = useState<WritingScores>(
     () =>
-      initialDraft?.scores ?? {
+      initialDraft?.scores ??
+      aiScores ?? {
         tr: s.score_tr ?? 6,
         cc: s.score_cc ?? 6,
         lr: s.score_lr ?? 6,
         gra: s.score_gra ?? 6,
       },
   );
-  const [feedback, setFeedback] = useState(() => initialDraft?.feedback ?? s.feedback ?? "");
+  const [feedback, setFeedback] = useState(() => initialDraft?.feedback ?? s.feedback ?? aiDraft?.feedback ?? "");
   const [corrections, setCorrections] = useState<WritingCorrection[]>(
-    () => initialDraft?.corrections ?? s.writing_corrections ?? [],
+    () => initialDraft?.corrections ?? (s.writing_corrections?.length ? s.writing_corrections : aiCorrections),
   );
+
+  function applyAiDraft() {
+    if (!aiScores) return;
+    setSc(aiScores);
+    setFeedback(aiDraft?.feedback ?? "");
+    setCorrections(aiCorrections);
+    setErr(null);
+  }
   const [selectedText, setSelectedText] = useState("");
   const [fixedText, setFixedText] = useState("");
   const [fixNote, setFixNote] = useState("");
@@ -589,6 +613,11 @@ function Row({
           ) : (
             <span className="pill off small">{statusLabel()}</span>
           )}
+          {s.status !== "graded" && s.ai_status === "suggested" && (
+            <span className="pill ai-pill small" title="Bot đã gợi ý điểm, chờ giáo viên duyệt">
+              🤖 AI gợi ý
+            </span>
+          )}
         </td>
         <td data-label="Vi phạm">{s.violations ? <span className="viol">{s.violations}</span> : "0"}</td>
         <td className="grading-row-action">
@@ -670,6 +699,21 @@ function Row({
 
               <aside className="grading-score-panel">
                 <div className="grading-score-card">
+                  {aiDraft && (
+                    <div className="ai-draft-banner">
+                      <strong>🤖 AI đã gợi ý điểm & nhận xét</strong>
+                      <p className="muted small">
+                        Điểm/nhận xét bên dưới do bot chấm. Kiểm tra, chỉnh nếu cần rồi bấm{" "}
+                        <strong>Lưu điểm &amp; chấm xong</strong> để xác nhận vào lịch sử học sinh.
+                      </p>
+                      <button className="btn ghost small" type="button" onClick={applyAiDraft}>
+                        ↻ Dùng lại gợi ý AI
+                      </button>
+                    </div>
+                  )}
+                  {s.ai_status === "error" && s.ai_error && (
+                    <p className="warn-text small">AI chấm lỗi: {s.ai_error} — bạn chấm tay bình thường.</p>
+                  )}
                   <div className="grading-score-head">
                     <div>
                       <span className="eyebrow dark">Band</span>

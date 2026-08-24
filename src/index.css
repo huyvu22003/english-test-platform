@@ -4575,6 +4575,27 @@ main:focus-visible {
   font-size: 1.5rem;
 }
 
+/* ==================== AI draft (Writing gợi ý AI) ==================== */
+.ai-draft-banner {
+  border: 1px solid #a78bfa;
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 0.85rem;
+}
+.ai-draft-banner strong {
+  display: block;
+  margin-bottom: 0.15rem;
+}
+.ai-draft-banner .btn {
+  margin-top: 0.5rem;
+}
+.ai-pill {
+  background: #ede9fe;
+  color: #6d28d9;
+  margin-left: 0.35rem;
+}
+
 /* ==================== Help Assistant (trợ lý hướng dẫn) ==================== */
 .help-fab {
   position: fixed;

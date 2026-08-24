@@ -110,6 +110,16 @@ export interface WritingCorrection {
   end?: number;
 }
 
+// Bản nháp AI cho Writing (bot OpenClaw gợi ý; corrections chưa gắn id).
+export interface WritingAiDraft {
+  score_tr: number;
+  score_cc: number;
+  score_lr: number;
+  score_gra: number;
+  feedback: string | null;
+  corrections: { original: string; corrected: string; note?: string }[] | null;
+}
+
 export interface Submission {
   id: string;
   test_id: string | null;
@@ -148,6 +158,10 @@ export interface Submission {
   score_pronunciation: number | null;
   ai_error?: string | null;
   ai_attempted_at?: string | null;
+  // AI draft (Writing) — bot chấm nháp, GV duyệt mới graded
+  ai_status?: "none" | "pending" | "suggested" | "error" | null;
+  ai_draft?: WritingAiDraft | null;
+  ai_draft_at?: string | null;
   // Đề bài (join từ bảng tests) — hiện khi GV chấm. Có thể null nếu đề đã xóa.
   tests?: { prompt: string | null; title: string | null } | null;
 }
