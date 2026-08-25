@@ -604,7 +604,7 @@ export default function StudentHome() {
             <div>
               <span className="eyebrow">Speaking</span>
               <h3>Chủ đề luyện nói</h3>
-              <p>Bốc đề ngẫu nhiên, ghi âm trả lời và nộp bài — AI chấm tự động.</p>
+              <p>Bốc đề ngẫu nhiên, ghi âm trả lời và nộp bài.</p>
             </div>
           </div>
           <div className="learning-list">
