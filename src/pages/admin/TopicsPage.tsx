@@ -5,6 +5,13 @@ import { deleteTopic, listTopics, saveTopic, listTests, saveTest, deleteTest } f
 import { useAsync } from "../../lib/useAsync";
 import { ErrorBox, SkillBadge, Spinner } from "../../components/common";
 import { AdminPageHeader } from "../../components/AdminPageHeader";
+import {
+  formatSpeakingTopicName,
+  SPEAKING_PART_OPTIONS,
+  speakingPartOf,
+  speakingTopicBaseName,
+  type SpeakingPartOption,
+} from "../../lib/speakingParts";
 import type { Skill, Test, Topic } from "../../lib/types";
 
 const AUTHORING_SKILLS: Skill[] = ["writing", "reading", "listening", "speaking"];
@@ -61,7 +68,7 @@ const SKILL_META: Record<Skill, { label: string; title: string; desc: string; ct
   speaking: {
     label: "Nói",
     title: "Đề Nói",
-    desc: "Quản lý chủ đề Speaking, prompt bài nói, thời gian ghi âm.",
+    desc: "Quản lý đề Speaking theo Part 1/2/3, prompt bài nói và thời gian ghi âm.",
     cta: "+ Thêm chủ đề Nói",
   },
 };
@@ -75,7 +82,10 @@ export default function TopicsPage() {
   const topics = useAsync<Topic[]>(listTopics, []);
   const [name, setName] = useState("");
   const [skill, setSkill] = useState<Skill>(isPlacement ? "reading" : (fixedSkill ?? "reading"));
+  const [speakingPart, setSpeakingPart] = useState<SpeakingPartOption>("Part 1");
   const [err, setErr] = useState<string | null>(null);
+  const selectedSkill = isIntensive ? "writing" : (fixedSkill ?? skill);
+  const isCreatingSpeaking = selectedSkill === "speaking" && !isPlacement && !isIntensive;
 
   const visibleTopics = useMemo(() => {
     const rows = topics.data ?? [];
@@ -116,12 +126,13 @@ export default function TopicsPage() {
 
   async function addTopic() {
     setErr(null);
-    const topicName =
+    const rawTopicName =
       isIntensive && !name.trim()
         ? INTENSIVE_TOPIC_NAME
         : isPlacement && !name.trim()
           ? `${PLACEMENT_TOPIC_NAME} - ${SKILL_META[skill].label}`
           : name.trim();
+    const topicName = selectedSkill === "speaking" ? formatSpeakingTopicName(speakingPart, rawTopicName) : rawTopicName;
     if (topicName.length < 2) {
       setErr("Tên chủ đề phải có ít nhất 2 ký tự.");
       return;
@@ -129,7 +140,7 @@ export default function TopicsPage() {
     try {
       await saveTopic({
         name: topicName,
-        skill: isIntensive ? "writing" : (fixedSkill ?? skill),
+        skill: selectedSkill,
         category: isIntensive ? "intensive_2026" : isPlacement ? "placement" : "regular",
         active: true,
       });
@@ -205,6 +216,8 @@ export default function TopicsPage() {
                   ? INTENSIVE_TOPIC_NAME
                   : isPlacement
                     ? `${PLACEMENT_TOPIC_NAME} - ${SKILL_META[skill].label}`
+                    : isCreatingSpeaking
+                      ? "vd: Places / Person / Daily routine"
                     : "Tên chủ đề mới…"
               }
               value={name}
@@ -229,6 +242,18 @@ export default function TopicsPage() {
             <span className={`pill skill-${fixedSkill} topic-create-pill`}>
               {fixedSkill ? SKILL_META[fixedSkill].label : "Chủ đề"}
             </span>
+          )}
+          {isCreatingSpeaking && (
+            <label className="field inline topic-part-select">
+              <span>Part</span>
+              <select value={speakingPart} onChange={(e) => setSpeakingPart(e.target.value as SpeakingPartOption)}>
+                {SPEAKING_PART_OPTIONS.map((part) => (
+                  <option key={part} value={part}>
+                    {part}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
           <button className="btn primary" onClick={addTopic}>
             {page.cta}
@@ -280,7 +305,12 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
   const nav = useNavigate();
   const tests = useAsync<Test[]>(() => listTests(topic.id), [topic.id]);
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(topic.name);
+  const isSpeaking = topic.skill === "speaking";
+  const inferredSpeakingPart = speakingPartOf(topic.name);
+  const [speakingPart, setSpeakingPart] = useState<SpeakingPartOption>(
+    inferredSpeakingPart === "Khác" ? "Part 1" : inferredSpeakingPart,
+  );
+  const [name, setName] = useState(isSpeaking ? speakingTopicBaseName(topic.name) : topic.name);
   const [err, setErr] = useState<string | null>(null);
 
   async function toggleActive() {
@@ -290,21 +320,22 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
   async function rename() {
     setErr(null);
     const nextName = name.trim();
-    if (nextName.length < 2) {
+    const savedName = isSpeaking ? formatSpeakingTopicName(speakingPart, nextName) : nextName;
+    if (savedName.length < 2) {
       setErr("Tên chủ đề phải có ít nhất 2 ký tự.");
-      setName(topic.name);
+      setName(isSpeaking ? speakingTopicBaseName(topic.name) : topic.name);
       return;
     }
     const saved = await saveTopic({
       ...topic,
-      name: nextName,
+      name: savedName,
       category: isIntensiveTopic(topic)
         ? "intensive_2026"
         : isPlacementTopic(topic)
           ? "placement"
           : (topic.category ?? "regular"),
     });
-    setName(saved.name);
+    setName(isSpeaking ? speakingTopicBaseName(saved.name) : saved.name);
     setEditing(false);
     onChanged();
   }
@@ -349,6 +380,15 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
         <div className="topic-title-block">
           {editing ? (
             <span className="row-form topic-rename-form">
+              {isSpeaking && (
+                <select value={speakingPart} onChange={(e) => setSpeakingPart(e.target.value as SpeakingPartOption)}>
+                  {SPEAKING_PART_OPTIONS.map((part) => (
+                    <option key={part} value={part}>
+                      {part}
+                    </option>
+                  ))}
+                </select>
+              )}
               <input value={name} onChange={(e) => setName(e.target.value)} />
               <button className="btn small" onClick={rename}>
                 Lưu
@@ -356,7 +396,8 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
               <button
                 className="btn ghost small"
                 onClick={() => {
-                  setName(topic.name);
+                  setName(isSpeaking ? speakingTopicBaseName(topic.name) : topic.name);
+                  setSpeakingPart(inferredSpeakingPart === "Khác" ? "Part 1" : inferredSpeakingPart);
                   setErr(null);
                   setEditing(false);
                 }}
@@ -370,6 +411,11 @@ function TopicCard({ topic, onChanged }: { topic: Topic; onChanged: () => void }
           {err && <span className="warn-text small">{err}</span>}
           <span className="topic-meta-line">
             <SkillBadge skill={topic.skill} />
+            {isSpeaking && (
+              <span className={inferredSpeakingPart === "Khác" ? "pill off small" : "pill skill-speaking small"}>
+                {inferredSpeakingPart === "Khác" ? "Chưa gán Part" : inferredSpeakingPart}
+              </span>
+            )}
             <span className="muted small">{testCount} đề</span>
             {!topic.active && <span className="pill off small">Đang khóa</span>}
           </span>

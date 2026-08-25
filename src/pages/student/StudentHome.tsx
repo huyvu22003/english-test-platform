@@ -19,11 +19,10 @@ import { ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/comm
 import Logo from "../../components/Logo";
 import HelpAssistant from "../../components/HelpAssistant";
 import { STUDENT_GUIDE } from "../../lib/helpContent";
+import { SPEAKING_PARTS, speakingPartOf, type SpeakingPart } from "../../lib/speakingParts";
 import type { ExamListItem, PlacementItem, Skill, WritingTopic } from "../../lib/types";
 
 const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
-const SPEAKING_PARTS = ["Part 1", "Part 2", "Part 3", "Khác"] as const;
-type SpeakingPart = (typeof SPEAKING_PARTS)[number];
 
 function normalizeVi(s: string) {
   return s
@@ -45,14 +44,6 @@ function isIntensiveTopic(topic: { topic_name: string; topic_category?: string |
 function isPlacementTopic(topic: { topic_name: string; topic_category?: string | null }) {
   const n = normalizeVi(topic.topic_name);
   return topic.topic_category === "placement" || n.includes("placement") || n.includes("xep lop");
-}
-
-function speakingPartOf(...parts: Array<string | null | undefined>): SpeakingPart {
-  const text = normalizeVi(parts.filter(Boolean).join(" "));
-  if (/\b(part|phan)\s*1\b/.test(text)) return "Part 1";
-  if (/\b(part|phan)\s*2\b/.test(text)) return "Part 2";
-  if (/\b(part|phan)\s*3\b/.test(text)) return "Part 3";
-  return "Khác";
 }
 
 export default function StudentHome() {
