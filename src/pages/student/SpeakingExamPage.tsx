@@ -17,6 +17,7 @@ export default function SpeakingExamPage() {
   const { topicId = "" } = useParams();
   const nav = useNavigate();
   const loc = useLocation();
+  const selectedTestId = new URLSearchParams(loc.search).get("test");
   const savedIdentity = loadStudentIdentity();
   const routeMeta = (loc.state ?? {}) as {
     name?: string;
@@ -34,7 +35,7 @@ export default function SpeakingExamPage() {
     [routeMeta.name, routeMeta.email, routeMeta.studentCode, routeMeta.studentMode, savedIdentity],
   );
 
-  const data = useAsync<PickedPrompt>(() => pickSpeakingPrompt(topicId), [topicId]);
+  const data = useAsync<PickedPrompt>(() => pickSpeakingPrompt(topicId, selectedTestId), [topicId, selectedTestId]);
   const [started, setStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
@@ -167,7 +168,7 @@ export default function SpeakingExamPage() {
   if (data.loading)
     return (
       <div className="wrap">
-        <Spinner label="Đang bốc đề Speaking…" />
+        <Spinner label="Đang tải đề Speaking…" />
       </div>
     );
   if (data.error)
@@ -205,7 +206,7 @@ export default function SpeakingExamPage() {
               Nếu vi phạm <strong>từ {MAX_ALLOWED_VIOLATIONS} lần</strong>, hệ thống sẽ <strong>dừng bài ngay</strong>.
             </li>
             <li>
-              Hết giờ hệ thống <strong>tự nộp</strong>. Bài sẽ do <strong>AI chấm tự động</strong>.
+              Hết giờ hệ thống <strong>tự nộp</strong>.
             </li>
           </ul>
           <button

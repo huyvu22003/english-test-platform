@@ -2,7 +2,7 @@
 // Đọc-Nghe dùng lại rpc_list_exams + ExamPage để chấm trắc nghiệm ở server, không lộ đáp án.
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listExams, listPlacements, listSpeakingTopics, listWritingTopics, studentByCode } from "../../lib/api";
+import { listExams, listPlacements, listWritingTopics, studentByCode } from "../../lib/api";
 import {
   clearStudentIdentity,
   guestIdentity,
@@ -19,9 +19,11 @@ import { ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/comm
 import Logo from "../../components/Logo";
 import HelpAssistant from "../../components/HelpAssistant";
 import { STUDENT_GUIDE } from "../../lib/helpContent";
-import type { ExamListItem, PlacementItem, Skill, SpeakingTopic, WritingTopic } from "../../lib/types";
+import type { ExamListItem, PlacementItem, Skill, WritingTopic } from "../../lib/types";
 
 const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
+const SPEAKING_PARTS = ["Part 1", "Part 2", "Part 3", "Khác"] as const;
+type SpeakingPart = (typeof SPEAKING_PARTS)[number];
 
 function normalizeVi(s: string) {
   return s
@@ -45,6 +47,14 @@ function isPlacementTopic(topic: { topic_name: string; topic_category?: string |
   return topic.topic_category === "placement" || n.includes("placement") || n.includes("xep lop");
 }
 
+function speakingPartOf(...parts: Array<string | null | undefined>): SpeakingPart {
+  const text = normalizeVi(parts.filter(Boolean).join(" "));
+  if (/\b(part|phan)\s*1\b/.test(text)) return "Part 1";
+  if (/\b(part|phan)\s*2\b/.test(text)) return "Part 2";
+  if (/\b(part|phan)\s*3\b/.test(text)) return "Part 3";
+  return "Khác";
+}
+
 export default function StudentHome() {
   const nav = useNavigate();
   const [name, setName] = useState("");
@@ -60,7 +70,6 @@ export default function StudentHome() {
   const [selectedIntensiveTestId, setSelectedIntensiveTestId] = useState("");
   const [intensiveTouched, setIntensiveTouched] = useState(false);
   const topics = useAsync<WritingTopic[]>(listWritingTopics, []);
-  const speakingTopics = useAsync<SpeakingTopic[]>(listSpeakingTopics, []);
   const placements = useAsync<PlacementItem[]>(listPlacements, []);
   const exams = useAsync<ExamListItem[]>(listExams, []);
 
@@ -83,8 +92,31 @@ export default function StudentHome() {
   const totalIntensiveTests = intensiveExamTopics.reduce((sum, topic) => sum + topic.tests.length, 0);
   const totalPracticeTests = practiceExams.reduce((sum, topic) => sum + topic.tests.length, 0);
   const totalWritingPrompts = normalWritingTopics.reduce((sum, topic) => sum + topic.num_prompts, 0);
-  const speakingList = useMemo(() => speakingTopics.data ?? [], [speakingTopics.data]);
-  const totalSpeakingPrompts = speakingList.reduce((sum, t) => sum + t.num_prompts, 0);
+  const speakingExamTopics = useMemo(
+    () => (exams.data ?? []).filter((e) => e.skill === "speaking" && !isPlacementTopic(e)),
+    [exams.data],
+  );
+  const speakingChoices = useMemo(
+    () =>
+      speakingExamTopics.flatMap((topic) =>
+        topic.tests.map((test) => ({
+          topicId: topic.topic_id,
+          topicName: topic.topic_name,
+          test,
+          part: speakingPartOf(topic.topic_name, test.title, test.version_label),
+        })),
+      ),
+    [speakingExamTopics],
+  );
+  const speakingGroups = useMemo(
+    () =>
+      SPEAKING_PARTS.map((part) => ({
+        part,
+        choices: speakingChoices.filter((choice) => choice.part === part),
+      })).filter((group) => group.choices.length > 0),
+    [speakingChoices],
+  );
+  const totalSpeakingPrompts = speakingChoices.length;
   const placementSuites = useMemo(() => groupPlacementSuites(placements.data ?? []), [placements.data]);
 
   useEffect(() => {
@@ -229,7 +261,7 @@ export default function StudentHome() {
     nav(`/exam/${testId}`, { state: routeState() });
   }
 
-  function startSpeaking(topicId: string) {
+  function startSpeaking(topicId: string, testId: string) {
     setTouched(true);
     setAccessMsg(null);
     if (!ready) return;
@@ -238,7 +270,7 @@ export default function StudentHome() {
       return;
     }
     saveStudentIdentity(identity ?? guestIdentity(name, email));
-    nav(`/speaking/${topicId}`, { state: routeState() });
+    nav(`/speaking/${topicId}?test=${testId}`, { state: routeState() });
   }
 
   function continueAsGuest() {
@@ -597,32 +629,40 @@ export default function StudentHome() {
         </section>
       )}
 
-      {speakingList.length > 0 && (
+      {speakingChoices.length > 0 && (
         <section className="learning-block speaking-block">
           <div className="skill-card skill-card-speaking">
             <div className="skill-icon">🎙</div>
             <div>
               <span className="eyebrow">Speaking</span>
               <h3>Chủ đề luyện nói</h3>
-              <p>Bốc đề ngẫu nhiên, ghi âm trả lời và nộp bài.</p>
+              <p>Học sinh chọn đề theo Part 1, Part 2 hoặc Part 3, ghi âm trả lời và nộp bài.</p>
             </div>
           </div>
           <div className="learning-list">
-            {speakingTopics.loading && <Spinner />}
-            {speakingTopics.error && <ErrorBox msg={speakingTopics.error} />}
-            <div className="topic-grid premium-topic-grid">
-              {speakingList.map((t) => (
-                <button
-                  className="topic-pick premium-topic-card"
-                  key={t.topic_id}
-                  onClick={() => startSpeaking(t.topic_id)}
-                >
-                  <span className="topic-spark">🎙</span>
-                  <strong>{t.topic_name}</strong>
-                  <span className="muted small">{t.num_prompts} đề · bốc ngẫu nhiên</span>
-                </button>
-              ))}
-            </div>
+            {exams.loading && <Spinner label="Đang tải đề Speaking…" />}
+            {exams.error && <ErrorBox msg={exams.error} />}
+            {speakingGroups.map((group) => (
+              <div className="practice-topic speaking-part-group" key={group.part}>
+                <div className="practice-topic-head">
+                  <strong>{group.part}</strong>
+                  <span className="muted small">{group.choices.length} đề để chọn</span>
+                </div>
+                {group.choices.map((choice) => (
+                  <div className="premium-test-row compact" key={choice.test.id}>
+                    <div>
+                      <strong>{choice.test.title || choice.topicName || `Đề ${choice.test.version_label}`}</strong>
+                      <span className="meta-line">
+                        {choice.topicName} · {choice.test.time_limit_min} phút
+                      </span>
+                    </div>
+                    <button className="btn primary" onClick={() => startSpeaking(choice.topicId, choice.test.id)}>
+                      Chọn đề
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </section>
       )}
