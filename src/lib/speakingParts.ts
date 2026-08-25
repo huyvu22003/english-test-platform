@@ -21,9 +21,7 @@ export function speakingPartOf(...parts: Array<string | null | undefined>): Spea
 }
 
 export function speakingTopicBaseName(name: string): string {
-  return name
-    .replace(/^\s*(speaking\s*)?(practice\s*)?(part|phan)\s*[123]\s*[-:–—]?\s*/i, "")
-    .trim();
+  return name.replace(/^\s*(speaking\s*)?(practice\s*)?(part|phan)\s*[123]\s*[-:–—]?\s*/i, "").trim();
 }
 
 export function formatSpeakingTopicName(part: SpeakingPartOption, name: string): string {

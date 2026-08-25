@@ -218,7 +218,7 @@ export default function TopicsPage() {
                     ? `${PLACEMENT_TOPIC_NAME} - ${SKILL_META[skill].label}`
                     : isCreatingSpeaking
                       ? "vd: Places / Person / Daily routine"
-                    : "Tên chủ đề mới…"
+                      : "Tên chủ đề mới…"
               }
               value={name}
               onChange={(e) => setName(e.target.value)}
