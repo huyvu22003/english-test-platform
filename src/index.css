@@ -4590,6 +4590,51 @@ main:focus-visible {
   font-size: 1.5rem;
 }
 
+.speaking-step-panel {
+  margin-bottom: 12px;
+  padding: 16px;
+  border: 1px solid rgba(236, 236, 241, 0.9);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow);
+}
+.speaking-step-panel h3 {
+  margin: 4px 0 12px;
+  font-size: 18px;
+}
+.speaking-part-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 8px;
+}
+.speaking-part-tabs button {
+  min-height: 44px;
+  border: 1px solid rgba(122, 43, 143, 0.16);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text);
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.14s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.speaking-part-tabs button:hover,
+.speaking-part-tabs button.active {
+  transform: translateY(-1px);
+  border-color: rgba(236, 58, 43, 0.42);
+  box-shadow: 0 12px 26px rgba(236, 58, 43, 0.14);
+}
+.speaking-part-tabs button.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+.speaking-part-group .practice-topic-head strong {
+  display: block;
+  margin-top: 2px;
+}
+
 /* ==================== AI draft (Writing gợi ý AI) ==================== */
 .ai-draft-banner {
   border: 1px solid #a78bfa;

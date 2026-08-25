@@ -69,6 +69,7 @@ export default function StudentHome() {
   const [selectedIntensiveTopicId, setSelectedIntensiveTopicId] = useState("");
   const [selectedIntensiveTestId, setSelectedIntensiveTestId] = useState("");
   const [intensiveTouched, setIntensiveTouched] = useState(false);
+  const [selectedSpeakingPart, setSelectedSpeakingPart] = useState<SpeakingPart | "">("");
   const topics = useAsync<WritingTopic[]>(listWritingTopics, []);
   const placements = useAsync<PlacementItem[]>(listPlacements, []);
   const exams = useAsync<ExamListItem[]>(listExams, []);
@@ -116,6 +117,8 @@ export default function StudentHome() {
       })).filter((group) => group.choices.length > 0),
     [speakingChoices],
   );
+  const selectedSpeakingGroup =
+    speakingGroups.find((group) => group.part === selectedSpeakingPart) ?? speakingGroups[0] ?? null;
   const totalSpeakingPrompts = speakingChoices.length;
   const placementSuites = useMemo(() => groupPlacementSuites(placements.data ?? []), [placements.data]);
 
@@ -141,6 +144,13 @@ export default function StudentHome() {
     const timer = window.setTimeout(() => setAccessToast(null), 3600);
     return () => window.clearTimeout(timer);
   }, [accessToast]);
+
+  useEffect(() => {
+    if (speakingGroups.length === 0) return;
+    if (!selectedSpeakingPart || !speakingGroups.some((group) => group.part === selectedSpeakingPart)) {
+      setSelectedSpeakingPart(speakingGroups[0].part);
+    }
+  }, [selectedSpeakingPart, speakingGroups]);
 
   function showAccessDenied(message: string) {
     setAccessMsg(message);
@@ -636,19 +646,42 @@ export default function StudentHome() {
             <div>
               <span className="eyebrow">Speaking</span>
               <h3>Chủ đề luyện nói</h3>
-              <p>Học sinh chọn đề theo Part 1, Part 2 hoặc Part 3, ghi âm trả lời và nộp bài.</p>
+              <p>Bước 1: Chọn Part 1 / Part 2 / Part 3. Bước 2: Chọn đề.</p>
             </div>
           </div>
           <div className="learning-list">
             {exams.loading && <Spinner label="Đang tải đề Speaking…" />}
             {exams.error && <ErrorBox msg={exams.error} />}
-            {speakingGroups.map((group) => (
-              <div className="practice-topic speaking-part-group" key={group.part}>
-                <div className="practice-topic-head">
-                  <strong>{group.part}</strong>
-                  <span className="muted small">{group.choices.length} đề để chọn</span>
+            {speakingGroups.length > 0 && (
+              <div className="speaking-step-panel">
+                <span className="eyebrow dark">Bước 1</span>
+                <h3>Chọn Part 1 / Part 2 / Part 3</h3>
+                <div className="speaking-part-tabs" role="tablist" aria-label="Chọn Part Speaking">
+                  {speakingGroups.map((group) => (
+                    <button
+                      type="button"
+                      className={group.part === selectedSpeakingGroup?.part ? "active" : ""}
+                      key={group.part}
+                      onClick={() => setSelectedSpeakingPart(group.part)}
+                    >
+                      {group.part}
+                    </button>
+                  ))}
                 </div>
-                {group.choices.map((choice) => (
+              </div>
+            )}
+            {selectedSpeakingGroup && (
+              <div className="practice-topic speaking-part-group" key={selectedSpeakingGroup.part}>
+                <div className="practice-topic-head">
+                  <div>
+                    <span className="eyebrow dark">Bước 2</span>
+                    <strong>Chọn đề</strong>
+                  </div>
+                  <span className="muted small">
+                    {selectedSpeakingGroup.part} · {selectedSpeakingGroup.choices.length} đề
+                  </span>
+                </div>
+                {selectedSpeakingGroup.choices.map((choice) => (
                   <div className="premium-test-row compact" key={choice.test.id}>
                     <div>
                       <strong>{choice.test.title || choice.topicName || `Đề ${choice.test.version_label}`}</strong>
@@ -662,7 +695,7 @@ export default function StudentHome() {
                   </div>
                 ))}
               </div>
-            ))}
+            )}
           </div>
         </section>
       )}
