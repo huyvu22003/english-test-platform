@@ -28,6 +28,75 @@ interface Correction {
   note?: string;
 }
 
+interface SubmissionNotice {
+  student_name?: string | null;
+  topic_name?: string | null;
+  submitted_at?: string | null;
+  tests?: { title?: string | null } | null;
+}
+
+const TEACHER_TELEGRAM_CHAT_ID = "6599802862";
+const ADMIN_GRADING_URL = "https://english-test-platform.pages.dev/admin/submissions";
+
+function formatBand(n: number): string {
+  return Number.isInteger(n) ? n.toFixed(1) : String(n);
+}
+
+async function notifyTeacherWritingAiDraft(
+  admin: ReturnType<typeof createClient>,
+  submissionId: string,
+  scores: { tr: number; cc: number; lr: number; gra: number },
+) {
+  const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+  const chatId = Deno.env.get("TEACHER_TELEGRAM_CHAT_ID") || TEACHER_TELEGRAM_CHAT_ID;
+  if (!botToken || !chatId) return;
+
+  const { data, error } = await admin
+    .from("submissions")
+    .select("student_name, topic_name, submitted_at, tests(title)")
+    .eq("id", submissionId)
+    .maybeSingle<SubmissionNotice>();
+
+  if (error) {
+    console.warn("Không lấy được thông tin bài để gửi Telegram:", error.message);
+  }
+
+  const studentName = data?.student_name?.trim() || "Học viên";
+  const topicName = data?.topic_name?.trim() || data?.tests?.title?.trim() || "Writing";
+  const submittedAt = data?.submitted_at
+    ? new Date(data.submitted_at).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })
+    : null;
+
+  const text = [
+    "IELTS Trà My - AI đã có gợi ý chấm Writing",
+    "",
+    `Học viên: ${studentName}`,
+    `Chủ đề: ${topicName}`,
+    submittedAt ? `Nộp lúc: ${submittedAt}` : null,
+    `Điểm AI: TR ${formatBand(scores.tr)} | CC ${formatBand(scores.cc)} | LR ${formatBand(scores.lr)} | GRA ${formatBand(scores.gra)}`,
+    "",
+    "Vào Admin -> Hàng đợi chấm để duyệt thủ công.",
+    ADMIN_GRADING_URL,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      disable_web_page_preview: true,
+    }),
+  });
+
+  if (!telegramResponse.ok) {
+    const body = await telegramResponse.text().catch(() => "");
+    console.warn(`Telegram notify failed: ${telegramResponse.status} ${body.slice(0, 300)}`);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -104,5 +173,20 @@ Deno.serve(async (req) => {
     p_corrections: corrections,
   });
   if (error) return json({ error: error.message }, 400);
+
+  if (!data?.skipped) {
+    await notifyTeacherWritingAiDraft(admin, submissionId, {
+      tr: scores.tr,
+      cc: scores.cc,
+      lr: scores.lr,
+      gra: scores.gra,
+    }).catch((notifyError) => {
+      console.warn(
+        "Không gửi được thông báo Telegram:",
+        notifyError instanceof Error ? notifyError.message : notifyError,
+      );
+    });
+  }
+
   return json({ ok: true, result: data });
 });
