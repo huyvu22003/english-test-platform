@@ -85,7 +85,9 @@ export default function SpeakingExamPage() {
           log: ac.log,
           startedAt: startedAtRef.current,
         });
-        if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
+        if (document.fullscreenElement) {
+          void document.exitFullscreen().catch(() => {});
+        }
         nav("/result", {
           state: {
             speaking: true,
