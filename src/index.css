@@ -4580,7 +4580,7 @@ main:focus-visible {
 
 @media (max-width: 640px) {
   .speaking-exam {
-    padding-bottom: calc(116px + env(safe-area-inset-bottom));
+    padding-bottom: calc(196px + env(safe-area-inset-bottom));
   }
   .speaking-stage {
     padding: 0.75rem 0 1.25rem;
@@ -4603,7 +4603,7 @@ main:focus-visible {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     text-align: center;
-    padding: 0.25rem 0.25rem 0.75rem;
+    padding: 0.25rem 0.25rem 1.5rem;
   }
   .speaking-audio-btn {
     width: 40px;
@@ -4619,10 +4619,10 @@ main:focus-visible {
     position: fixed;
     z-index: 30;
     right: 0;
-    bottom: 0;
+    bottom: calc(72px + env(safe-area-inset-bottom));
     left: 0;
     gap: 0.65rem;
-    padding: 0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom));
+    padding: 0.75rem 1rem;
     background: linear-gradient(180deg, rgba(255, 247, 242, 0), rgba(255, 247, 242, 0.96) 18%, #fff 100%);
     box-shadow: 0 -18px 36px rgba(42, 15, 61, 0.12);
   }
