@@ -19,7 +19,7 @@ import { ErrorBox, SkillBadge, Spinner, skillLabel } from "../../components/comm
 import Logo from "../../components/Logo";
 import HelpAssistant from "../../components/HelpAssistant";
 import { STUDENT_GUIDE } from "../../lib/helpContent";
-import { SPEAKING_PARTS, speakingPartOf, type SpeakingPart } from "../../lib/speakingParts";
+import { SPEAKING_PART_OPTIONS, speakingPartOf, type SpeakingPart } from "../../lib/speakingParts";
 import type { ExamListItem, PlacementItem, Skill, WritingTopic } from "../../lib/types";
 
 const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
@@ -100,16 +100,21 @@ export default function StudentHome() {
       ),
     [speakingExamTopics],
   );
-  const speakingGroups = useMemo(
-    () =>
-      SPEAKING_PARTS.map((part) => ({
-        part,
-        choices: speakingChoices.filter((choice) => choice.part === part),
-      })).filter((group) => group.choices.length > 0),
-    [speakingChoices],
-  );
+  const speakingGroups = useMemo(() => {
+    const standardGroups = SPEAKING_PART_OPTIONS.map((part) => ({
+      part,
+      choices: speakingChoices.filter((choice) => choice.part === part),
+    }));
+    const otherChoices = speakingChoices.filter((choice) => choice.part === "Khác");
+    return otherChoices.length > 0
+      ? [...standardGroups, { part: "Khác" as const, choices: otherChoices }]
+      : standardGroups;
+  }, [speakingChoices]);
   const selectedSpeakingGroup =
-    speakingGroups.find((group) => group.part === selectedSpeakingPart) ?? speakingGroups[0] ?? null;
+    speakingGroups.find((group) => group.part === selectedSpeakingPart) ??
+    speakingGroups.find((group) => group.choices.length > 0) ??
+    speakingGroups[0] ??
+    null;
   const totalSpeakingPrompts = speakingChoices.length;
   const placementSuites = useMemo(() => groupPlacementSuites(placements.data ?? []), [placements.data]);
 
@@ -139,7 +144,7 @@ export default function StudentHome() {
   useEffect(() => {
     if (speakingGroups.length === 0) return;
     if (!selectedSpeakingPart || !speakingGroups.some((group) => group.part === selectedSpeakingPart)) {
-      setSelectedSpeakingPart(speakingGroups[0].part);
+      setSelectedSpeakingPart((speakingGroups.find((group) => group.choices.length > 0) ?? speakingGroups[0]).part);
     }
   }, [selectedSpeakingPart, speakingGroups]);
 
@@ -652,8 +657,11 @@ export default function StudentHome() {
                     <button
                       type="button"
                       className={group.part === selectedSpeakingGroup?.part ? "active" : ""}
+                      disabled={group.choices.length === 0}
                       key={group.part}
+                      aria-selected={group.part === selectedSpeakingGroup?.part}
                       onClick={() => setSelectedSpeakingPart(group.part)}
+                      title={group.choices.length === 0 ? `${group.part} chưa có đề` : undefined}
                     >
                       {group.part}
                     </button>

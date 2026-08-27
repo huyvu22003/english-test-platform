@@ -4687,7 +4687,7 @@ main:focus-visible {
   border: 1px solid rgba(122, 43, 143, 0.16);
   border-radius: 12px;
   background: #fff;
-  color: var(--text);
+  color: var(--ink);
   font-weight: 800;
   cursor: pointer;
   transition:
@@ -4695,15 +4695,25 @@ main:focus-visible {
     border-color 0.18s ease,
     box-shadow 0.18s ease;
 }
+.speaking-part-tabs button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.68;
+}
 .speaking-part-tabs button:hover,
 .speaking-part-tabs button.active {
   transform: translateY(-1px);
   border-color: rgba(236, 58, 43, 0.42);
   box-shadow: 0 12px 26px rgba(236, 58, 43, 0.14);
 }
+.speaking-part-tabs button:disabled:hover {
+  transform: none;
+  border-color: rgba(122, 43, 143, 0.16);
+  box-shadow: none;
+}
 .speaking-part-tabs button.active {
   color: #fff;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: var(--grad);
 }
 .speaking-part-group .practice-topic-head strong {
   display: block;
