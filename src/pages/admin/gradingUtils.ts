@@ -165,8 +165,11 @@ export function downloadGradingExcel(rows: Submission[], meta: GradingExportMeta
     .join("");
 
   const html = `<!doctype html><html><head><meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <style>
-      body { font-family: Arial, sans-serif; color: #221b26; }
+      body { font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #221b26; }
       .title { font-size: 22px; font-weight: 800; color: #7a2b8f; }
       .subtitle { color: #6c6880; font-size: 12px; }
       .summary td { border: 1px solid #ececf1; padding: 8px 10px; }
