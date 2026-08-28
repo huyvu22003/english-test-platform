@@ -2535,6 +2535,61 @@ td.cell-weak {
   font-size: 28px;
   letter-spacing: -0.035em;
 }
+.learning-tabs {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 6px;
+  overflow-x: auto;
+  border: 1px solid rgba(236, 236, 241, 0.92);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: var(--shadow);
+  scrollbar-width: thin;
+}
+.learning-tabs button {
+  flex: 1 0 142px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.learning-tabs button:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.78);
+}
+.learning-tabs button.active {
+  color: #fff;
+  border-color: rgba(236, 58, 43, 0.24);
+  background: linear-gradient(135deg, var(--brand), var(--accent));
+  box-shadow: 0 12px 24px rgba(236, 58, 43, 0.18);
+}
+.learning-tabs strong {
+  min-width: 26px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: inherit;
+  background: rgba(42, 15, 61, 0.08);
+  font-size: 12px;
+  line-height: 1.15;
+}
+.learning-tabs button.active strong {
+  background: rgba(255, 255, 255, 0.2);
+}
 .learning-block {
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -3417,6 +3472,13 @@ td.cell-weak {
   }
   .section-head h2 {
     font-size: 24px;
+  }
+  .learning-tabs {
+    margin-bottom: 14px;
+    border-radius: 14px;
+  }
+  .learning-tabs button {
+    flex-basis: 128px;
   }
   .skill-card {
     position: relative;

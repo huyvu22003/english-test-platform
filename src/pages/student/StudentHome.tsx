@@ -23,6 +23,7 @@ import { SPEAKING_PART_OPTIONS, speakingPartOf, type SpeakingPart } from "../../
 import type { ExamListItem, PlacementItem, Skill, WritingTopic } from "../../lib/types";
 
 const INTENSIVE_TOPIC_NAME = "HỌC TĂNG CƯỜNG 2026";
+type LearningTabId = "placement" | "practice" | "intensive" | "speaking" | "writing";
 
 function normalizeVi(s: string) {
   return s
@@ -61,6 +62,7 @@ export default function StudentHome() {
   const [selectedIntensiveTestId, setSelectedIntensiveTestId] = useState("");
   const [intensiveTouched, setIntensiveTouched] = useState(false);
   const [selectedSpeakingPart, setSelectedSpeakingPart] = useState<SpeakingPart | "">("");
+  const [activeLearningTab, setActiveLearningTab] = useState<LearningTabId>("placement");
   const topics = useAsync<WritingTopic[]>(listWritingTopics, []);
   const placements = useAsync<PlacementItem[]>(listPlacements, []);
   const exams = useAsync<ExamListItem[]>(listExams, []);
@@ -117,6 +119,31 @@ export default function StudentHome() {
     null;
   const totalSpeakingPrompts = speakingChoices.length;
   const placementSuites = useMemo(() => groupPlacementSuites(placements.data ?? []), [placements.data]);
+  const learningTabs = useMemo(
+    () =>
+      [
+        { id: "placement" as const, label: "Xếp lớp", count: placementSuites.length, loading: placements.loading },
+        { id: "practice" as const, label: "Đọc & Nghe", count: totalPracticeTests, loading: exams.loading },
+        {
+          id: "intensive" as const,
+          label: "Tăng cường",
+          count: totalIntensiveTests,
+          loading: exams.loading || topics.loading,
+        },
+        { id: "speaking" as const, label: "Speaking", count: totalSpeakingPrompts, loading: exams.loading },
+        { id: "writing" as const, label: "Writing", count: totalWritingPrompts, loading: topics.loading },
+      ].filter((tab) => tab.loading || tab.count > 0),
+    [
+      exams.loading,
+      placementSuites.length,
+      placements.loading,
+      topics.loading,
+      totalIntensiveTests,
+      totalPracticeTests,
+      totalSpeakingPrompts,
+      totalWritingPrompts,
+    ],
+  );
 
   useEffect(() => {
     const saved = loadStudentIdentity();
@@ -147,6 +174,11 @@ export default function StudentHome() {
       setSelectedSpeakingPart((speakingGroups.find((group) => group.choices.length > 0) ?? speakingGroups[0]).part);
     }
   }, [selectedSpeakingPart, speakingGroups]);
+
+  useEffect(() => {
+    if (learningTabs.length === 0) return;
+    if (!learningTabs.some((tab) => tab.id === activeLearningTab)) setActiveLearningTab(learningTabs[0].id);
+  }, [activeLearningTab, learningTabs]);
 
   function showAccessDenied(message: string) {
     setAccessMsg(message);
@@ -430,33 +462,6 @@ export default function StudentHome() {
         </div>
       </section>
 
-      <section className="quick-guide-grid" aria-label="Hướng dẫn sử dụng nhanh">
-        <article className="guide-card guide-student">
-          <div className="guide-icon">🎓</div>
-          <div>
-            <span className="eyebrow dark">Dành cho học sinh</span>
-            <h3>Làm đúng bài cần làm</h3>
-            <ol>
-              <li>Nhập mã học viên hoặc tên/email.</li>
-              <li>Chọn xếp lớp, Đọc/Nghe hoặc Writing.</li>
-              <li>Nộp bài và xem kết quả/tiến bộ khi được mở.</li>
-            </ol>
-          </div>
-        </article>
-        <article className="guide-card guide-teacher">
-          <div className="guide-icon">👩‍🏫</div>
-          <div>
-            <span className="eyebrow dark">Dành cho giáo viên</span>
-            <h3>Quản lý từ khu vực riêng</h3>
-            <ol>
-              <li>Đăng nhập để tạo chủ đề, đề thi và media.</li>
-              <li>Dùng mã thi cho buổi kiểm tra chính thức.</li>
-              <li>Chấm Writing và theo dõi điểm yếu của lớp.</li>
-            </ol>
-          </div>
-        </article>
-      </section>
-
       <div className="section-head">
         <div>
           <span className="eyebrow dark">Bước 2</span>
@@ -465,7 +470,25 @@ export default function StudentHome() {
         <span className="muted small">Xếp lớp · luyện tập · theo dõi tiến bộ</span>
       </div>
 
-      {placementSuites.length > 0 && (
+      {learningTabs.length > 0 && (
+        <div className="learning-tabs" role="tablist" aria-label="Chọn loại kỹ năng">
+          {learningTabs.map((tab) => (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeLearningTab === tab.id}
+              className={activeLearningTab === tab.id ? "active" : ""}
+              key={tab.id}
+              onClick={() => setActiveLearningTab(tab.id)}
+            >
+              <span>{tab.label}</span>
+              <strong>{tab.loading ? "..." : tab.count}</strong>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {placementSuites.length > 0 && activeLearningTab === "placement" && (
         <section className="learning-block placement-block" id="placement-tests">
           <div className="skill-card skill-card-placement">
             <div className="skill-icon">🎯</div>
@@ -534,9 +557,9 @@ export default function StudentHome() {
         </section>
       )}
 
-      {exams.loading && <Spinner label="Đang tải đề Đọc/Nghe…" />}
-      {exams.error && <ErrorBox msg={exams.error} />}
-      {practiceExams.length > 0 && (
+      {activeLearningTab === "practice" && exams.loading && <Spinner label="Đang tải đề Đọc/Nghe…" />}
+      {activeLearningTab === "practice" && exams.error && <ErrorBox msg={exams.error} />}
+      {practiceExams.length > 0 && activeLearningTab === "practice" && (
         <section className="learning-block">
           <div className="skill-card skill-card-listening">
             <div className="skill-icon">🎧</div>
@@ -574,7 +597,7 @@ export default function StudentHome() {
         </section>
       )}
 
-      {(intensiveTopics.length > 0 || intensiveExamTopics.length > 0) && (
+      {(intensiveTopics.length > 0 || intensiveExamTopics.length > 0) && activeLearningTab === "intensive" && (
         <section className="learning-block intensive-block">
           <div className="skill-card skill-card-intensive">
             <div className="skill-icon">🚀</div>
@@ -635,7 +658,7 @@ export default function StudentHome() {
         </section>
       )}
 
-      {speakingChoices.length > 0 && (
+      {speakingChoices.length > 0 && activeLearningTab === "speaking" && (
         <section className="learning-block speaking-block">
           <div className="skill-card skill-card-speaking">
             <div className="skill-icon">🎙</div>
@@ -699,32 +722,34 @@ export default function StudentHome() {
         </section>
       )}
 
-      <section className="learning-block writing-block">
-        <div className="skill-card skill-card-writing">
-          <div className="skill-icon">✍️</div>
-          <div>
-            <span className="eyebrow">Writing</span>
-            <h3>Chủ đề luyện viết</h3>
-            <p>Bốc đề ngẫu nhiên theo chủ đề, giáo viên chấm tay theo 4 tiêu chí IELTS.</p>
+      {activeLearningTab === "writing" && (
+        <section className="learning-block writing-block">
+          <div className="skill-card skill-card-writing">
+            <div className="skill-icon">✍️</div>
+            <div>
+              <span className="eyebrow">Writing</span>
+              <h3>Chủ đề luyện viết</h3>
+              <p>Bốc đề ngẫu nhiên theo chủ đề, giáo viên chấm tay theo 4 tiêu chí IELTS.</p>
+            </div>
           </div>
-        </div>
-        <div className="learning-list">
-          {topics.loading && <Spinner />}
-          {topics.error && <ErrorBox msg={topics.error} />}
-          {topics.data && normalWritingTopics.length === 0 && (
-            <div className="empty-state">Hiện chưa có chủ đề Writing nào được mở.</div>
-          )}
-          <div className="topic-grid premium-topic-grid">
-            {normalWritingTopics.map((t) => (
-              <button className="topic-pick premium-topic-card" key={t.topic_id} onClick={() => start(t.topic_id)}>
-                <span className="topic-spark">✦</span>
-                <strong>{t.topic_name}</strong>
-                <span className="muted small">{t.num_prompts} đề · bốc ngẫu nhiên</span>
-              </button>
-            ))}
+          <div className="learning-list">
+            {topics.loading && <Spinner />}
+            {topics.error && <ErrorBox msg={topics.error} />}
+            {topics.data && normalWritingTopics.length === 0 && (
+              <div className="empty-state">Hiện chưa có chủ đề Writing nào được mở.</div>
+            )}
+            <div className="topic-grid premium-topic-grid">
+              {normalWritingTopics.map((t) => (
+                <button className="topic-pick premium-topic-card" key={t.topic_id} onClick={() => start(t.topic_id)}>
+                  <span className="topic-spark">✦</span>
+                  <strong>{t.topic_name}</strong>
+                  <span className="muted small">{t.num_prompts} đề · bốc ngẫu nhiên</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
       <HelpAssistant guide={STUDENT_GUIDE} />
     </main>
   );
