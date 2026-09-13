@@ -1,6 +1,6 @@
 // Trình soạn ĐỀ: sửa thông tin đề + quản lý ĐOẠN VĂN/AUDIO + CÂU HỎI (kèm đáp án).
 // Đáp án lưu theo GIÁ TRỊ lựa chọn (xem schema) để an toàn khi xáo trộn lúc thi.
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   deletePassage,
@@ -196,6 +196,80 @@ function Editor({ test, reloadTest }: { test: Test; reloadTest: () => void }) {
   );
 }
 
+type MetaDraft = {
+  title: string;
+  prompt: string;
+  version: string;
+  time: number;
+  minWords: number;
+  purpose: Test["purpose"];
+  threshold: number;
+  active: boolean;
+};
+
+function readMetaDraft(key: string): MetaDraft | null {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const draft = JSON.parse(raw) as Partial<MetaDraft>;
+    if (typeof draft !== "object" || !draft) return null;
+    return {
+      title: typeof draft.title === "string" ? draft.title : "",
+      prompt: typeof draft.prompt === "string" ? draft.prompt : "",
+      version: typeof draft.version === "string" ? draft.version : "A",
+      time: typeof draft.time === "number" ? draft.time : 0,
+      minWords: typeof draft.minWords === "number" ? draft.minWords : 0,
+      purpose: (draft.purpose ?? "progress") as Test["purpose"],
+      threshold: typeof draft.threshold === "number" ? draft.threshold : 0.6,
+      active: typeof draft.active === "boolean" ? draft.active : true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeMetaDraft(key: string, draft: MetaDraft) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(draft));
+  } catch {
+    // Draft persistence is a convenience; saving to the database still works if storage is unavailable.
+  }
+}
+
+function removeMetaDraft(key: string) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore storage cleanup errors.
+  }
+}
+
+function isMetaDraftPristine(draft: MetaDraft, test: Test) {
+  return isSameMetaDraft(draft, {
+    title: test.title ?? "",
+    prompt: test.prompt ?? "",
+    version: test.version_label,
+    time: test.time_limit_min,
+    minWords: test.min_words,
+    purpose: test.purpose,
+    threshold: test.pass_threshold ?? 0.6,
+    active: test.active,
+  });
+}
+
+function isSameMetaDraft(a: MetaDraft, b: MetaDraft) {
+  return (
+    a.title === b.title &&
+    a.prompt === b.prompt &&
+    a.version === b.version &&
+    Number(a.time) === Number(b.time) &&
+    Number(a.minWords) === Number(b.minWords) &&
+    a.purpose === b.purpose &&
+    Number(a.threshold) === Number(b.threshold) &&
+    a.active === b.active
+  );
+}
+
 // ---------- Thông tin đề ----------
 function MetaForm({
   test,
@@ -208,21 +282,35 @@ function MetaForm({
   isWriting: boolean;
   isSpeaking: boolean;
 }) {
-  const [title, setTitle] = useState(test.title ?? "");
-  const [prompt, setPrompt] = useState(test.prompt ?? "");
-  const [version, setVersion] = useState(test.version_label);
-  const [time, setTime] = useState(test.time_limit_min);
-  const [minWords, setMinWords] = useState(test.min_words);
-  const [purpose, setPurpose] = useState<Test["purpose"]>(test.purpose);
-  const [threshold, setThreshold] = useState(test.pass_threshold ?? 0.6);
-  const [active, setActive] = useState(test.active);
+  const draftKey = `admin:test-editor:meta:${test.id}`;
+  const [restoredDraft] = useState(() => readMetaDraft(draftKey));
+  const [title, setTitle] = useState(restoredDraft?.title ?? test.title ?? "");
+  const [prompt, setPrompt] = useState(restoredDraft?.prompt ?? test.prompt ?? "");
+  const [version, setVersion] = useState(restoredDraft?.version ?? test.version_label);
+  const [time, setTime] = useState(restoredDraft?.time ?? test.time_limit_min);
+  const [minWords, setMinWords] = useState(restoredDraft?.minWords ?? test.min_words);
+  const [purpose, setPurpose] = useState<Test["purpose"]>(restoredDraft?.purpose ?? test.purpose);
+  const [threshold, setThreshold] = useState(restoredDraft?.threshold ?? test.pass_threshold ?? 0.6);
+  const [active, setActive] = useState(restoredDraft?.active ?? test.active);
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(Boolean(restoredDraft));
+  const [lastSavedDraft, setLastSavedDraft] = useState<MetaDraft | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const isPlacement = purpose === "placement";
 
+  useEffect(() => {
+    const draft: MetaDraft = { title, prompt, version, time, minWords, purpose, threshold, active };
+    if (isMetaDraftPristine(draft, test) || (lastSavedDraft && isSameMetaDraft(draft, lastSavedDraft))) {
+      removeMetaDraft(draftKey);
+      return;
+    }
+    writeMetaDraft(draftKey, draft);
+  }, [active, draftKey, lastSavedDraft, minWords, prompt, purpose, test, threshold, time, title, version]);
+
   async function save() {
     setErr(null);
     setMsg(null);
+    const draft: MetaDraft = { title, prompt, version, time, minWords, purpose, threshold, active };
     try {
       await saveTest({
         id: test.id,
@@ -236,6 +324,9 @@ function MetaForm({
         min_words: Number(minWords) || 0,
         active,
       });
+      setLastSavedDraft(draft);
+      removeMetaDraft(draftKey);
+      setHasRestoredDraft(false);
       setMsg("Đã lưu.");
       onSaved();
     } catch (e) {
@@ -321,6 +412,7 @@ function MetaForm({
         <button className="btn primary" onClick={save}>
           Lưu đề
         </button>
+        {hasRestoredDraft && !msg && <span className="muted small">Đang dùng bản nháp chưa lưu.</span>}
         {msg && <span className="ok-text">{msg}</span>}
       </div>
       {err && <ErrorBox msg={err} />}
