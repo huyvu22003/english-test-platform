@@ -53,6 +53,10 @@ export default function SpeakingExamPage() {
   const chunksRef = useRef<Blob[]>([]);
   const recStartRef = useRef(0);
   const recTimerRef = useRef<number | undefined>(undefined);
+  const pendingAutoSubmitRef = useRef<"timeout" | "violations" | null>(null);
+  const submitBlobRef = useRef<(blob: Blob, duration: number, reason: "manual" | "timeout" | "violations") => void>(
+    () => {},
+  );
   const questionAudioRef = useRef<HTMLAudioElement>(null);
   const [questionPlaying, setQuestionPlaying] = useState(false);
 
@@ -60,30 +64,23 @@ export default function SpeakingExamPage() {
     if (!meta.name || !meta.email || meta.studentMode !== "student" || !meta.studentCode) nav("/", { replace: true });
   }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
-  const doSubmit = useCallback(
-    async (reason: "manual" | "timeout" | "violations") => {
+  const submitSpeakingBlob = useCallback(
+    async (blob: Blob, duration: number, reason: "manual" | "timeout" | "violations") => {
       if (submittingRef.current || !data.data) return;
-      if (!audioBlob) {
-        if (reason === "manual") {
-          setSubmitErr("Chưa có bản ghi âm. Hãy thu âm trước khi nộp bài.");
-          return;
-        }
-        return;
-      }
       submittingRef.current = true;
       setSubmitting(true);
       setSubmitErr(null);
       try {
-        const mime = audioBlob.type || "audio/webm";
-        const { path, token } = await getSpeakingUploadUrl(mime, audioBlob.size);
-        await uploadSpeakingAudio(audioBlob, path, token);
+        const mime = blob.type || "audio/webm";
+        const { path, token } = await getSpeakingUploadUrl(mime, blob.size);
+        await uploadSpeakingAudio(blob, path, token);
         await submitSpeaking({
           testId: data.data.test_id,
           name: meta.name ?? "",
           email: meta.email ?? "",
           audioPath: path,
           audioMime: mime,
-          audioDurationSec: recDuration,
+          audioDurationSec: duration,
           violations: ac.violations,
           log: ac.log,
           startedAt: startedAtRef.current,
@@ -107,7 +104,35 @@ export default function SpeakingExamPage() {
         setSubmitting(false);
       }
     },
-    [data.data, audioBlob, meta, recDuration, ac.violations, ac.log, nav],
+    [data.data, meta, ac.violations, ac.log, nav],
+  );
+
+  useEffect(() => {
+    submitBlobRef.current = (blob, duration, reason) => {
+      void submitSpeakingBlob(blob, duration, reason);
+    };
+  }, [submitSpeakingBlob]);
+
+  const doSubmit = useCallback(
+    async (reason: "manual" | "timeout" | "violations") => {
+      if (submittingRef.current || !data.data) return;
+      if (!audioBlob) {
+        if (reason !== "manual" && recState === "recording" && recorderRef.current?.state === "recording") {
+          pendingAutoSubmitRef.current = reason;
+          setSubmitting(true);
+          stopRecording();
+          return;
+        }
+        if (reason === "manual") {
+          setSubmitErr("Chưa có bản ghi âm. Hãy thu âm trước khi nộp bài.");
+          return;
+        }
+        setSubmitErr("Bài đã bị dừng nhưng chưa có bản ghi âm để nộp.");
+        return;
+      }
+      await submitSpeakingBlob(audioBlob, recDuration, reason);
+    },
+    [data.data, audioBlob, recDuration, recState, submitSpeakingBlob],
   );
 
   const timer = useCountdownTimer(() => void doSubmit("timeout"));
@@ -141,11 +166,18 @@ export default function SpeakingExamPage() {
       recorder.onstop = () => {
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
+        const duration = Math.floor((Date.now() - recStartRef.current) / 1000);
         setAudioBlob(blob);
         if (audioUrl) URL.revokeObjectURL(audioUrl);
         setAudioUrl(URL.createObjectURL(blob));
+        setRecDuration(duration);
         setRecState("done");
         window.clearInterval(recTimerRef.current);
+        const pendingReason = pendingAutoSubmitRef.current;
+        if (pendingReason) {
+          pendingAutoSubmitRef.current = null;
+          submitBlobRef.current(blob, duration, pendingReason);
+        }
       };
       recorderRef.current = recorder;
       recorder.start(1000);
