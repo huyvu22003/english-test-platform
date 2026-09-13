@@ -40,7 +40,8 @@ export default function SpeakingExamPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef("");
-  const ac = useAntiCheat(started);
+  const submittingRef = useRef(false);
+  const ac = useAntiCheat(started && !submitting);
 
   const [recState, setRecState] = useState<RecState>("idle");
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -60,7 +61,7 @@ export default function SpeakingExamPage() {
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
-      if (submitting || !data.data) return;
+      if (submittingRef.current || !data.data) return;
       if (!audioBlob) {
         if (reason === "manual") {
           setSubmitErr("Chưa có bản ghi âm. Hãy thu âm trước khi nộp bài.");
@@ -68,6 +69,7 @@ export default function SpeakingExamPage() {
         }
         return;
       }
+      submittingRef.current = true;
       setSubmitting(true);
       setSubmitErr(null);
       try {
@@ -100,10 +102,11 @@ export default function SpeakingExamPage() {
         });
       } catch (e) {
         setSubmitErr(formatError(e));
+        submittingRef.current = false;
         setSubmitting(false);
       }
     },
-    [submitting, data.data, audioBlob, meta, recDuration, ac.violations, ac.log, nav],
+    [data.data, audioBlob, meta, recDuration, ac.violations, ac.log, nav],
   );
 
   const timer = useCountdownTimer(() => void doSubmit("timeout"));

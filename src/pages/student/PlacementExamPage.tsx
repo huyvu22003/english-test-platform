@@ -40,15 +40,17 @@ export default function PlacementExamPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
-  const ac = useAntiCheat(started);
+  const submittingRef = useRef(false);
+  const ac = useAntiCheat(started && !submitting);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
-      if (submitting) return;
+      if (submittingRef.current) return;
       if (reason === "manual" && data.data) {
         const missing = data.data.questions.filter((q) => !isAnswered(answers[q.id])).length;
         if (missing > 0 && !confirm(`Bạn còn ${missing} câu chưa trả lời. Vẫn nộp bài?`)) return;
       }
+      submittingRef.current = true;
       setSubmitting(true);
       setSubmitErr(null);
       try {
@@ -75,10 +77,11 @@ export default function PlacementExamPage() {
         });
       } catch (e) {
         setSubmitErr(formatError(e));
+        submittingRef.current = false;
         setSubmitting(false);
       }
     },
-    [submitting, data.data, answers, testId, meta, ac.violations, ac.log, nav],
+    [data.data, answers, testId, meta, ac.violations, ac.log, nav],
   );
 
   const timer = useCountdownTimer(() => void doSubmit("timeout"));

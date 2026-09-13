@@ -41,13 +41,14 @@ export default function WritingExamPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
-  const ac = useAntiCheat(started);
+  const submittingRef = useRef(false);
+  const ac = useAntiCheat(started && !submitting);
 
   const wordCount = useMemo(() => countWords(essay), [essay]);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
-      if (submitting || !data.data) return;
+      if (submittingRef.current || !data.data) return;
       if (
         reason === "manual" &&
         data.data.min_words > 0 &&
@@ -55,6 +56,7 @@ export default function WritingExamPage() {
         !confirm(`Bài chưa đủ ${data.data.min_words} từ. Vẫn nộp bài?`)
       )
         return;
+      submittingRef.current = true;
       setSubmitting(true);
       setSubmitErr(null);
       try {
@@ -81,10 +83,11 @@ export default function WritingExamPage() {
         });
       } catch (e) {
         setSubmitErr(formatError(e));
+        submittingRef.current = false;
         setSubmitting(false);
       }
     },
-    [submitting, data.data, wordCount, meta, essay, ac.violations, ac.log, nav, routeMeta.placement],
+    [data.data, wordCount, meta, essay, ac.violations, ac.log, nav, routeMeta.placement],
   );
 
   const timer = useCountdownTimer(() => void doSubmit("timeout"));

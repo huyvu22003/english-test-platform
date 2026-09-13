@@ -46,14 +46,15 @@ export default function ExamPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
+  const submittingRef = useRef(false);
 
-  const ac = useAntiCheat(started);
+  const ac = useAntiCheat(started && !submitting);
   const isWriting = data.data?.topic.skill === "writing";
   const wordCount = useMemo(() => countWords(essay), [essay]);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
-      if (submitting) return;
+      if (submittingRef.current) return;
       if (reason === "manual" && data.data) {
         const missing = isWriting ? 0 : data.data.questions.filter((q) => !isAnswered(answers[q.id])).length;
         if (missing > 0 && !confirm(`Bạn còn ${missing} câu chưa trả lời. Vẫn nộp bài?`)) return;
@@ -65,6 +66,7 @@ export default function ExamPage() {
         )
           return;
       }
+      submittingRef.current = true;
       setSubmitting(true);
       setSubmitErr(null);
       try {
@@ -92,10 +94,11 @@ export default function ExamPage() {
         });
       } catch (e) {
         setSubmitErr(formatError(e));
+        submittingRef.current = false;
         setSubmitting(false);
       }
     },
-    [submitting, data.data, isWriting, answers, wordCount, testId, meta, ac.violations, ac.log, essay, nav],
+    [data.data, isWriting, answers, wordCount, testId, meta, ac.violations, ac.log, essay, nav],
   );
 
   const timer = useCountdownTimer(() => void doSubmit("timeout"));

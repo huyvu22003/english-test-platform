@@ -49,7 +49,8 @@ export default function SessionExamPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
-  const ac = useAntiCheat(started);
+  const submittingRef = useRef(false);
+  const ac = useAntiCheat(started && !submitting);
   const isWriting = meta.skill === "writing";
   const maxViol = meta.maxViolations ?? 0;
   const stopAtViolations = maxViol > 0 ? maxViol : MAX_ALLOWED_VIOLATIONS;
@@ -63,7 +64,7 @@ export default function SessionExamPage() {
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
-      if (submitting) return;
+      if (submittingRef.current) return;
       if (reason === "manual" && data.data) {
         const missing = isWriting ? 0 : data.data.questions.filter((q) => !isAnswered(answers[q.id])).length;
         if (missing > 0 && !confirm(`Bạn còn ${missing} câu chưa trả lời. Vẫn nộp bài?`)) return;
@@ -75,6 +76,7 @@ export default function SessionExamPage() {
         )
           return;
       }
+      submittingRef.current = true;
       setSubmitting(true);
       setSubmitErr(null);
       try {
@@ -101,10 +103,11 @@ export default function SessionExamPage() {
         });
       } catch (e) {
         setSubmitErr(formatError(e));
+        submittingRef.current = false;
         setSubmitting(false);
       }
     },
-    [submitting, data.data, isWriting, answers, wordCount, sessionId, meta, essay, ac.violations, ac.log, nav],
+    [data.data, isWriting, answers, wordCount, sessionId, meta, essay, ac.violations, ac.log, nav],
   );
 
   const timer = useCountdownTimer(() => void doSubmit("timeout"));
