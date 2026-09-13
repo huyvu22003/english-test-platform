@@ -47,10 +47,11 @@ export default function SessionExamPage() {
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [essay, setEssay] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [lockedByViolations, setLockedByViolations] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
   const submittingRef = useRef(false);
-  const ac = useAntiCheat(started && !submitting);
+  const ac = useAntiCheat(started && !submitting && !lockedByViolations);
   const isWriting = meta.skill === "writing";
   const maxViol = meta.maxViolations ?? 0;
   const stopAtViolations = maxViol > 0 ? maxViol : MAX_ALLOWED_VIOLATIONS;
@@ -119,8 +120,11 @@ export default function SessionExamPage() {
   }, [meta.name, meta.email, meta.studentCode, meta.studentMode, meta.testId, nav]);
 
   useEffect(() => {
-    if (started && ac.violations >= stopAtViolations) void doSubmit("violations");
-  }, [started, stopAtViolations, ac.violations, doSubmit]);
+    if (started && !lockedByViolations && ac.violations >= stopAtViolations) {
+      setLockedByViolations(true);
+      void doSubmit("violations");
+    }
+  }, [started, lockedByViolations, stopAtViolations, ac.violations, doSubmit]);
 
   if (!meta.testId) return null;
   if (data.loading)
@@ -138,6 +142,7 @@ export default function SessionExamPage() {
   if (!data.data) return null;
   const { test, passages, questions } = data.data;
   const answeredCount = questions.filter((q) => isAnswered(answers[q.id])).length;
+  const locked = submitting || lockedByViolations;
 
   if (!started) {
     return (
@@ -249,6 +254,7 @@ export default function SessionExamPage() {
             rows={18}
             value={essay}
             onChange={(e) => setEssay(e.target.value)}
+            readOnly={locked}
             placeholder="Viết bài của bạn…"
           />
           <div className="muted wc">
@@ -263,6 +269,7 @@ export default function SessionExamPage() {
             index={i + 1}
             q={q}
             value={answers[q.id]}
+            disabled={locked}
             onChange={(v) => setAnswers((a) => ({ ...a, [q.id]: v }))}
           />
         ))

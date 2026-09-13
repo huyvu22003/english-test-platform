@@ -38,10 +38,11 @@ export default function SpeakingExamPage() {
   const data = useAsync<PickedPrompt>(() => pickSpeakingPrompt(topicId, selectedTestId), [topicId, selectedTestId]);
   const [started, setStarted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [lockedByViolations, setLockedByViolations] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef("");
   const submittingRef = useRef(false);
-  const ac = useAntiCheat(started && !submitting);
+  const ac = useAntiCheat(started && !submitting && !lockedByViolations);
 
   const [recState, setRecState] = useState<RecState>("idle");
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -113,8 +114,11 @@ export default function SpeakingExamPage() {
   const secondsLeft = timer.secondsLeft;
 
   useEffect(() => {
-    if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
-  }, [started, ac.violations, doSubmit]);
+    if (started && !lockedByViolations && ac.violations >= MAX_ALLOWED_VIOLATIONS) {
+      setLockedByViolations(true);
+      void doSubmit("violations");
+    }
+  }, [started, lockedByViolations, ac.violations, doSubmit]);
 
   useEffect(() => {
     return () => {
@@ -232,6 +236,7 @@ export default function SpeakingExamPage() {
 
   const questionAudio = p.passages.find((ps) => ps.kind === "audio" && ps.media_url)?.media_url ?? null;
   const questionText = (p.prompt ?? p.title ?? "").replace(/<[^>]+>/g, "").trim();
+  const locked = submitting || lockedByViolations;
 
   function toggleQuestionAudio() {
     const el = questionAudioRef.current;
@@ -270,7 +275,7 @@ export default function SpeakingExamPage() {
               type="button"
               className={`speaking-audio-btn ${questionPlaying ? "playing" : ""}`}
               onClick={toggleQuestionAudio}
-              disabled={!questionAudio}
+              disabled={!questionAudio || locked}
               aria-label={questionAudio ? "Nghe câu hỏi" : "Câu hỏi này không có audio"}
               title={questionAudio ? "Nghe câu hỏi" : "Câu hỏi này không có audio"}
             >
@@ -294,7 +299,7 @@ export default function SpeakingExamPage() {
             {micError && <p className="warn-text">{micError}</p>}
 
             {recState === "idle" && (
-              <button className="btn primary big speaking-rec-btn" onClick={startRecording}>
+              <button className="btn primary big speaking-rec-btn" onClick={startRecording} disabled={locked}>
                 <MicIcon /> Bắt đầu ghi âm
               </button>
             )}
@@ -305,7 +310,7 @@ export default function SpeakingExamPage() {
                   <span className="rec-dot" />
                   <span>Đang ghi âm… {fmtTime(recDuration)}</span>
                 </div>
-                <button className="btn danger big speaking-rec-btn" onClick={stopRecording}>
+                <button className="btn danger big speaking-rec-btn" onClick={stopRecording} disabled={locked}>
                   ⏹ Dừng ghi âm
                 </button>
               </div>
@@ -316,7 +321,7 @@ export default function SpeakingExamPage() {
                 {audioUrl && <audio controls src={audioUrl} className="audio-player speaking-playback" />}
                 <p className="muted small">Thời lượng bài nói: {fmtTime(recDuration)}</p>
                 <div className="speaking-done-actions">
-                  <button className="btn ghost" onClick={resetRecording} disabled={submitting}>
+                  <button className="btn ghost" onClick={resetRecording} disabled={locked}>
                     Thu lại
                   </button>
                   <button className="btn primary big" onClick={() => void doSubmit("manual")} disabled={submitting}>

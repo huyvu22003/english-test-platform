@@ -39,10 +39,11 @@ export default function WritingExamPage() {
   const [started, setStarted] = useState(false);
   const [essay, setEssay] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [lockedByViolations, setLockedByViolations] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
   const submittingRef = useRef(false);
-  const ac = useAntiCheat(started && !submitting);
+  const ac = useAntiCheat(started && !submitting && !lockedByViolations);
 
   const wordCount = useMemo(() => countWords(essay), [essay]);
 
@@ -98,8 +99,11 @@ export default function WritingExamPage() {
   }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   useEffect(() => {
-    if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
-  }, [started, ac.violations, doSubmit]);
+    if (started && !lockedByViolations && ac.violations >= MAX_ALLOWED_VIOLATIONS) {
+      setLockedByViolations(true);
+      void doSubmit("violations");
+    }
+  }, [started, lockedByViolations, ac.violations, doSubmit]);
 
   if (data.loading)
     return (
@@ -115,6 +119,7 @@ export default function WritingExamPage() {
     );
   if (!data.data) return null;
   const p = data.data;
+  const locked = submitting || lockedByViolations;
 
   if (!started) {
     return (
@@ -219,6 +224,7 @@ export default function WritingExamPage() {
               className="essay"
               value={essay}
               onChange={(e) => setEssay(e.target.value)}
+              readOnly={locked}
               placeholder="Viết bài của bạn ở đây…"
               rows={18}
             />

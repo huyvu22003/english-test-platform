@@ -38,10 +38,11 @@ export default function PlacementExamPage() {
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [submitting, setSubmitting] = useState(false);
+  const [lockedByViolations, setLockedByViolations] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
   const submittingRef = useRef(false);
-  const ac = useAntiCheat(started && !submitting);
+  const ac = useAntiCheat(started && !submitting && !lockedByViolations);
 
   const doSubmit = useCallback(
     async (reason: "manual" | "timeout" | "violations") => {
@@ -92,8 +93,11 @@ export default function PlacementExamPage() {
   }, [meta.name, meta.email, nav]);
 
   useEffect(() => {
-    if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
-  }, [started, ac.violations, doSubmit]);
+    if (started && !lockedByViolations && ac.violations >= MAX_ALLOWED_VIOLATIONS) {
+      setLockedByViolations(true);
+      void doSubmit("violations");
+    }
+  }, [started, lockedByViolations, ac.violations, doSubmit]);
 
   if (data.loading)
     return (
@@ -110,6 +114,7 @@ export default function PlacementExamPage() {
   if (!data.data) return null;
   const { test, topic, passages, questions } = data.data;
   const answeredCount = questions.filter((q) => isAnswered(answers[q.id])).length;
+  const locked = submitting || lockedByViolations;
 
   if (!started) {
     return (
@@ -203,6 +208,7 @@ export default function PlacementExamPage() {
           index={i + 1}
           q={q}
           value={answers[q.id]}
+          disabled={locked}
           onChange={(v) => setAnswers((a) => ({ ...a, [q.id]: v }))}
         />
       ))}

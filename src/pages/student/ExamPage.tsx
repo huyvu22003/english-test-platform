@@ -44,11 +44,12 @@ export default function ExamPage() {
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [essay, setEssay] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [lockedByViolations, setLockedByViolations] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const startedAtRef = useRef<string>("");
   const submittingRef = useRef(false);
 
-  const ac = useAntiCheat(started && !submitting);
+  const ac = useAntiCheat(started && !submitting && !lockedByViolations);
   const isWriting = data.data?.topic.skill === "writing";
   const wordCount = useMemo(() => countWords(essay), [essay]);
 
@@ -109,8 +110,11 @@ export default function ExamPage() {
   }, [meta.name, meta.email, meta.studentCode, meta.studentMode, nav]);
 
   useEffect(() => {
-    if (started && ac.violations >= MAX_ALLOWED_VIOLATIONS) void doSubmit("violations");
-  }, [started, ac.violations, doSubmit]);
+    if (started && !lockedByViolations && ac.violations >= MAX_ALLOWED_VIOLATIONS) {
+      setLockedByViolations(true);
+      void doSubmit("violations");
+    }
+  }, [started, lockedByViolations, ac.violations, doSubmit]);
 
   if (data.loading)
     return (
@@ -128,6 +132,7 @@ export default function ExamPage() {
 
   const { test, topic, passages, questions } = data.data;
   const answeredCount = questions.filter((q) => isAnswered(answers[q.id])).length;
+  const locked = submitting || lockedByViolations;
 
   // Màn hướng dẫn + bắt đầu (cần cử chỉ người dùng để vào fullscreen).
   if (!started) {
@@ -238,6 +243,7 @@ export default function ExamPage() {
             className="essay"
             value={essay}
             onChange={(e) => setEssay(e.target.value)}
+            readOnly={locked}
             placeholder="Viết bài của bạn ở đây…"
             rows={16}
           />
@@ -255,6 +261,7 @@ export default function ExamPage() {
           index={i + 1}
           q={q}
           value={answers[q.id]}
+          disabled={locked}
           onChange={(v) => setAnswers((a) => ({ ...a, [q.id]: v }))}
         />
       ))}
@@ -288,11 +295,13 @@ export function QuestionView({
   q,
   value,
   onChange,
+  disabled = false,
 }: {
   index: number;
   q: PublicQuestion;
   value: string | string[] | undefined;
   onChange: (v: string | string[]) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="card question exam-question-card">
@@ -304,7 +313,7 @@ export function QuestionView({
         <div className="options">
           {q.options.map((o) => (
             <label className="opt" key={o}>
-              <input type="radio" name={q.id} checked={value === o} onChange={() => onChange(o)} />
+              <input type="radio" name={q.id} checked={value === o} disabled={disabled} onChange={() => onChange(o)} />
               <span>{o}</span>
             </label>
           ))}
@@ -321,6 +330,7 @@ export function QuestionView({
                 <input
                   type="checkbox"
                   checked={checked}
+                  disabled={disabled}
                   onChange={() => onChange(checked ? arr.filter((x) => x !== o) : [...arr, o])}
                 />
                 <span>{o}</span>
@@ -334,7 +344,13 @@ export function QuestionView({
         <div className="options">
           {TFNG_OPTIONS.map((o) => (
             <label className="opt" key={o.value}>
-              <input type="radio" name={q.id} checked={value === o.value} onChange={() => onChange(o.value)} />
+              <input
+                type="radio"
+                name={q.id}
+                checked={value === o.value}
+                disabled={disabled}
+                onChange={() => onChange(o.value)}
+              />
               <span>{o.label}</span>
             </label>
           ))}
@@ -345,6 +361,7 @@ export function QuestionView({
         <input
           className="fill"
           value={typeof value === "string" ? value : ""}
+          disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Nhập câu trả lời…"
         />
