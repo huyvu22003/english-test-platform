@@ -8,6 +8,7 @@ import {
   listProfiles,
   listStudents,
   listSubmissions,
+  requestWritingAiRegrade,
   bandToCefr,
   updateSubmission,
   getSpeakingSignedUrl,
@@ -398,9 +399,11 @@ function Row({
   const initialDraft = useMemo(() => readGradingDraft(s.id), [s.id]);
   // Gợi ý AI (bot OpenClaw) — chỉ dùng khi bài đang ở trạng thái 'suggested'.
   const aiDraft = s.ai_status === "suggested" && s.ai_draft ? s.ai_draft : null;
-  const aiScores: WritingScores | null = aiDraft
-    ? { tr: aiDraft.score_tr, cc: aiDraft.score_cc, lr: aiDraft.score_lr, gra: aiDraft.score_gra }
-    : null;
+  const aiScores: WritingScores | null = useMemo(
+    () =>
+      aiDraft ? { tr: aiDraft.score_tr, cc: aiDraft.score_cc, lr: aiDraft.score_lr, gra: aiDraft.score_gra } : null,
+    [aiDraft],
+  );
   const aiCorrections: WritingCorrection[] = useMemo(
     () =>
       (aiDraft?.corrections ?? []).map((c, i) => ({
@@ -425,17 +428,6 @@ function Row({
   const [corrections, setCorrections] = useState<WritingCorrection[]>(
     () => initialDraft?.corrections ?? (s.writing_corrections?.length ? s.writing_corrections : aiCorrections),
   );
-  const [aiDraftApplied, setAiDraftApplied] = useState(false);
-
-  function applyAiDraft() {
-    if (!aiScores) return;
-    setSc({ ...aiScores });
-    setFeedback(aiDraft?.feedback ?? "");
-    setCorrections(aiCorrections.map((correction) => ({ ...correction })));
-    setErr(null);
-    setMsg("Đã khôi phục điểm, nhận xét và câu sửa từ gợi ý AI.");
-    setAiDraftApplied(true);
-  }
   const [selectedText, setSelectedText] = useState("");
   const [fixedText, setFixedText] = useState("");
   const [fixNote, setFixNote] = useState("");
@@ -444,8 +436,36 @@ function Row({
   const [selectedEnd, setSelectedEnd] = useState<number | null>(null);
   const essayRef = useRef<HTMLParagraphElement>(null);
   const [busy, setBusy] = useState(false);
+  const [regradeBusy, setRegradeBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const lastAiDraftAt = useRef(s.ai_draft_at);
+
+  function applyAiDraft() {
+    if (!aiScores) return;
+    setSc({ ...aiScores });
+    setFeedback(aiDraft?.feedback ?? "");
+    setCorrections(aiCorrections.map((correction) => ({ ...correction })));
+    setErr(null);
+    setMsg("Đã khôi phục điểm, nhận xét và câu sửa từ gợi ý AI.");
+  }
+
+  async function requestAiRegrade() {
+    if (!confirm("Yêu cầu AI chấm lại bài này bằng skill hiện tại? Điểm chính thức chỉ đổi khi bạn bấm lưu.")) return;
+    setErr(null);
+    setMsg(null);
+    setRegradeBusy(true);
+    try {
+      clearGradingDraft(s.id);
+      await requestWritingAiRegrade(s.id, s.status);
+      setMsg("Đã đưa bài vào hàng đợi chấm lại. AI sẽ dùng skill hiện tại; thường có kết quả trong tối đa 3 phút.");
+      onChanged();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setRegradeBusy(false);
+    }
+  }
 
   const overall = Math.round(((sc.tr + sc.cc + sc.lr + sc.gra) / 4) * 2) / 2;
 
@@ -453,6 +473,15 @@ function Row({
     if (!open) return;
     writeGradingDraft(s.id, { scores: sc, feedback, corrections, updatedAt: new Date().toISOString() });
   }, [s.id, open, sc, feedback, corrections]);
+
+  useEffect(() => {
+    if (!aiScores || !s.ai_draft_at || lastAiDraftAt.current === s.ai_draft_at) return;
+    lastAiDraftAt.current = s.ai_draft_at;
+    setSc({ ...aiScores });
+    setFeedback(aiDraft?.feedback ?? "");
+    setCorrections(aiCorrections.map((correction) => ({ ...correction })));
+    setMsg("AI đã chấm lại bằng skill hiện tại và cập nhật bản gợi ý mới.");
+  }, [aiCorrections, aiDraft?.feedback, aiScores, s.ai_draft_at]);
 
   async function save() {
     setErr(null);
@@ -709,14 +738,14 @@ function Row({
                         Điểm/nhận xét bên dưới do bot chấm. Kiểm tra, chỉnh nếu cần rồi bấm{" "}
                         <strong>Lưu điểm &amp; chấm xong</strong> để xác nhận vào lịch sử học sinh.
                       </p>
-                      <button className="btn ghost small" type="button" onClick={applyAiDraft}>
-                        ↻ Khôi phục gợi ý AI đã lưu
-                      </button>
-                      {aiDraftApplied && (
-                        <span className="ok-text small" role="status">
-                          Đã áp dụng lại gợi ý AI vào biểu mẫu bên dưới.
-                        </span>
-                      )}
+                      <div className="actions">
+                        <button className="btn small" type="button" disabled={regradeBusy} onClick={requestAiRegrade}>
+                          {regradeBusy ? "Đang gửi…" : "↻ Chấm lại bằng skill AI hiện tại"}
+                        </button>
+                        <button className="btn ghost small" type="button" disabled={regradeBusy} onClick={applyAiDraft}>
+                          Khôi phục bản gợi ý này
+                        </button>
+                      </div>
                     </div>
                   )}
                   {s.ai_status === "error" && s.ai_error && (
