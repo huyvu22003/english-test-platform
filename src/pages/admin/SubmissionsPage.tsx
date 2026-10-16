@@ -425,13 +425,16 @@ function Row({
   const [corrections, setCorrections] = useState<WritingCorrection[]>(
     () => initialDraft?.corrections ?? (s.writing_corrections?.length ? s.writing_corrections : aiCorrections),
   );
+  const [aiDraftApplied, setAiDraftApplied] = useState(false);
 
   function applyAiDraft() {
     if (!aiScores) return;
-    setSc(aiScores);
+    setSc({ ...aiScores });
     setFeedback(aiDraft?.feedback ?? "");
-    setCorrections(aiCorrections);
+    setCorrections(aiCorrections.map((correction) => ({ ...correction })));
     setErr(null);
+    setMsg("Đã khôi phục điểm, nhận xét và câu sửa từ gợi ý AI.");
+    setAiDraftApplied(true);
   }
   const [selectedText, setSelectedText] = useState("");
   const [fixedText, setFixedText] = useState("");
@@ -707,8 +710,13 @@ function Row({
                         <strong>Lưu điểm &amp; chấm xong</strong> để xác nhận vào lịch sử học sinh.
                       </p>
                       <button className="btn ghost small" type="button" onClick={applyAiDraft}>
-                        ↻ Dùng lại gợi ý AI
+                        ↻ Khôi phục gợi ý AI đã lưu
                       </button>
+                      {aiDraftApplied && (
+                        <span className="ok-text small" role="status">
+                          Đã áp dụng lại gợi ý AI vào biểu mẫu bên dưới.
+                        </span>
+                      )}
                     </div>
                   )}
                   {s.ai_status === "error" && s.ai_error && (
