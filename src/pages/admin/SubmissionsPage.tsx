@@ -457,7 +457,7 @@ function Row({
     setRegradeBusy(true);
     try {
       clearGradingDraft(s.id);
-      await requestWritingAiRegrade(s.id, s.status);
+      await requestWritingAiRegrade(s.id);
       setMsg("Đã đưa bài vào hàng đợi chấm lại. AI sẽ dùng skill hiện tại; thường có kết quả trong tối đa 3 phút.");
       onChanged();
     } catch (e) {
@@ -645,9 +645,14 @@ function Row({
           ) : (
             <span className="pill off small">{statusLabel()}</span>
           )}
-          {s.status !== "graded" && s.ai_status === "suggested" && (
+          {s.ai_status === "suggested" && (
             <span className="pill ai-pill small" title="Bot đã gợi ý điểm, chờ giáo viên duyệt">
               🤖 AI gợi ý
+            </span>
+          )}
+          {(s.ai_status === "requested" || s.ai_status === "pending") && (
+            <span className="pill ai-pill small" title="AI đang chấm lại bằng skill hiện tại">
+              🤖 AI đang chấm lại
             </span>
           )}
         </td>

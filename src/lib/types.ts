@@ -159,7 +159,7 @@ export interface Submission {
   ai_error?: string | null;
   ai_attempted_at?: string | null;
   // AI draft (Writing) — bot chấm nháp, GV duyệt mới graded
-  ai_status?: "none" | "pending" | "suggested" | "error" | null;
+  ai_status?: "none" | "requested" | "pending" | "suggested" | "error" | null;
   ai_draft?: WritingAiDraft | null;
   ai_draft_at?: string | null;
   // Đề bài (join từ bảng tests) — hiện khi GV chấm. Có thể null nếu đề đã xóa.

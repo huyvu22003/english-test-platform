@@ -274,17 +274,8 @@ export async function gradeWriting(
 
 // Đưa bài Writing vào lại hàng đợi AI. AI chỉ tạo draft mới; điểm chính thức
 // vẫn giữ nguyên cho tới khi giáo viên kiểm tra và lưu.
-export async function requestWritingAiRegrade(id: string, currentStatus: Submission["status"]): Promise<void> {
-  const patch: Partial<Submission> = {
-    ai_status: null,
-    ai_draft: null,
-    ai_draft_at: null,
-    ai_error: null,
-  };
-  // Worker mặc định không lấy bài đã graded. Mở lại bước review nhưng giữ
-  // nguyên điểm chính thức hiện có cho tới khi giáo viên lưu draft mới.
-  if (currentStatus === "graded") patch.status = "in_review";
-  const { error } = await db().from("submissions").update(patch).eq("id", id);
+export async function requestWritingAiRegrade(id: string): Promise<void> {
+  const { error } = await db().rpc("rpc_request_writing_ai_regrade", { p_submission_id: id });
   if (error) throw new Error(error.message);
 }
 
