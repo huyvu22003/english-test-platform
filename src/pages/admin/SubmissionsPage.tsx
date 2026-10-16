@@ -414,19 +414,32 @@ function Row({
       })),
     [aiDraft],
   );
+  const preferAiDraft = useMemo(() => {
+    if (!aiDraft) return false;
+    if (!initialDraft) return true;
+    const aiTime = Date.parse(s.ai_draft_at ?? "");
+    const localTime = Date.parse(initialDraft.updatedAt);
+    if (!Number.isFinite(aiTime)) return false;
+    if (!Number.isFinite(localTime)) return true;
+    return aiTime > localTime;
+  }, [aiDraft, initialDraft, s.ai_draft_at]);
   const [sc, setSc] = useState<WritingScores>(
     () =>
-      initialDraft?.scores ??
-      aiScores ?? {
+      (preferAiDraft ? aiScores : initialDraft?.scores ?? aiScores) ?? {
         tr: s.score_tr ?? 6,
         cc: s.score_cc ?? 6,
         lr: s.score_lr ?? 6,
         gra: s.score_gra ?? 6,
       },
   );
-  const [feedback, setFeedback] = useState(() => initialDraft?.feedback ?? s.feedback ?? aiDraft?.feedback ?? "");
+  const [feedback, setFeedback] = useState(() =>
+    preferAiDraft ? (aiDraft?.feedback ?? "") : (initialDraft?.feedback ?? s.feedback ?? aiDraft?.feedback ?? ""),
+  );
   const [corrections, setCorrections] = useState<WritingCorrection[]>(
-    () => initialDraft?.corrections ?? (s.writing_corrections?.length ? s.writing_corrections : aiCorrections),
+    () =>
+      preferAiDraft
+        ? aiCorrections
+        : (initialDraft?.corrections ?? (s.writing_corrections?.length ? s.writing_corrections : aiCorrections)),
   );
   const [selectedText, setSelectedText] = useState("");
   const [fixedText, setFixedText] = useState("");
@@ -439,7 +452,7 @@ function Row({
   const [regradeBusy, setRegradeBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const lastAiDraftAt = useRef(s.ai_draft_at);
+  const lastAiDraftAt = useRef(preferAiDraft ? null : s.ai_draft_at);
 
   function applyAiDraft() {
     if (!aiScores) return;
