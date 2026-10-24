@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <title>Phiếu khảo sát Internal Academy - IELTS Ms. Trà My</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --ink: #172033;
+      --muted: #64748b;
+      --line: #dbe4f0;
+      --surface: #ffffff;
+      --soft: #eff6ff;
+      --success: #15803d;
+      --danger: #b91c1c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, #dbeafe 0, transparent 28rem),
+        linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    .page { width: min(860px, calc(100% - 28px)); margin: 34px auto 56px; }
+
+    .hero,
+    .card {
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(219, 228, 240, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 14px 40px rgba(36, 61, 92, 0.08);
+    }
+
+    .hero {
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .hero-band { height: 8px; background: linear-gradient(90deg, #2563eb, #06b6d4); }
+    .hero-content { padding: 28px 30px 26px; }
+
+    .eyebrow {
+      display: inline-flex;
+      padding: 6px 11px;
+      border-radius: 999px;
+      color: #1d4ed8;
+      background: #dbeafe;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    h1 { margin: 14px 0 9px; font-size: clamp(1.65rem, 4vw, 2.35rem); line-height: 1.18; }
+    .intro { margin: 0; color: #475569; max-width: 68ch; }
+
+    .idea {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-left: 4px solid var(--primary);
+      border-radius: 10px;
+      background: var(--soft);
+      color: #334155;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 9px 18px; margin-top: 17px; color: var(--muted); font-size: 0.9rem; }
+
+    form { display: grid; gap: 16px; }
+    .card { padding: 24px 26px; }
+    .section-title { margin: 0 0 18px; font-size: 1.12rem; }
+
+    .field { margin-top: 20px; }
+    .field:first-of-type { margin-top: 0; }
+    .question { display: block; margin-bottom: 10px; font-weight: 750; }
+    .required { color: var(--danger); }
+    .hint { display: block; margin: -5px 0 10px; color: var(--muted); font-size: 0.88rem; }
+
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 11px;
+      padding: 11px 12px;
+      color: var(--ink);
+      background: #fff;
+      font: inherit;
+      outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+
+    textarea { min-height: 120px; resize: vertical; }
+    input[type="text"]:focus, textarea:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.13);
+    }
+
+    .options { display: grid; gap: 9px; }
+    .option {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      cursor: pointer;
+      transition: background 0.18s, border-color 0.18s;
+    }
+
+    .option:hover { border-color: #93c5fd; background: #f8fbff; }
+    .option:has(input:checked) { border-color: #60a5fa; background: var(--soft); }
+    .option input { flex: 0 0 auto; margin-top: 4px; accent-color: var(--primary); }
+
+    .actions {
+      position: sticky;
+      bottom: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 10px 35px rgba(15, 23, 42, 0.14);
+      backdrop-filter: blur(12px);
+      z-index: 3;
+    }
+
+    button {
+      min-height: 44px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 10px 15px;
+      font: inherit;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .primary { color: #fff; background: var(--primary); }
+    .primary:hover { background: var(--primary-dark); }
+    .secondary { color: #1e40af; border-color: #bfdbfe; background: #eff6ff; }
+    .ghost { color: #475569; border-color: #cbd5e1; background: #fff; }
+    .danger { color: var(--danger); border-color: #fecaca; background: #fff7f7; margin-left: auto; }
+
+    #status { min-height: 24px; margin: 2px 2px 0; color: var(--success); font-size: 0.92rem; font-weight: 650; }
+    footer { padding: 20px 4px 0; color: var(--muted); text-align: center; font-size: 0.84rem; }
+
+    @media (max-width: 600px) {
+      .page { width: min(100% - 18px, 860px); margin-top: 12px; }
+      .hero-content, .card { padding: 21px 18px; }
+      .actions { position: static; }
+      .actions button { flex: 1 1 100%; }
+      .danger { margin-left: 0; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page { width: 100%; margin: 0; }
+      .hero, .card { box-shadow: none; break-inside: avoid; }
+      .actions, footer { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="hero-band"></div>
+      <div class="hero-content">
+        <span class="eyebrow">IELTS Ms. Trà My</span>
+        <h1>Khảo sát ý tưởng Internal Academy</h1>
+        <p class="intro">Phiếu này dùng để thu thập nhu cầu thực tế trước khi trung tâm xây dựng hệ thống. Thời gian trả lời khoảng 4–6 phút.</p>
+        <div class="idea"><strong>Ý tưởng:</strong> Xây dựng một website đào tạo nội bộ để nhân sự đăng nhập và tự học theo từng bộ phận. Riêng giáo viên có thêm giáo án, hướng dẫn từng bước dạy và video minh họa. Nội dung được quản lý tập trung, phân quyền và hạn chế tải xuống/chia sẻ ra ngoài.</div>
+        <div class="meta"><span>🔒 Dùng nội bộ</span><span>💾 Tự lưu nháp trên thiết bị</span><span>📤 Có thể chia sẻ kết quả qua Zalo</span></div>
+      </div>
+    </header>
+
+    <form id="surveyForm">
+      <section class="card" aria-labelledby="info-title">
+        <h2 class="section-title" id="info-title">A. Thông tin người trả lời</h2>
+
+        <div class="field">
+          <label class="question" for="fullName">Họ và tên <span class="hint" style="display:inline">(không bắt buộc)</span></label>
+          <input id="fullName" name="fullName" type="text" autocomplete="name" placeholder="Nhập họ và tên">
+        </div>
+
+        <div class="field">
+          <label class="question" for="role">1. Vai trò hiện tại của bạn tại trung tâm <span class="required">*</span></label>
+          <select id="role" name="role" required>
+            <option value="">— Chọn một phương án —</option>
+            <option>Giáo viên</option>
+            <option>Trợ giảng</option>
+            <option>Tư vấn tuyển sinh/chăm sóc học viên</option>
+            <option>Marketing</option>
+            <option>Hành chính/vận hành</option>
+            <option>Quản lý/chuyên môn</option>
+            <option>Vai trò khác</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <span class="question">2. Bạn cần tra cứu tài liệu đào tạo hoặc quy trình làm việc của trung tâm với tần suất nào? <span class="required">*</span></span>
+          <div class="options">
+            <label class="option"><input type="radio" name="materialFrequency" value="Hằng ngày" required>Hằng ngày</label>
+            <label class="option"><input type="radio" name="materialFrequency" value="3–5 lần/tuần">3–5 lần/tuần</label>
+            <label class="option"><input type="radio" name="materialFrequency" value="1–2 lần/tuần">1–2 lần/tuần</label>
+            <label class="option"><input type="radio" name="materialFrequency" value="Ít hơn 1 lần/tuần">Ít hơn 1 lần/tuần</label>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="need-title">
+        <h2 class="section-title" id="need-title">B. Nhu cầu và mức độ cần thiết</h2>
+
+        <div class="field">
+          <span class="question">3. Hiện nay, việc tìm đúng tài liệu đào tạo, quy trình hoặc giáo án cần dùng có thuận tiện không? <span class="required">*</span></span>
+          <div class="options">
+            <label class="option"><input type="radio" name="currentConvenience" value="Rất thuận tiện" required>Rất thuận tiện</label>
+            <label class="option"><input type="radio" name="currentConvenience" value="Khá thuận tiện">Khá thuận tiện</label>
+            <label class="option"><input type="radio" name="currentConvenience" value="Bình thường">Bình thường</label>
+            <label class="option"><input type="radio" name="currentConvenience" value="Khá bất tiện">Khá bất tiện</label>
+            <label class="option"><input type="radio" name="currentConvenience" value="Rất bất tiện">Rất bất tiện</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="question">4. Theo bạn, trung tâm có cần một website Internal Academy để nhân sự tự học theo bộ phận không? <span class="required">*</span></span>
+          <div class="options">
+            <label class="option"><input type="radio" name="needLevel" value="Rất cần thiết" required>Rất cần thiết</label>
+            <label class="option"><input type="radio" name="needLevel" value="Cần thiết">Cần thiết</label>
+            <label class="option"><input type="radio" name="needLevel" value="Có cũng được">Có cũng được</label>
+            <label class="option"><input type="radio" name="needLevel" value="Không cần thiết lắm">Không cần thiết lắm</label>
+            <label class="option"><input type="radio" name="needLevel" value="Không cần thiết">Không cần thiết</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="question">5. Những khó khăn bạn đang gặp khi học hoặc tra cứu tài liệu nội bộ là gì?</span>
+          <span class="hint">Có thể chọn nhiều phương án.</span>
+          <div class="options">
+            <label class="option"><input type="checkbox" name="difficulties" value="Khó tìm đúng tài liệu theo bộ phận">Khó tìm đúng tài liệu theo bộ phận</label>
+            <label class="option"><input type="checkbox" name="difficulties" value="Không biết bản nào mới nhất">Không biết bản nào mới nhất</label>
+            <label class="option"><input type="checkbox" name="difficulties" value="Tài liệu nằm ở nhiều nơi">Tài liệu nằm ở nhiều nơi</label>
+            <label class="option"><input type="checkbox" name="difficulties" value="Thiếu lộ trình học rõ ràng">Thiếu lộ trình học rõ ràng</label>
+            <label class="option"><input type="checkbox" name="difficulties" value="Thiếu video hoặc hướng dẫn thực hành">Thiếu video hoặc hướng dẫn thực hành</label>
+            <label class="option"><input type="checkbox" name="difficulties" value="Khó xem trên điện thoại">Khó xem trên điện thoại</label>
+            <label class="option"><input type="checkbox" name="difficulties" value="Không gặp khó khăn đáng kể">Không gặp khó khăn đáng kể</label>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="feature-title">
+        <h2 class="section-title" id="feature-title">C. Tính năng mong muốn</h2>
+
+        <div class="field">
+          <span class="question">6. Bạn mong muốn website có những nội dung/tính năng nào? <span class="required">*</span></span>
+          <span class="hint">Có thể chọn nhiều phương án.</span>
+          <div class="options" id="featuresGroup">
+            <label class="option"><input type="checkbox" name="features" value="Lộ trình tự học theo từng bộ phận">Lộ trình tự học theo từng bộ phận</label>
+            <label class="option"><input type="checkbox" name="features" value="Video đào tạo và hướng dẫn thực hành">Video đào tạo và hướng dẫn thực hành</label>
+            <label class="option"><input type="checkbox" name="features" value="Giáo án và hướng dẫn từng bước dạy dành cho giáo viên">Giáo án và hướng dẫn từng bước dạy dành cho giáo viên</label>
+            <label class="option"><input type="checkbox" name="features" value="Tìm kiếm theo bộ phận/chủ đề/khóa học">Tìm kiếm theo bộ phận, chủ đề hoặc khóa học</label>
+            <label class="option"><input type="checkbox" name="features" value="Đánh dấu nội dung yêu thích hoặc đã học">Đánh dấu nội dung yêu thích hoặc đã học</label>
+            <label class="option"><input type="checkbox" name="features" value="Thông báo khi nội dung được cập nhật">Thông báo khi nội dung được cập nhật</label>
+            <label class="option"><input type="checkbox" name="features" value="Gửi câu hỏi/góp ý cho bộ phận chuyên môn">Gửi câu hỏi hoặc góp ý cho bộ phận chuyên môn</label>
+            <label class="option"><input type="checkbox" name="features" value="Theo dõi tiến độ và hoàn thành nội dung học">Theo dõi tiến độ và hoàn thành nội dung học</label>
+            <label class="option"><input type="checkbox" name="features" value="Bài kiểm tra ngắn sau mỗi nội dung">Bài kiểm tra ngắn sau mỗi nội dung</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="question">7. Video hướng dẫn nên có độ dài bao nhiêu là phù hợp nhất? <span class="required">*</span></span>
+          <div class="options">
+            <label class="option"><input type="radio" name="videoLength" value="Dưới 5 phút" required>Dưới 5 phút</label>
+            <label class="option"><input type="radio" name="videoLength" value="5–10 phút">5–10 phút</label>
+            <label class="option"><input type="radio" name="videoLength" value="10–20 phút">10–20 phút</label>
+            <label class="option"><input type="radio" name="videoLength" value="Trên 20 phút">Trên 20 phút</label>
+            <label class="option"><input type="radio" name="videoLength" value="Tùy nội dung bài">Tùy nội dung bài</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="question">8. Bạn thường muốn truy cập hệ thống bằng thiết bị nào?</span>
+          <span class="hint">Có thể chọn nhiều phương án.</span>
+          <div class="options">
+            <label class="option"><input type="checkbox" name="devices" value="Điện thoại">Điện thoại</label>
+            <label class="option"><input type="checkbox" name="devices" value="Máy tính xách tay/máy tính bàn">Máy tính xách tay/máy tính bàn</label>
+            <label class="option"><input type="checkbox" name="devices" value="Máy tính bảng">Máy tính bảng</label>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="security-title">
+        <h2 class="section-title" id="security-title">D. Quyền truy cập và bảo vệ tài liệu</h2>
+
+        <div class="field">
+          <span class="question">9. Bạn đánh giá thế nào về phương án: mỗi nhân sự có tài khoản riêng, chỉ thấy nội dung đúng bộ phận và xem trực tuyến, không có nút tải xuống? <span class="required">*</span></span>
+          <div class="options">
+            <label class="option"><input type="radio" name="accessPolicy" value="Hoàn toàn đồng ý" required>Hoàn toàn đồng ý</label>
+            <label class="option"><input type="radio" name="accessPolicy" value="Đồng ý">Đồng ý</label>
+            <label class="option"><input type="radio" name="accessPolicy" value="Phân vân">Phân vân</label>
+            <label class="option"><input type="radio" name="accessPolicy" value="Không đồng ý">Không đồng ý</label>
+            <label class="option"><input type="radio" name="accessPolicy" value="Hoàn toàn không đồng ý">Hoàn toàn không đồng ý</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="question">10. Việc không cho tải tài liệu xuống có ảnh hưởng tới quá trình học hoặc công việc của bạn không? <span class="required">*</span></span>
+          <div class="options">
+            <label class="option"><input type="radio" name="downloadImpact" value="Không ảnh hưởng" required>Không ảnh hưởng</label>
+            <label class="option"><input type="radio" name="downloadImpact" value="Ảnh hưởng ít">Ảnh hưởng ít</label>
+            <label class="option"><input type="radio" name="downloadImpact" value="Ảnh hưởng vừa phải">Ảnh hưởng vừa phải</label>
+            <label class="option"><input type="radio" name="downloadImpact" value="Ảnh hưởng nhiều">Ảnh hưởng nhiều</label>
+            <label class="option"><input type="radio" name="downloadImpact" value="Chưa thể đánh giá">Chưa thể đánh giá</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="question" for="offlineSolution">11. Nếu cần học hoặc làm việc ở nơi mạng yếu/mất mạng, bạn đề xuất giải pháp nào?</label>
+          <textarea id="offlineSolution" name="offlineSolution" placeholder="Ví dụ: cho phép xem tạm nội dung trong ứng dụng trong một khoảng thời gian..."></textarea>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="pilot-title">
+        <h2 class="section-title" id="pilot-title">E. Sẵn sàng sử dụng và góp ý</h2>
+
+        <div class="field">
+          <span class="question">12. Nếu hệ thống được làm thử, bạn có sẵn sàng tham gia dùng thử và góp ý không? <span class="required">*</span></span>
+          <div class="options">
+            <label class="option"><input type="radio" name="pilotWillingness" value="Có, sẵn sàng tham gia" required>Có, sẵn sàng tham gia</label>
+            <label class="option"><input type="radio" name="pilotWillingness" value="Có thể, nếu sắp xếp được thời gian">Có thể, nếu sắp xếp được thời gian</label>
+            <label class="option"><input type="radio" name="pilotWillingness" value="Chưa sẵn sàng">Chưa sẵn sàng</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="question" for="topPriority">13. Nếu chỉ được ưu tiên một điều khi triển khai, bạn muốn trung tâm ưu tiên điều gì nhất?</label>
+          <textarea id="topPriority" name="topPriority" placeholder="Nhập điều bạn cho là quan trọng nhất..."></textarea>
+        </div>
+
+        <div class="field">
+          <label class="question" for="otherComments">14. Ý kiến hoặc đề xuất khác</label>
+          <textarea id="otherComments" name="otherComments" placeholder="Bạn có thể góp ý tự do tại đây..."></textarea>
+        </div>
+      </section>
+
+      <div class="actions" aria-label="Thao tác với phiếu khảo sát">
+        <button class="primary" type="submit">Hoàn tất & chia sẻ</button>
+        <button class="secondary" type="button" id="downloadResult">Tải file kết quả</button>
+        <button class="secondary" type="button" id="saveDraft">Lưu nháp</button>
+        <button class="ghost" type="button" id="printForm">In / lưu PDF</button>
+        <button class="danger" type="button" id="clearForm">Xóa câu trả lời</button>
+      </div>
+      <div id="status" role="status" aria-live="polite"></div>
+    </form>
+
+    <footer>Câu trả lời chỉ được lưu trên điện thoại hoặc thiết bị này cho đến khi người dùng tải file và gửi cho trung tâm.</footer>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const form = document.getElementById('surveyForm');
+      const status = document.getElementById('status');
+      const storageKey = 'ielts-tra-my-internal-academy-survey-v2';
+
+      const questionLabels = {
+        fullName: 'Họ và tên',
+        role: 'Vai trò tại trung tâm',
+        materialFrequency: 'Tần suất tra cứu tài liệu đào tạo/quy trình',
+        currentConvenience: 'Mức độ thuận tiện hiện tại',
+        needLevel: 'Mức độ cần thiết của Internal Academy',
+        difficulties: 'Khó khăn hiện tại',
+        features: 'Tính năng mong muốn',
+        videoLength: 'Độ dài video phù hợp',
+        devices: 'Thiết bị thường dùng',
+        accessPolicy: 'Ý kiến về tài khoản riêng, phân quyền và chỉ xem trực tuyến',
+        downloadImpact: 'Ảnh hưởng khi không được tải xuống',
+        offlineSolution: 'Đề xuất khi mạng yếu/mất mạng',
+        pilotWillingness: 'Sẵn sàng tham gia dùng thử',
+        topPriority: 'Ưu tiên quan trọng nhất',
+        otherComments: 'Ý kiến khác'
+      };
+
+      function getAnswers() {
+        const answers = {};
+        const data = new FormData(form);
+        for (const [key, value] of data.entries()) {
+          if (Object.prototype.hasOwnProperty.call(answers, key)) {
+            answers[key] = Array.isArray(answers[key]) ? [...answers[key], value] : [answers[key], value];
+          } else {
+            answers[key] = value;
+          }
+        }
+
+        for (const key of Object.keys(questionLabels)) {
+          if (!Object.prototype.hasOwnProperty.call(answers, key)) answers[key] = '';
+        }
+        return answers;
+      }
+
+      function saveDraft(showMessage = true) {
+        const payload = { savedAt: new Date().toISOString(), answers: getAnswers() };
+        localStorage.setItem(storageKey, JSON.stringify(payload));
+        if (showMessage) setStatus('Đã lưu nháp trên thiết bị này.');
+      }
+
+      function restoreDraft() {
+        const raw = localStorage.getItem(storageKey);
+        if (!raw) return;
+        try {
+          const { answers } = JSON.parse(raw);
+          for (const [name, value] of Object.entries(answers || {})) {
+            const fields = form.elements.namedItem(name);
+            if (!fields) continue;
+            const values = Array.isArray(value) ? value : [value];
+
+            if (fields instanceof RadioNodeList) {
+              for (const field of fields) {
+                if (field.type === 'checkbox' || field.type === 'radio') field.checked = values.includes(field.value);
+              }
+            } else if (fields.type === 'checkbox' || fields.type === 'radio') {
+              fields.checked = values.includes(fields.value);
+            } else {
+              fields.value = value || '';
+            }
+          }
+          setStatus('Đã khôi phục bản nháp gần nhất.');
+        } catch {
+          localStorage.removeItem(storageKey);
+        }
+      }
+
+      function setStatus(message, isError = false) {
+        status.textContent = message;
+        status.style.color = isError ? 'var(--danger)' : 'var(--success)';
+      }
+
+      function safeFilePart(value) {
+        return (value || 'nguoi-tra-loi')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '') || 'nguoi-tra-loi';
+      }
+
+      function validateAnswers() {
+        const selectedFeatures = form.querySelectorAll('input[name="features"]:checked');
+        if (!selectedFeatures.length) {
+          setStatus('Vui lòng chọn ít nhất một tính năng ở câu 6.', true);
+          document.getElementById('featuresGroup').scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return false;
+        }
+        if (!form.reportValidity()) {
+          setStatus('Vui lòng trả lời các câu có dấu *.', true);
+          return false;
+        }
+        return true;
+      }
+
+      function createResultFile() {
+        const answers = getAnswers();
+        const now = new Date();
+        const lines = [
+          'PHIẾU KHẢO SÁT INTERNAL ACADEMY - IELTS MS. TRÀ MY',
+          `Thời gian hoàn tất: ${now.toLocaleString('vi-VN')}`,
+          '',
+          ...Object.entries(questionLabels).flatMap(([key, label]) => {
+            const value = answers[key];
+            const display = Array.isArray(value) ? value.map(item => `- ${item}`).join('\n') : (value || '(Không trả lời)');
+            return [`${label}:`, display, ''];
+          })
+        ];
+        const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+        const filename = `phieu-khao-sat-${safeFilePart(answers.fullName)}-${now.toISOString().slice(0, 10)}.txt`;
+        return { answers, blob, filename };
+      }
+
+      function downloadAnswers() {
+        const { blob, filename } = createResultFile();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      async function shareAnswers() {
+        const { blob, filename } = createResultFile();
+        const file = new File([blob], filename, { type: 'text/plain' });
+        const shareData = {
+          title: 'Kết quả khảo sát Internal Academy',
+          text: 'Kết quả khảo sát Internal Academy - IELTS Ms. Trà My',
+          files: [file]
+        };
+
+        try {
+          if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+            await navigator.share(shareData);
+            setStatus('Đã mở menu chia sẻ. Chọn Zalo hoặc ứng dụng anh/chị muốn gửi.');
+            return;
+          }
+          downloadAnswers();
+          setStatus('Điện thoại chưa hỗ trợ chia sẻ trực tiếp. File .txt đã được tải xuống; hãy đính kèm file này trong Zalo.');
+        } catch (error) {
+          if (error && error.name === 'AbortError') {
+            setStatus('Đã đóng menu chia sẻ. Câu trả lời vẫn được lưu nháp trên thiết bị.');
+            return;
+          }
+          downloadAnswers();
+          setStatus('Không mở được menu chia sẻ. File .txt đã được tải xuống để gửi thủ công qua Zalo.', true);
+        }
+      }
+
+      form.addEventListener('input', () => saveDraft(false));
+      form.addEventListener('change', () => saveDraft(false));
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!validateAnswers()) return;
+        saveDraft(false);
+        shareAnswers();
+      });
+
+      document.getElementById('downloadResult').addEventListener('click', () => {
+        if (!validateAnswers()) return;
+        saveDraft(false);
+        downloadAnswers();
+        setStatus('Đã tải file kết quả .txt. Có thể đính kèm file này trong Zalo.');
+      });
+      document.getElementById('saveDraft').addEventListener('click', () => saveDraft(true));
+      document.getElementById('printForm').addEventListener('click', () => window.print());
+      document.getElementById('clearForm').addEventListener('click', () => {
+        if (!window.confirm('Bạn chắc chắn muốn xóa toàn bộ câu trả lời đã nhập?')) return;
+        form.reset();
+        localStorage.removeItem(storageKey);
+        setStatus('Đã xóa toàn bộ câu trả lời.');
+      });
+
+      restoreDraft();
+    })();
+  </script>
+</body>
+</html>
