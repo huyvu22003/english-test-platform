@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { AdminPageHeader } from "../../components/AdminPageHeader";
 import { EmptyState, ErrorBox, Spinner } from "../../components/common";
 import {
@@ -64,9 +65,9 @@ export default function AcademyPage() {
   const { session, canManageContent } = useAuth();
   const userId = session?.user.id ?? "";
   const academy = useAsync(() => getAcademyData(userId), [userId]);
-  const [view, setView] = useState<"learn" | "manage">("learn");
-  const [query, setQuery] = useState("");
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [view] = useState<"learn" | "manage">("manage");
+  const [query] = useState("");
+  const [favoritesOnly] = useState(false);
   const [courseId, setCourseId] = useState<string | null>(null);
   const [lessonId, setLessonId] = useState<string | null>(null);
   const [courseForm, setCourseForm] = useState({ ...EMPTY_COURSE } as typeof EMPTY_COURSE & { id?: string });
@@ -100,9 +101,6 @@ export default function AcademyPage() {
   const selectedCourse = courses.find((x) => x.id === courseId) ?? null;
   const courseLessons = lessons.filter((x) => x.course_id === selectedCourse?.id);
   const selectedLesson = lessons.find((x) => x.id === lessonId) ?? null;
-  const totalPublished = lessons.filter((x) => x.active).length;
-  const completedPublished = lessons.filter((x) => x.active && completed.has(x.id)).length;
-  const progress = totalPublished ? Math.round((completedPublished / totalPublished) * 100) : 0;
 
   function chooseCourse(id: string) {
     setCourseId(id);
@@ -221,40 +219,25 @@ export default function AcademyPage() {
     <div className="admin-page academy-page">
       <AdminPageHeader
         eyebrow="Internal Academy"
-        title="Học viện nội bộ"
-        subtitle="Giáo án, video và hướng dẫn từng bước dành cho đội ngũ IELTS Ms. Trà My."
+        title="Quản lý nội dung Academy"
+        subtitle="Tạo khóa học, đăng giáo án, video và xuất bản nội dung cho đội ngũ."
         stats={[
-          { label: "Khóa học", value: courses.filter((x) => x.active).length },
-          { label: "Bài đã học", value: `${completedPublished}/${totalPublished}` },
-          { label: "Tiến độ", value: `${progress}%` },
+          { label: "Khóa học", value: courses.length },
+          { label: "Đã xuất bản", value: courses.filter((x) => x.active).length },
+          { label: "Bài học", value: lessons.length },
         ]}
       />
 
       <div className="academy-toolbar card">
-        <div className="academy-view-tabs" role="tablist" aria-label="Chế độ Internal Academy">
-          <button className={`btn ${view === "learn" ? "primary" : ""}`} onClick={() => setView("learn")}>
-            Học tập
-          </button>
-          {canManageContent && (
-            <button className={`btn ${view === "manage" ? "primary" : ""}`} onClick={() => setView("manage")}>
-              Quản lý nội dung
-            </button>
-          )}
-        </div>
-        {view === "learn" && (
-          <div className="academy-search-row">
-            <input
-              aria-label="Tìm khóa học hoặc bài học"
-              placeholder="Tìm giáo án, bài học, chủ đề…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <label className="check">
-              <input type="checkbox" checked={favoritesOnly} onChange={(e) => setFavoritesOnly(e.target.checked)} /> Chỉ
-              mục yêu thích
-            </label>
+        <div>
+          <strong>Khu vực dành cho quản lý</strong>
+          <div className="muted small">
+            Nội dung bản nháp chỉ quản lý nhìn thấy; bật “Xuất bản” để đưa sang trang học.
           </div>
-        )}
+        </div>
+        <Link className="btn primary" to="/academy">
+          Mở trang học →
+        </Link>
       </div>
 
       {(academy.error || actionError) && <ErrorBox msg={academy.error || actionError || "Có lỗi xảy ra."} />}

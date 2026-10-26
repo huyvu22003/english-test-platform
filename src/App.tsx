@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ScrollToTop from "./components/ScrollToTop";
@@ -29,6 +29,7 @@ const OperationsPage = lazy(() => import("./pages/admin/OperationsPage"));
 const StaffPage = lazy(() => import("./pages/admin/StaffPage"));
 const PlacementResultsPage = lazy(() => import("./pages/admin/PlacementResultsPage"));
 const AcademyPage = lazy(() => import("./pages/admin/AcademyPage"));
+const AcademyLearnPage = lazy(() => import("./pages/academy/AcademyLearnPage"));
 
 function Loading() {
   return (
@@ -40,8 +41,12 @@ function Loading() {
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading, profileLoading, profile } = useAuth();
+  const location = useLocation();
   if (loading || profileLoading) return <div className="center muted">Đang kiểm tra đăng nhập…</div>;
-  if (!session) return <Navigate to="/admin/login" replace />;
+  if (!session) {
+    const loginPath = location.pathname === "/academy" ? "/admin/login?next=/academy" : "/admin/login";
+    return <Navigate to={loginPath} replace />;
+  }
   if (profile?.active === false)
     return <div className="center muted">Tài khoản giáo viên này đang bị khóa. Liên hệ admin để mở lại.</div>;
   return <>{children}</>;
@@ -87,6 +92,16 @@ export default function App() {
               <Route path="/result" element={<ResultPage />} />
               <Route path="/progress" element={<ProgressPage />} />
 
+              {/* Học viện nội bộ — giao diện học riêng, dùng chung tài khoản nhân sự */}
+              <Route
+                path="/academy"
+                element={
+                  <RequireAuth>
+                    <AcademyLearnPage />
+                  </RequireAuth>
+                }
+              />
+
               {/* Giáo viên */}
               <Route path="/admin/login" element={<LoginPage />} />
               <Route
@@ -98,7 +113,14 @@ export default function App() {
                 }
               >
                 <Route index element={<Navigate to="operations" replace />} />
-                <Route path="academy" element={<AcademyPage />} />
+                <Route
+                  path="academy"
+                  element={
+                    <RequireContent>
+                      <AcademyPage />
+                    </RequireContent>
+                  }
+                />
                 <Route path="operations" element={<OperationsPage />} />
                 <Route
                   path="staff"

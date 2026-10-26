@@ -35,9 +35,14 @@ export default function AdminLayout() {
         </div>
         <nav id="admin-nav" aria-label="Quản trị" className={menuOpen ? "open" : ""} onClick={() => setMenuOpen(false)}>
           <div className="nav-group-label">Đào tạo nội bộ</div>
-          <NavLink to="/admin/academy" className={({ isActive }) => (isActive ? "active" : "")}>
-            Internal Academy
+          <NavLink to="/academy" className={({ isActive }) => (isActive ? "active" : "")}>
+            Trang học Academy
           </NavLink>
+          {canManageContent && (
+            <NavLink to="/admin/academy" className={({ isActive }) => (isActive ? "active" : "")}>
+              Quản lý Academy
+            </NavLink>
+          )}
           <div className="nav-group-label">Vận hành</div>
           <NavLink to="/admin/operations" className={({ isActive }) => (isActive ? "active" : "")}>
             Tổng quan
