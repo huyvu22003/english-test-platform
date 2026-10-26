@@ -2,6 +2,9 @@
 // để component không phải biết chi tiết. Đáp án học sinh luôn đi qua RPC.
 import { supabase } from "./supabase";
 import type {
+  AcademyCourse,
+  AcademyData,
+  AcademyLesson,
   AnswerMap,
   ClassRow,
   ClassTeacher,
@@ -32,6 +35,86 @@ import type {
   WritingScores,
   WritingTopic,
 } from "./types";
+
+// ---------- Internal Academy (chỉ tài khoản nội bộ đã đăng nhập) ----------
+export async function getAcademyData(userId: string): Promise<AcademyData> {
+  const [coursesRes, lessonsRes, progressRes, favoritesRes] = await Promise.all([
+    db().from("academy_courses").select("*").order("sort_order").order("created_at"),
+    db().from("academy_lessons").select("*").order("sort_order").order("created_at"),
+    db().from("academy_progress").select("lesson_id").eq("user_id", userId),
+    db().from("academy_favorites").select("lesson_id").eq("user_id", userId),
+  ]);
+  return {
+    courses: unwrap<AcademyCourse[]>(coursesRes) ?? [],
+    lessons: unwrap<AcademyLesson[]>(lessonsRes) ?? [],
+    completedLessonIds: (unwrap<{ lesson_id: string }[]>(progressRes) ?? []).map((x) => x.lesson_id),
+    favoriteLessonIds: (unwrap<{ lesson_id: string }[]>(favoritesRes) ?? []).map((x) => x.lesson_id),
+  };
+}
+
+export async function saveAcademyCourse(
+  input: Partial<AcademyCourse> & Pick<AcademyCourse, "title" | "department">,
+  userId: string,
+): Promise<AcademyCourse> {
+  const payload = {
+    ...(input.id ? { id: input.id } : {}),
+    title: input.title.trim(),
+    description: input.description?.trim() ?? "",
+    department: input.department.trim() || "academic",
+    cover_url: input.cover_url?.trim() || null,
+    active: input.active ?? false,
+    sort_order: Number(input.sort_order ?? 0),
+    created_by: input.created_by ?? userId,
+    updated_at: new Date().toISOString(),
+  };
+  return unwrap<AcademyCourse>(await db().from("academy_courses").upsert(payload).select("*").single());
+}
+
+export async function deleteAcademyCourse(id: string): Promise<void> {
+  unwrap(await db().from("academy_courses").delete().eq("id", id));
+}
+
+export async function saveAcademyLesson(
+  input: Partial<AcademyLesson> & Pick<AcademyLesson, "course_id" | "title">,
+  userId: string,
+): Promise<AcademyLesson> {
+  const payload = {
+    ...(input.id ? { id: input.id } : {}),
+    course_id: input.course_id,
+    title: input.title.trim(),
+    summary: input.summary?.trim() ?? "",
+    content: input.content?.trim() ?? "",
+    video_url: input.video_url?.trim() || null,
+    resource_url: input.resource_url?.trim() || null,
+    duration_min: Math.max(1, Number(input.duration_min ?? 5)),
+    version_label: input.version_label?.trim() || "1.0",
+    active: input.active ?? false,
+    sort_order: Number(input.sort_order ?? 0),
+    created_by: input.created_by ?? userId,
+    updated_at: new Date().toISOString(),
+  };
+  return unwrap<AcademyLesson>(await db().from("academy_lessons").upsert(payload).select("*").single());
+}
+
+export async function deleteAcademyLesson(id: string): Promise<void> {
+  unwrap(await db().from("academy_lessons").delete().eq("id", id));
+}
+
+export async function setAcademyLessonCompleted(userId: string, lessonId: string, completed: boolean): Promise<void> {
+  if (completed) {
+    unwrap(await db().from("academy_progress").upsert({ user_id: userId, lesson_id: lessonId }));
+  } else {
+    unwrap(await db().from("academy_progress").delete().eq("user_id", userId).eq("lesson_id", lessonId));
+  }
+}
+
+export async function setAcademyLessonFavorite(userId: string, lessonId: string, favorite: boolean): Promise<void> {
+  if (favorite) {
+    unwrap(await db().from("academy_favorites").upsert({ user_id: userId, lesson_id: lessonId }));
+  } else {
+    unwrap(await db().from("academy_favorites").delete().eq("user_id", userId).eq("lesson_id", lessonId));
+  }
+}
 
 // Trả client hoặc báo lỗi rõ ràng khi chưa cấu hình .env (tránh crash khó hiểu).
 function db() {

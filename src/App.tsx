@@ -28,6 +28,7 @@ const SessionsPage = lazy(() => import("./pages/admin/SessionsPage"));
 const OperationsPage = lazy(() => import("./pages/admin/OperationsPage"));
 const StaffPage = lazy(() => import("./pages/admin/StaffPage"));
 const PlacementResultsPage = lazy(() => import("./pages/admin/PlacementResultsPage"));
+const AcademyPage = lazy(() => import("./pages/admin/AcademyPage"));
 
 function Loading() {
   return (
@@ -97,6 +98,7 @@ export default function App() {
                 }
               >
                 <Route index element={<Navigate to="operations" replace />} />
+                <Route path="academy" element={<AcademyPage />} />
                 <Route path="operations" element={<OperationsPage />} />
                 <Route
                   path="staff"

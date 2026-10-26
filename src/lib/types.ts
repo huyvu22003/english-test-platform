@@ -15,6 +15,43 @@ export interface Profile {
   created_at?: string;
 }
 
+export interface AcademyCourse {
+  id: string;
+  title: string;
+  description: string;
+  department: string;
+  cover_url: string | null;
+  active: boolean;
+  sort_order: number;
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AcademyLesson {
+  id: string;
+  course_id: string;
+  title: string;
+  summary: string;
+  content: string;
+  video_url: string | null;
+  resource_url: string | null;
+  duration_min: number;
+  version_label: string;
+  active: boolean;
+  sort_order: number;
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AcademyData {
+  courses: AcademyCourse[];
+  lessons: AcademyLesson[];
+  completedLessonIds: string[];
+  favoriteLessonIds: string[];
+}
+
 export interface Topic {
   id: string;
   name: string;
