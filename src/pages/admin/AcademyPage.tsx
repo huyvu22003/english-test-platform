@@ -5,14 +5,16 @@ import { EmptyState, ErrorBox, Spinner } from "../../components/common";
 import {
   deleteAcademyCourse,
   deleteAcademyLesson,
+  deleteAcademyLevel,
+  deleteAcademyUnit,
   getAcademyData,
   saveAcademyCourse,
   saveAcademyLesson,
-  setAcademyLessonCompleted,
-  setAcademyLessonFavorite,
+  saveAcademyLevel,
+  saveAcademyUnit,
 } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
-import type { AcademyCourse, AcademyLesson } from "../../lib/types";
+import type { AcademyCourse, AcademyLesson, AcademyLevel, AcademyObjectives, AcademyUnit } from "../../lib/types";
 import { useAsync } from "../../lib/useAsync";
 
 const EMPTY_COURSE = {
@@ -23,551 +25,762 @@ const EMPTY_COURSE = {
   active: false,
   sort_order: 0,
 };
-
+const EMPTY_LEVEL = {
+  title: "",
+  code: "",
+  description: "",
+  outcome: "",
+  session_count: 0,
+  active: false,
+  sort_order: 0,
+};
+const EMPTY_UNIT = { title: "", code: "", description: "", active: false, sort_order: 0 };
+const EMPTY_OBJECTIVES: AcademyObjectives = { outcome: "", lesson: "", language: "", skills: "", pronunciation: "" };
 const EMPTY_LESSON = {
   title: "",
   summary: "",
   content: "",
   video_url: "",
   resource_url: "",
-  duration_min: 5,
+  slide_url: "",
+  game_url: "",
+  worksheet_url: "",
+  references_text: "",
+  homework: "",
+  teacher_notes: "",
+  objectives: { ...EMPTY_OBJECTIVES },
+  lesson_type: "lesson" as AcademyLesson["lesson_type"],
+  session_no: null as number | null,
+  duration_min: 120,
   version_label: "1.0",
   active: false,
   sort_order: 0,
 };
+type CourseForm = typeof EMPTY_COURSE & { id?: string };
+type LevelForm = typeof EMPTY_LEVEL & { id?: string };
+type UnitForm = typeof EMPTY_UNIT & { id?: string };
+type LessonForm = typeof EMPTY_LESSON & { id?: string };
 
-function youtubeEmbed(url: string | null): string | null {
-  if (!url) return null;
-  try {
-    const parsed = new URL(url);
-    if (parsed.hostname === "youtu.be") return `https://www.youtube-nocookie.com/embed/${parsed.pathname.slice(1)}`;
-    if (parsed.hostname.endsWith("youtube.com")) {
-      const id = parsed.searchParams.get("v") || parsed.pathname.split("/").filter(Boolean).pop();
-      return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
-function validHttpUrl(value: string | null): string | null {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" ? url.toString() : null;
-  } catch {
-    return null;
-  }
+function status(active: boolean) {
+  return active ? "Đã xuất bản" : "Bản nháp";
 }
 
 export default function AcademyPage() {
-  const { session, canManageContent } = useAuth();
+  const { session } = useAuth();
   const userId = session?.user.id ?? "";
   const academy = useAsync(() => getAcademyData(userId), [userId]);
-  const [view] = useState<"learn" | "manage">("manage");
-  const [query] = useState("");
-  const [favoritesOnly] = useState(false);
   const [courseId, setCourseId] = useState<string | null>(null);
-  const [lessonId, setLessonId] = useState<string | null>(null);
-  const [courseForm, setCourseForm] = useState({ ...EMPTY_COURSE } as typeof EMPTY_COURSE & { id?: string });
-  const [lessonForm, setLessonForm] = useState({ ...EMPTY_LESSON } as typeof EMPTY_LESSON & { id?: string });
+  const [levelId, setLevelId] = useState<string | null>(null);
+  const [unitId, setUnitId] = useState<string | null>(null);
+  const [courseForm, setCourseForm] = useState<CourseForm>({ ...EMPTY_COURSE });
+  const [levelForm, setLevelForm] = useState<LevelForm>({ ...EMPTY_LEVEL });
+  const [unitForm, setUnitForm] = useState<UnitForm>({ ...EMPTY_UNIT });
+  const [lessonForm, setLessonForm] = useState<LessonForm>({ ...EMPTY_LESSON });
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const courses = useMemo(() => academy.data?.courses ?? [], [academy.data]);
+  const levels = useMemo(() => academy.data?.levels ?? [], [academy.data]);
+  const units = useMemo(() => academy.data?.units ?? [], [academy.data]);
   const lessons = useMemo(() => academy.data?.lessons ?? [], [academy.data]);
-  const completed = useMemo(() => new Set(academy.data?.completedLessonIds ?? []), [academy.data]);
-  const favorites = useMemo(() => new Set(academy.data?.favoriteLessonIds ?? []), [academy.data]);
+  const selectedCourse = courses.find((x) => x.id === courseId) ?? null;
+  const courseLevels = levels.filter((x) => x.course_id === courseId);
+  const selectedLevel = levels.find((x) => x.id === levelId) ?? null;
+  const levelUnits = units.filter((x) => x.level_id === levelId);
+  const selectedUnit = units.find((x) => x.id === unitId) ?? null;
+  const visibleLessons = lessons.filter((x) =>
+    unitId
+      ? x.unit_id === unitId
+      : levelId
+        ? x.level_id === levelId && !x.unit_id
+        : x.course_id === courseId && !x.level_id,
+  );
 
   useEffect(() => {
     if (!courseId && courses.length) setCourseId(courses[0].id);
   }, [courseId, courses]);
+  useEffect(() => {
+    if (levelId && !courseLevels.some((x) => x.id === levelId)) setLevelId(null);
+  }, [courseLevels, levelId]);
+  useEffect(() => {
+    if (unitId && !levelUnits.some((x) => x.id === unitId)) setUnitId(null);
+  }, [levelUnits, unitId]);
 
-  const visibleCourses = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase("vi");
-    return courses.filter((course) => {
-      const courseLessons = lessons.filter((lesson) => lesson.course_id === course.id);
-      const matches =
-        !q ||
-        `${course.title} ${course.description} ${course.department} ${courseLessons.map((x) => `${x.title} ${x.summary}`).join(" ")}`
-          .toLocaleLowerCase("vi")
-          .includes(q);
-      const hasFavorite = !favoritesOnly || courseLessons.some((lesson) => favorites.has(lesson.id));
-      return matches && hasFavorite;
-    });
-  }, [courses, lessons, query, favoritesOnly, favorites]);
-
-  const selectedCourse = courses.find((x) => x.id === courseId) ?? null;
-  const courseLessons = lessons.filter((x) => x.course_id === selectedCourse?.id);
-  const selectedLesson = lessons.find((x) => x.id === lessonId) ?? null;
-
-  function chooseCourse(id: string) {
-    setCourseId(id);
-    setLessonId(null);
-  }
-
-  async function toggleCompleted(lesson: AcademyLesson) {
-    setActionError(null);
-    try {
-      await setAcademyLessonCompleted(userId, lesson.id, !completed.has(lesson.id));
-      academy.reload();
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : String(error));
-    }
-  }
-
-  async function toggleFavorite(lesson: AcademyLesson) {
-    setActionError(null);
-    try {
-      await setAcademyLessonFavorite(userId, lesson.id, !favorites.has(lesson.id));
-      academy.reload();
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : String(error));
-    }
-  }
-
-  function editCourse(course: AcademyCourse) {
-    setCourseId(course.id);
-    setCourseForm({
-      id: course.id,
-      title: course.title,
-      description: course.description,
-      department: course.department,
-      cover_url: course.cover_url ?? "",
-      active: course.active,
-      sort_order: course.sort_order,
-    });
-  }
-
-  function editLesson(lesson: AcademyLesson) {
-    setCourseId(lesson.course_id);
-    setLessonForm({
-      id: lesson.id,
-      title: lesson.title,
-      summary: lesson.summary,
-      content: lesson.content,
-      video_url: lesson.video_url ?? "",
-      resource_url: lesson.resource_url ?? "",
-      duration_min: lesson.duration_min,
-      version_label: lesson.version_label,
-      active: lesson.active,
-      sort_order: lesson.sort_order,
-    });
-  }
-
-  async function submitCourse(event: React.FormEvent) {
-    event.preventDefault();
+  async function run(action: () => Promise<void>) {
     setBusy(true);
     setActionError(null);
     try {
+      await action();
+      academy.reload();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitCourse(e: React.FormEvent) {
+    e.preventDefault();
+    await run(async () => {
       const saved = await saveAcademyCourse(courseForm, userId);
       setCourseId(saved.id);
+      setLevelId(null);
+      setUnitId(null);
       setCourseForm({ ...EMPTY_COURSE });
-      academy.reload();
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setBusy(false);
-    }
+    });
   }
-
-  async function submitLesson(event: React.FormEvent) {
-    event.preventDefault();
+  async function submitLevel(e: React.FormEvent) {
+    e.preventDefault();
     if (!courseId) return;
-    setBusy(true);
-    setActionError(null);
-    try {
-      await saveAcademyLesson({ ...lessonForm, course_id: courseId }, userId);
-      setLessonForm({ ...EMPTY_LESSON });
-      academy.reload();
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setBusy(false);
-    }
+    await run(async () => {
+      const saved = await saveAcademyLevel({ ...levelForm, course_id: courseId }, userId);
+      setLevelId(saved.id);
+      setUnitId(null);
+      setLevelForm({ ...EMPTY_LEVEL });
+    });
+  }
+  async function submitUnit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!levelId) return;
+    await run(async () => {
+      const saved = await saveAcademyUnit({ ...unitForm, level_id: levelId }, userId);
+      setUnitId(saved.id);
+      setUnitForm({ ...EMPTY_UNIT });
+    });
+  }
+  async function submitLesson(e: React.FormEvent) {
+    e.preventDefault();
+    if (!courseId) return;
+    await run(async () => {
+      await saveAcademyLesson({ ...lessonForm, course_id: courseId, level_id: levelId, unit_id: unitId }, userId);
+      setLessonForm({ ...EMPTY_LESSON, objectives: { ...EMPTY_OBJECTIVES } });
+    });
   }
 
-  async function removeCourse(course: AcademyCourse) {
-    if (!window.confirm(`Xóa khóa học “${course.title}” và toàn bộ bài học?`)) return;
-    setActionError(null);
-    try {
-      await deleteAcademyCourse(course.id);
-      if (courseId === course.id) setCourseId(null);
-      academy.reload();
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : String(error));
-    }
+  function editCourse(x: AcademyCourse) {
+    setCourseId(x.id);
+    setLevelId(null);
+    setUnitId(null);
+    setCourseForm({
+      id: x.id,
+      title: x.title,
+      description: x.description,
+      department: x.department,
+      cover_url: x.cover_url ?? "",
+      active: x.active,
+      sort_order: x.sort_order,
+    });
+  }
+  function editLevel(x: AcademyLevel) {
+    setLevelId(x.id);
+    setUnitId(null);
+    setLevelForm({
+      id: x.id,
+      title: x.title,
+      code: x.code,
+      description: x.description,
+      outcome: x.outcome,
+      session_count: x.session_count,
+      active: x.active,
+      sort_order: x.sort_order,
+    });
+  }
+  function editUnit(x: AcademyUnit) {
+    setUnitId(x.id);
+    setUnitForm({
+      id: x.id,
+      title: x.title,
+      code: x.code,
+      description: x.description,
+      active: x.active,
+      sort_order: x.sort_order,
+    });
+  }
+  function editLesson(x: AcademyLesson) {
+    setCourseId(x.course_id);
+    setLevelId(x.level_id);
+    setUnitId(x.unit_id);
+    setLessonForm({
+      id: x.id,
+      title: x.title,
+      summary: x.summary,
+      content: x.content,
+      video_url: x.video_url ?? "",
+      resource_url: x.resource_url ?? "",
+      slide_url: x.slide_url ?? "",
+      game_url: x.game_url ?? "",
+      worksheet_url: x.worksheet_url ?? "",
+      references_text: x.references_text,
+      homework: x.homework,
+      teacher_notes: x.teacher_notes,
+      objectives: { ...EMPTY_OBJECTIVES, ...x.objectives },
+      lesson_type: x.lesson_type,
+      session_no: x.session_no,
+      duration_min: x.duration_min,
+      version_label: x.version_label,
+      active: x.active,
+      sort_order: x.sort_order,
+    });
+  }
+  async function remove(kind: "course" | "level" | "unit" | "lesson", id: string, title: string) {
+    if (!window.confirm(`Xóa “${title}”? Nội dung con liên quan cũng có thể bị xóa.`)) return;
+    await run(async () => {
+      if (kind === "course") await deleteAcademyCourse(id);
+      if (kind === "level") await deleteAcademyLevel(id);
+      if (kind === "unit") await deleteAcademyUnit(id);
+      if (kind === "lesson") await deleteAcademyLesson(id);
+      if (kind === "course") {
+        setCourseId(null);
+        setLevelId(null);
+        setUnitId(null);
+      }
+      if (kind === "level") {
+        setLevelId(null);
+        setUnitId(null);
+      }
+      if (kind === "unit") setUnitId(null);
+    });
   }
 
-  async function removeLesson(lesson: AcademyLesson) {
-    if (!window.confirm(`Xóa bài học “${lesson.title}”?`)) return;
-    setActionError(null);
-    try {
-      await deleteAcademyLesson(lesson.id);
-      academy.reload();
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : String(error));
-    }
+  function objective(key: keyof AcademyObjectives, label: string) {
+    return (
+      <label className="field">
+        <span>{label}</span>
+        <textarea
+          rows={2}
+          value={lessonForm.objectives[key] ?? ""}
+          onChange={(e) =>
+            setLessonForm({ ...lessonForm, objectives: { ...lessonForm.objectives, [key]: e.target.value } })
+          }
+        />
+      </label>
+    );
   }
-
-  const embedUrl = youtubeEmbed(selectedLesson?.video_url ?? null);
-  const videoUrl = validHttpUrl(selectedLesson?.video_url ?? null);
-  const resourceUrl = validHttpUrl(selectedLesson?.resource_url ?? null);
 
   return (
     <div className="admin-page academy-page">
       <AdminPageHeader
         eyebrow="Internal Academy"
-        title="Quản lý nội dung Academy"
-        subtitle="Tạo khóa học, đăng giáo án, video và xuất bản nội dung cho đội ngũ."
+        title="Syllabus & Lesson Plan"
+        subtitle="Quản lý chương trình, level, unit và giáo án chi tiết cho đội ngũ."
         stats={[
-          { label: "Khóa học", value: courses.length },
-          { label: "Đã xuất bản", value: courses.filter((x) => x.active).length },
-          { label: "Bài học", value: lessons.length },
+          { label: "Chương trình", value: courses.length },
+          { label: "Level", value: levels.length },
+          { label: "Buổi học", value: lessons.length },
         ]}
       />
-
       <div className="academy-toolbar card">
         <div>
-          <strong>Khu vực dành cho quản lý</strong>
-          <div className="muted small">
-            Nội dung bản nháp chỉ quản lý nhìn thấy; bật “Xuất bản” để đưa sang trang học.
-          </div>
+          <strong>Khu vực biên soạn</strong>
+          <div className="muted small">Soạn nháp, xem trước rồi xuất bản sang trang học.</div>
         </div>
         <Link className="btn primary" to="/academy">
-          Mở trang học →
+          Xem trang học →
         </Link>
       </div>
-
       {(academy.error || actionError) && <ErrorBox msg={academy.error || actionError || "Có lỗi xảy ra."} />}
       {academy.loading ? (
-        <Spinner label="Đang tải học viện…" />
-      ) : view === "learn" ? (
-        <div className="academy-layout">
-          <aside className="academy-course-list card" aria-label="Danh sách khóa học">
-            <div className="card-title-row compact">
-              <h3>Khóa học</h3>
-              <span className="muted small">{visibleCourses.length}</span>
-            </div>
-            {visibleCourses.length === 0 ? (
-              <EmptyState
-                title="Chưa có khóa học phù hợp"
-                body="Thử bỏ bộ lọc hoặc quay lại sau khi quản lý xuất bản nội dung."
-              />
-            ) : (
-              visibleCourses.map((course) => {
-                const items = lessons.filter((x) => x.course_id === course.id && x.active);
-                const done = items.filter((x) => completed.has(x.id)).length;
-                return (
-                  <button
-                    key={course.id}
-                    className={`academy-course-button ${course.id === courseId ? "active" : ""}`}
-                    onClick={() => chooseCourse(course.id)}
-                  >
-                    <span className="academy-course-department">{course.department}</span>
-                    <strong>{course.title}</strong>
-                    <span>
-                      {done}/{items.length} bài hoàn thành
-                    </span>
-                  </button>
-                );
-              })
-            )}
-          </aside>
-
-          <section className="academy-main">
-            {!selectedCourse ? (
-              <EmptyState title="Chọn một khóa học" body="Nội dung bài học sẽ hiển thị tại đây." />
-            ) : selectedLesson ? (
-              <article className="card academy-lesson-detail">
-                <button className="btn ghost small" onClick={() => setLessonId(null)}>
-                  ← Danh sách bài học
-                </button>
-                <div className="academy-lesson-heading">
-                  <div>
-                    <span className="pill">Phiên bản {selectedLesson.version_label}</span>
-                    <h2>{selectedLesson.title}</h2>
-                    <p className="muted">{selectedLesson.summary}</p>
-                  </div>
-                  <button
-                    className="btn small"
-                    aria-label="Đánh dấu yêu thích"
-                    onClick={() => toggleFavorite(selectedLesson)}
-                  >
-                    {favorites.has(selectedLesson.id) ? "★ Đã yêu thích" : "☆ Yêu thích"}
-                  </button>
-                </div>
-                {embedUrl ? (
-                  <div className="academy-video">
-                    <iframe
-                      src={embedUrl}
-                      title={`Video: ${selectedLesson.title}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                ) : videoUrl ? (
-                  <a className="btn" href={videoUrl} target="_blank" rel="noreferrer">
-                    Mở video hướng dẫn ↗
-                  </a>
-                ) : null}
-                <div className="academy-content">{selectedLesson.content || "Bài học chưa có nội dung văn bản."}</div>
-                {resourceUrl && (
-                  <a className="btn" href={resourceUrl} target="_blank" rel="noreferrer">
-                    Xem tài liệu trực tuyến ↗
-                  </a>
-                )}
-                <div className="academy-complete-bar">
-                  <span>Thời lượng dự kiến: {selectedLesson.duration_min} phút</span>
-                  <button
-                    className={`btn ${completed.has(selectedLesson.id) ? "" : "primary"}`}
-                    onClick={() => toggleCompleted(selectedLesson)}
-                  >
-                    {completed.has(selectedLesson.id) ? "✓ Đã hoàn thành" : "Đánh dấu hoàn thành"}
-                  </button>
-                </div>
-              </article>
-            ) : (
-              <div className="card">
-                <div className="academy-course-hero">
-                  <div>
-                    <span className="academy-course-department">{selectedCourse.department}</span>
-                    <h2>{selectedCourse.title}</h2>
-                    <p>{selectedCourse.description}</p>
-                  </div>
-                </div>
-                <div className="academy-lesson-list">
-                  {courseLessons.filter((x) => x.active).length === 0 ? (
-                    <EmptyState title="Khóa học chưa có bài được xuất bản" />
-                  ) : (
-                    courseLessons
-                      .filter((x) => x.active)
-                      .map((lesson, index) => (
-                        <button key={lesson.id} className="academy-lesson-row" onClick={() => setLessonId(lesson.id)}>
-                          <span className={`academy-step ${completed.has(lesson.id) ? "done" : ""}`}>
-                            {completed.has(lesson.id) ? "✓" : index + 1}
-                          </span>
-                          <span className="academy-lesson-copy">
-                            <strong>{lesson.title}</strong>
-                            <span>{lesson.summary || "Hướng dẫn chi tiết"}</span>
-                          </span>
-                          <span className="academy-lesson-meta">
-                            {favorites.has(lesson.id) ? "★ " : ""}
-                            {lesson.duration_min} phút ›
-                          </span>
-                        </button>
-                      ))
-                  )}
-                </div>
-              </div>
-            )}
-          </section>
-        </div>
-      ) : canManageContent ? (
-        <div className="academy-manage-grid">
-          <section>
-            <form className="card" onSubmit={submitCourse}>
+        <Spinner label="Đang tải Academy…" />
+      ) : (
+        <>
+          <div className="academy-authoring-grid">
+            <section className="card academy-authoring-panel">
               <div className="card-title-row">
                 <div>
-                  <h3>{courseForm.id ? "Sửa khóa học" : "Tạo khóa học"}</h3>
-                  <p className="muted small">Nên bắt đầu với Giáo viên - Academic.</p>
+                  <span className="academy-kicker">Cấp 1</span>
+                  <h3>Chương trình / Syllabus</h3>
                 </div>
                 {courseForm.id && (
-                  <button type="button" className="btn small" onClick={() => setCourseForm({ ...EMPTY_COURSE })}>
+                  <button className="btn small" onClick={() => setCourseForm({ ...EMPTY_COURSE })}>
                     Tạo mới
                   </button>
                 )}
               </div>
-              <label className="field">
-                <span>Tên khóa học</span>
-                <input
-                  required
-                  minLength={2}
-                  value={courseForm.title}
-                  onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
-                />
-              </label>
-              <label className="field">
-                <span>Mô tả</span>
-                <textarea
-                  rows={3}
-                  value={courseForm.description}
-                  onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
-                />
-              </label>
-              <div className="grid2">
+              <form onSubmit={submitCourse}>
                 <label className="field">
-                  <span>Bộ phận</span>
+                  <span>Tên chương trình</span>
                   <input
-                    value={courseForm.department}
-                    onChange={(e) => setCourseForm({ ...courseForm, department: e.target.value })}
+                    required
+                    value={courseForm.title}
+                    onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
+                    placeholder="Academy Stars Second Edition"
                   />
                 </label>
                 <label className="field">
-                  <span>Thứ tự</span>
-                  <input
-                    type="number"
-                    value={courseForm.sort_order}
-                    onChange={(e) => setCourseForm({ ...courseForm, sort_order: Number(e.target.value) })}
+                  <span>Mô tả</span>
+                  <textarea
+                    rows={3}
+                    value={courseForm.description}
+                    onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
                   />
                 </label>
-              </div>
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={courseForm.active}
-                  onChange={(e) => setCourseForm({ ...courseForm, active: e.target.checked })}
-                />{" "}
-                Xuất bản cho nhân sự
-              </label>
-              <button className="btn primary" disabled={busy}>
-                {busy ? "Đang lưu…" : "Lưu khóa học"}
-              </button>
-            </form>
-            <div className="card">
-              <h3>Danh sách khóa học</h3>
-              {courses.map((course) => (
-                <div className="academy-manage-row" key={course.id}>
-                  <button className="academy-manage-select" onClick={() => setCourseId(course.id)}>
-                    <strong>{course.title}</strong>
-                    <span>{course.active ? "Đang xuất bản" : "Bản nháp"}</span>
-                  </button>
-                  <button className="btn small" onClick={() => editCourse(course)}>
-                    Sửa
-                  </button>
-                  <button className="btn small danger" onClick={() => removeCourse(course)}>
-                    Xóa
-                  </button>
+                <div className="grid2">
+                  <label className="field">
+                    <span>Bộ phận</span>
+                    <input
+                      value={courseForm.department}
+                      onChange={(e) => setCourseForm({ ...courseForm, department: e.target.value })}
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Thứ tự</span>
+                    <input
+                      type="number"
+                      value={courseForm.sort_order}
+                      onChange={(e) => setCourseForm({ ...courseForm, sort_order: Number(e.target.value) })}
+                    />
+                  </label>
                 </div>
-              ))}
-            </div>
-          </section>
-          <section>
-            {!selectedCourse ? (
-              <EmptyState title="Chọn hoặc tạo khóa học trước" />
-            ) : (
-              <>
-                <form className="card" onSubmit={submitLesson}>
-                  <div className="card-title-row">
-                    <div>
-                      <h3>{lessonForm.id ? "Sửa bài học" : "Thêm bài học"}</h3>
-                      <p className="muted small">Thuộc: {selectedCourse.title}</p>
-                    </div>
-                    {lessonForm.id && (
-                      <button type="button" className="btn small" onClick={() => setLessonForm({ ...EMPTY_LESSON })}>
-                        Tạo mới
-                      </button>
-                    )}
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={courseForm.active}
+                    onChange={(e) => setCourseForm({ ...courseForm, active: e.target.checked })}
+                  />{" "}
+                  Xuất bản chương trình
+                </label>
+                <button className="btn primary" disabled={busy}>
+                  Lưu chương trình
+                </button>
+              </form>
+              <div className="academy-compact-list">
+                {courses.map((x) => (
+                  <div className={`academy-outline-row ${x.id === courseId ? "active" : ""}`} key={x.id}>
+                    <button
+                      onClick={() => {
+                        setCourseId(x.id);
+                        setLevelId(null);
+                        setUnitId(null);
+                      }}
+                    >
+                      <strong>{x.title}</strong>
+                      <small>{status(x.active)}</small>
+                    </button>
+                    <button className="btn small" onClick={() => editCourse(x)}>
+                      Sửa
+                    </button>
+                    <button className="btn small danger" onClick={() => remove("course", x.id, x.title)}>
+                      Xóa
+                    </button>
                   </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="card academy-authoring-panel">
+              <div className="card-title-row">
+                <div>
+                  <span className="academy-kicker">Cấp 2</span>
+                  <h3>Level</h3>
+                </div>
+                {levelForm.id && (
+                  <button className="btn small" onClick={() => setLevelForm({ ...EMPTY_LEVEL })}>
+                    Tạo mới
+                  </button>
+                )}
+              </div>
+              {!selectedCourse ? (
+                <EmptyState title="Chọn chương trình trước" />
+              ) : (
+                <>
+                  <p className="muted small">
+                    Thuộc: <strong>{selectedCourse.title}</strong>
+                  </p>
+                  <form onSubmit={submitLevel}>
+                    <div className="grid2">
+                      <label className="field">
+                        <span>Tên level</span>
+                        <input
+                          required
+                          value={levelForm.title}
+                          onChange={(e) => setLevelForm({ ...levelForm, title: e.target.value })}
+                          placeholder="Level 1"
+                        />
+                      </label>
+                      <label className="field">
+                        <span>Mã</span>
+                        <input
+                          value={levelForm.code}
+                          onChange={(e) => setLevelForm({ ...levelForm, code: e.target.value })}
+                          placeholder="L1"
+                        />
+                      </label>
+                    </div>
+                    <label className="field">
+                      <span>Chuẩn đầu ra</span>
+                      <textarea
+                        rows={2}
+                        value={levelForm.outcome}
+                        onChange={(e) => setLevelForm({ ...levelForm, outcome: e.target.value })}
+                      />
+                    </label>
+                    <div className="grid2">
+                      <label className="field">
+                        <span>Số buổi</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={levelForm.session_count}
+                          onChange={(e) => setLevelForm({ ...levelForm, session_count: Number(e.target.value) })}
+                        />
+                      </label>
+                      <label className="field">
+                        <span>Thứ tự</span>
+                        <input
+                          type="number"
+                          value={levelForm.sort_order}
+                          onChange={(e) => setLevelForm({ ...levelForm, sort_order: Number(e.target.value) })}
+                        />
+                      </label>
+                    </div>
+                    <label className="check">
+                      <input
+                        type="checkbox"
+                        checked={levelForm.active}
+                        onChange={(e) => setLevelForm({ ...levelForm, active: e.target.checked })}
+                      />{" "}
+                      Xuất bản level
+                    </label>
+                    <button className="btn primary" disabled={busy}>
+                      Lưu level
+                    </button>
+                  </form>
+                  <div className="academy-compact-list">
+                    {courseLevels.map((x) => (
+                      <div className={`academy-outline-row ${x.id === levelId ? "active" : ""}`} key={x.id}>
+                        <button
+                          onClick={() => {
+                            setLevelId(x.id);
+                            setUnitId(null);
+                          }}
+                        >
+                          <strong>{x.title}</strong>
+                          <small>
+                            {x.session_count} buổi · {status(x.active)}
+                          </small>
+                        </button>
+                        <button className="btn small" onClick={() => editLevel(x)}>
+                          Sửa
+                        </button>
+                        <button className="btn small danger" onClick={() => remove("level", x.id, x.title)}>
+                          Xóa
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+
+            <section className="card academy-authoring-panel">
+              <div className="card-title-row">
+                <div>
+                  <span className="academy-kicker">Cấp 3</span>
+                  <h3>Unit</h3>
+                </div>
+                {unitForm.id && (
+                  <button className="btn small" onClick={() => setUnitForm({ ...EMPTY_UNIT })}>
+                    Tạo mới
+                  </button>
+                )}
+              </div>
+              {!selectedLevel ? (
+                <EmptyState title="Chọn level trước" />
+              ) : (
+                <>
+                  <p className="muted small">
+                    Thuộc: <strong>{selectedLevel.title}</strong>
+                  </p>
+                  <form onSubmit={submitUnit}>
+                    <div className="grid2">
+                      <label className="field">
+                        <span>Tên unit</span>
+                        <input
+                          required
+                          value={unitForm.title}
+                          onChange={(e) => setUnitForm({ ...unitForm, title: e.target.value })}
+                          placeholder="Unit 1: My funny friends"
+                        />
+                      </label>
+                      <label className="field">
+                        <span>Mã</span>
+                        <input
+                          value={unitForm.code}
+                          onChange={(e) => setUnitForm({ ...unitForm, code: e.target.value })}
+                          placeholder="U1"
+                        />
+                      </label>
+                    </div>
+                    <label className="field">
+                      <span>Mô tả</span>
+                      <textarea
+                        rows={2}
+                        value={unitForm.description}
+                        onChange={(e) => setUnitForm({ ...unitForm, description: e.target.value })}
+                      />
+                    </label>
+                    <div className="grid2">
+                      <label className="field">
+                        <span>Thứ tự</span>
+                        <input
+                          type="number"
+                          value={unitForm.sort_order}
+                          onChange={(e) => setUnitForm({ ...unitForm, sort_order: Number(e.target.value) })}
+                        />
+                      </label>
+                      <label className="check academy-check-bottom">
+                        <input
+                          type="checkbox"
+                          checked={unitForm.active}
+                          onChange={(e) => setUnitForm({ ...unitForm, active: e.target.checked })}
+                        />{" "}
+                        Xuất bản
+                      </label>
+                    </div>
+                    <button className="btn primary" disabled={busy}>
+                      Lưu unit
+                    </button>
+                  </form>
+                  <div className="academy-compact-list">
+                    {levelUnits.map((x) => (
+                      <div className={`academy-outline-row ${x.id === unitId ? "active" : ""}`} key={x.id}>
+                        <button onClick={() => setUnitId(x.id)}>
+                          <strong>{x.title}</strong>
+                          <small>{status(x.active)}</small>
+                        </button>
+                        <button className="btn small" onClick={() => editUnit(x)}>
+                          Sửa
+                        </button>
+                        <button className="btn small danger" onClick={() => remove("unit", x.id, x.title)}>
+                          Xóa
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+          </div>
+
+          <section className="card academy-lesson-editor">
+            <div className="card-title-row">
+              <div>
+                <span className="academy-kicker">Cấp 4</span>
+                <h2>{lessonForm.id ? "Sửa buổi học" : "Tạo buổi học / Lesson plan"}</h2>
+                <p className="muted small">
+                  {selectedCourse?.title ?? "Chưa chọn chương trình"}
+                  {selectedLevel ? ` → ${selectedLevel.title}` : ""}
+                  {selectedUnit ? ` → ${selectedUnit.title}` : ""}
+                </p>
+              </div>
+              {lessonForm.id && (
+                <button
+                  className="btn"
+                  onClick={() => setLessonForm({ ...EMPTY_LESSON, objectives: { ...EMPTY_OBJECTIVES } })}
+                >
+                  Tạo buổi mới
+                </button>
+              )}
+            </div>
+            {!selectedCourse ? (
+              <EmptyState title="Chọn chương trình trước khi tạo buổi học" />
+            ) : (
+              <form onSubmit={submitLesson}>
+                <div className="academy-form-4">
                   <label className="field">
-                    <span>Tên bài học</span>
+                    <span>Số buổi</span>
                     <input
-                      required
-                      minLength={2}
-                      value={lessonForm.title}
-                      onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                      type="number"
+                      min={1}
+                      value={lessonForm.session_no ?? ""}
+                      onChange={(e) =>
+                        setLessonForm({ ...lessonForm, session_no: e.target.value ? Number(e.target.value) : null })
+                      }
                     />
                   </label>
                   <label className="field">
-                    <span>Tóm tắt</span>
+                    <span>Loại bài</span>
+                    <select
+                      value={lessonForm.lesson_type}
+                      onChange={(e) =>
+                        setLessonForm({ ...lessonForm, lesson_type: e.target.value as AcademyLesson["lesson_type"] })
+                      }
+                    >
+                      <option value="lesson">Bài học</option>
+                      <option value="review">Reading / Review</option>
+                      <option value="cambridge">Cambridge practice</option>
+                      <option value="midterm">Ôn tập giữa kỳ</option>
+                      <option value="test">Kiểm tra</option>
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>Thời lượng</span>
                     <input
-                      value={lessonForm.summary}
-                      onChange={(e) => setLessonForm({ ...lessonForm, summary: e.target.value })}
+                      type="number"
+                      min={1}
+                      value={lessonForm.duration_min}
+                      onChange={(e) => setLessonForm({ ...lessonForm, duration_min: Number(e.target.value) })}
                     />
                   </label>
                   <label className="field">
-                    <span>Nội dung/hướng dẫn từng bước</span>
+                    <span>Phiên bản</span>
+                    <input
+                      value={lessonForm.version_label}
+                      onChange={(e) => setLessonForm({ ...lessonForm, version_label: e.target.value })}
+                    />
+                  </label>
+                </div>
+                <label className="field">
+                  <span>Tên bài / buổi học</span>
+                  <input
+                    required
+                    value={lessonForm.title}
+                    onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                    placeholder="Lesson 1: Vocabulary – My funny friends"
+                  />
+                </label>
+                <label className="field">
+                  <span>Tóm tắt</span>
+                  <input
+                    value={lessonForm.summary}
+                    onChange={(e) => setLessonForm({ ...lessonForm, summary: e.target.value })}
+                  />
+                </label>
+                <div className="academy-editor-section">
+                  <h3>Mục tiêu bài học</h3>
+                  <div className="grid2">
+                    {objective("outcome", "Đến cuối buổi học")}
+                    {objective("lesson", "Mục tiêu bài học")}
+                    {objective("language", "Mục tiêu ngôn ngữ")}
+                    {objective("skills", "Mục tiêu kỹ năng")}
+                    {objective("pronunciation", "Mục tiêu phát âm")}
+                  </div>
+                </div>
+                <div className="academy-editor-section">
+                  <h3>Tiến trình giảng dạy</h3>
+                  <label className="field">
+                    <span>Các bước dạy</span>
                     <textarea
-                      rows={9}
+                      rows={12}
                       value={lessonForm.content}
                       onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })}
-                      placeholder="Bước 1…\nBước 2…"
+                      placeholder={
+                        "1. Review từ vựng\n2. Warm-up\n3. Lead-in\n4. Presentation\n5. Pronunciation focus\n6. Practice\n7. Production\n8. Worksheet\n9. Wrap-up & Exit ticket"
+                      }
                     />
                   </label>
+                </div>
+                <div className="academy-editor-section">
+                  <h3>Tài liệu & bài tập</h3>
                   <div className="grid2">
                     <label className="field">
-                      <span>Link video (YouTube)</span>
-                      <input
-                        type="url"
-                        value={lessonForm.video_url}
-                        onChange={(e) => setLessonForm({ ...lessonForm, video_url: e.target.value })}
+                      <span>Tài liệu tham khảo</span>
+                      <textarea
+                        rows={4}
+                        value={lessonForm.references_text}
+                        onChange={(e) => setLessonForm({ ...lessonForm, references_text: e.target.value })}
                       />
                     </label>
                     <label className="field">
-                      <span>Link tài liệu xem online</span>
-                      <input
-                        type="url"
-                        value={lessonForm.resource_url}
-                        onChange={(e) => setLessonForm({ ...lessonForm, resource_url: e.target.value })}
+                      <span>Bài tập về nhà</span>
+                      <textarea
+                        rows={4}
+                        value={lessonForm.homework}
+                        onChange={(e) => setLessonForm({ ...lessonForm, homework: e.target.value })}
                       />
                     </label>
                   </div>
-                  <div className="academy-form-3">
-                    <label className="field">
-                      <span>Thời lượng (phút)</span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={180}
-                        value={lessonForm.duration_min}
-                        onChange={(e) => setLessonForm({ ...lessonForm, duration_min: Number(e.target.value) })}
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Phiên bản</span>
-                      <input
-                        value={lessonForm.version_label}
-                        onChange={(e) => setLessonForm({ ...lessonForm, version_label: e.target.value })}
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Thứ tự</span>
-                      <input
-                        type="number"
-                        value={lessonForm.sort_order}
-                        onChange={(e) => setLessonForm({ ...lessonForm, sort_order: Number(e.target.value) })}
-                      />
-                    </label>
+                  <label className="field">
+                    <span>Ghi chú cho giáo viên</span>
+                    <textarea
+                      rows={3}
+                      value={lessonForm.teacher_notes}
+                      onChange={(e) => setLessonForm({ ...lessonForm, teacher_notes: e.target.value })}
+                    />
+                  </label>
+                </div>
+                <div className="academy-editor-section">
+                  <h3>Liên kết tài nguyên</h3>
+                  <div className="academy-resource-grid">
+                    {(
+                      [
+                        ["video_url", "Video hướng dẫn"],
+                        ["resource_url", "Giáo án/PDF"],
+                        ["slide_url", "Slide"],
+                        ["game_url", "Game"],
+                        ["worksheet_url", "Worksheet"],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <label className="field" key={key}>
+                        <span>{label}</span>
+                        <input
+                          type="url"
+                          value={lessonForm[key]}
+                          onChange={(e) => setLessonForm({ ...lessonForm, [key]: e.target.value })}
+                        />
+                      </label>
+                    ))}
                   </div>
+                </div>
+                <div className="academy-publish-bar">
                   <label className="check">
                     <input
                       type="checkbox"
                       checked={lessonForm.active}
                       onChange={(e) => setLessonForm({ ...lessonForm, active: e.target.checked })}
                     />{" "}
-                    Xuất bản bài học
+                    Xuất bản buổi học
                   </label>
-                  <button className="btn primary" disabled={busy}>
-                    {busy ? "Đang lưu…" : "Lưu bài học"}
+                  <label className="field inline">
+                    <span>Thứ tự</span>
+                    <input
+                      type="number"
+                      value={lessonForm.sort_order}
+                      onChange={(e) => setLessonForm({ ...lessonForm, sort_order: Number(e.target.value) })}
+                    />
+                  </label>
+                  <button className="btn primary big" disabled={busy}>
+                    {busy ? "Đang lưu…" : "Lưu lesson plan"}
                   </button>
-                </form>
-                <div className="card">
-                  <h3>Bài học trong khóa</h3>
-                  {courseLessons.length === 0 ? (
-                    <EmptyState title="Chưa có bài học" />
-                  ) : (
-                    courseLessons.map((lesson) => (
-                      <div className="academy-manage-row" key={lesson.id}>
-                        <div className="academy-manage-select">
-                          <strong>{lesson.title}</strong>
-                          <span>{lesson.active ? `Đã xuất bản · v${lesson.version_label}` : "Bản nháp"}</span>
-                        </div>
-                        <button className="btn small" onClick={() => editLesson(lesson)}>
-                          Sửa
-                        </button>
-                        <button className="btn small danger" onClick={() => removeLesson(lesson)}>
-                          Xóa
-                        </button>
-                      </div>
-                    ))
-                  )}
                 </div>
-              </>
+              </form>
             )}
           </section>
-        </div>
-      ) : null}
+
+          <section className="card">
+            <div className="card-title-row">
+              <h3>Buổi học trong mục đang chọn</h3>
+              <span className="muted small">{visibleLessons.length} buổi</span>
+            </div>
+            {visibleLessons.length === 0 ? (
+              <EmptyState title="Chưa có buổi học" body="Chọn chương trình, level/unit rồi tạo lesson plan đầu tiên." />
+            ) : (
+              <div className="academy-session-table">
+                {visibleLessons.map((x) => (
+                  <div className="academy-session-row" key={x.id}>
+                    <span className={`academy-status-dot ${x.active ? "active" : ""}`} />
+                    <div>
+                      <strong>
+                        {x.session_no ? `Buổi ${x.session_no} · ` : ""}
+                        {x.title}
+                      </strong>
+                      <small>
+                        {x.lesson_type} · {x.duration_min} phút · {status(x.active)}
+                      </small>
+                    </div>
+                    <button className="btn small" onClick={() => editLesson(x)}>
+                      Sửa chi tiết
+                    </button>
+                    <button className="btn small danger" onClick={() => remove("lesson", x.id, x.title)}>
+                      Xóa
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }

@@ -4,7 +4,9 @@ import { supabase } from "./supabase";
 import type {
   AcademyCourse,
   AcademyData,
+  AcademyLevel,
   AcademyLesson,
+  AcademyUnit,
   AnswerMap,
   ClassRow,
   ClassTeacher,
@@ -38,18 +40,68 @@ import type {
 
 // ---------- Internal Academy (chỉ tài khoản nội bộ đã đăng nhập) ----------
 export async function getAcademyData(userId: string): Promise<AcademyData> {
-  const [coursesRes, lessonsRes, progressRes, favoritesRes] = await Promise.all([
+  const [coursesRes, levelsRes, unitsRes, lessonsRes, progressRes, favoritesRes] = await Promise.all([
     db().from("academy_courses").select("*").order("sort_order").order("created_at"),
+    db().from("academy_levels").select("*").order("sort_order").order("created_at"),
+    db().from("academy_units").select("*").order("sort_order").order("created_at"),
     db().from("academy_lessons").select("*").order("sort_order").order("created_at"),
     db().from("academy_progress").select("lesson_id").eq("user_id", userId),
     db().from("academy_favorites").select("lesson_id").eq("user_id", userId),
   ]);
   return {
     courses: unwrap<AcademyCourse[]>(coursesRes) ?? [],
+    levels: unwrap<AcademyLevel[]>(levelsRes) ?? [],
+    units: unwrap<AcademyUnit[]>(unitsRes) ?? [],
     lessons: unwrap<AcademyLesson[]>(lessonsRes) ?? [],
     completedLessonIds: (unwrap<{ lesson_id: string }[]>(progressRes) ?? []).map((x) => x.lesson_id),
     favoriteLessonIds: (unwrap<{ lesson_id: string }[]>(favoritesRes) ?? []).map((x) => x.lesson_id),
   };
+}
+
+export async function saveAcademyLevel(
+  input: Partial<AcademyLevel> & Pick<AcademyLevel, "course_id" | "title">,
+  userId: string,
+): Promise<AcademyLevel> {
+  const payload = {
+    ...(input.id ? { id: input.id } : {}),
+    course_id: input.course_id,
+    title: input.title.trim(),
+    code: input.code?.trim() ?? "",
+    description: input.description?.trim() ?? "",
+    outcome: input.outcome?.trim() ?? "",
+    session_count: Math.max(0, Number(input.session_count ?? 0)),
+    active: input.active ?? false,
+    sort_order: Number(input.sort_order ?? 0),
+    created_by: input.created_by ?? userId,
+    updated_at: new Date().toISOString(),
+  };
+  return unwrap<AcademyLevel>(await db().from("academy_levels").upsert(payload).select("*").single());
+}
+
+export async function deleteAcademyLevel(id: string): Promise<void> {
+  unwrap(await db().from("academy_levels").delete().eq("id", id));
+}
+
+export async function saveAcademyUnit(
+  input: Partial<AcademyUnit> & Pick<AcademyUnit, "level_id" | "title">,
+  userId: string,
+): Promise<AcademyUnit> {
+  const payload = {
+    ...(input.id ? { id: input.id } : {}),
+    level_id: input.level_id,
+    title: input.title.trim(),
+    code: input.code?.trim() ?? "",
+    description: input.description?.trim() ?? "",
+    active: input.active ?? false,
+    sort_order: Number(input.sort_order ?? 0),
+    created_by: input.created_by ?? userId,
+    updated_at: new Date().toISOString(),
+  };
+  return unwrap<AcademyUnit>(await db().from("academy_units").upsert(payload).select("*").single());
+}
+
+export async function deleteAcademyUnit(id: string): Promise<void> {
+  unwrap(await db().from("academy_units").delete().eq("id", id));
 }
 
 export async function saveAcademyCourse(
@@ -86,6 +138,17 @@ export async function saveAcademyLesson(
     content: input.content?.trim() ?? "",
     video_url: input.video_url?.trim() || null,
     resource_url: input.resource_url?.trim() || null,
+    level_id: input.level_id || null,
+    unit_id: input.unit_id || null,
+    lesson_type: input.lesson_type ?? "lesson",
+    session_no: input.session_no == null ? null : Number(input.session_no),
+    references_text: input.references_text?.trim() ?? "",
+    objectives: input.objectives ?? {},
+    homework: input.homework?.trim() ?? "",
+    teacher_notes: input.teacher_notes?.trim() ?? "",
+    slide_url: input.slide_url?.trim() || null,
+    game_url: input.game_url?.trim() || null,
+    worksheet_url: input.worksheet_url?.trim() || null,
     duration_min: Math.max(1, Number(input.duration_min ?? 5)),
     version_label: input.version_label?.trim() || "1.0",
     active: input.active ?? false,

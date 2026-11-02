@@ -28,6 +28,42 @@ export interface AcademyCourse {
   updated_at?: string;
 }
 
+export interface AcademyLevel {
+  id: string;
+  course_id: string;
+  title: string;
+  code: string;
+  description: string;
+  outcome: string;
+  session_count: number;
+  active: boolean;
+  sort_order: number;
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AcademyUnit {
+  id: string;
+  level_id: string;
+  title: string;
+  code: string;
+  description: string;
+  active: boolean;
+  sort_order: number;
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AcademyObjectives {
+  outcome?: string;
+  lesson?: string;
+  language?: string;
+  skills?: string;
+  pronunciation?: string;
+}
+
 export interface AcademyLesson {
   id: string;
   course_id: string;
@@ -36,6 +72,17 @@ export interface AcademyLesson {
   content: string;
   video_url: string | null;
   resource_url: string | null;
+  level_id: string | null;
+  unit_id: string | null;
+  lesson_type: "lesson" | "review" | "cambridge" | "midterm" | "test";
+  session_no: number | null;
+  references_text: string;
+  objectives: AcademyObjectives;
+  homework: string;
+  teacher_notes: string;
+  slide_url: string | null;
+  game_url: string | null;
+  worksheet_url: string | null;
   duration_min: number;
   version_label: string;
   active: boolean;
@@ -47,6 +94,8 @@ export interface AcademyLesson {
 
 export interface AcademyData {
   courses: AcademyCourse[];
+  levels: AcademyLevel[];
+  units: AcademyUnit[];
   lessons: AcademyLesson[];
   completedLessonIds: string[];
   favoriteLessonIds: string[];

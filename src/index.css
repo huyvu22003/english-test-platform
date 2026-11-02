@@ -5286,7 +5286,372 @@ main:focus-visible {
   border-color: #fecaca;
 }
 
+/* Academy V2 — syllabus authoring */
+.academy-authoring-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.academy-authoring-panel {
+  min-width: 0;
+}
+.academy-kicker {
+  display: block;
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.academy-compact-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.academy-outline-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px;
+  align-items: center;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.academy-outline-row.active {
+  border-color: rgba(238, 90, 36, 0.48);
+  background: #fff8f4;
+}
+.academy-outline-row > button:first-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.academy-outline-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.academy-outline-row small {
+  color: var(--muted);
+}
+.academy-check-bottom {
+  align-self: end;
+  min-height: 42px;
+}
+.academy-lesson-editor {
+  margin-top: 4px;
+}
+.academy-form-4,
+.academy-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.academy-resource-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.academy-editor-section {
+  padding: 18px;
+  margin: 16px 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fcfbfd;
+}
+.academy-editor-section h3 {
+  margin-bottom: 14px;
+}
+.academy-publish-bar {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #fff5ed;
+}
+.academy-publish-bar .check {
+  margin-right: auto;
+}
+.academy-publish-bar .field {
+  width: 100px;
+}
+.academy-session-table {
+  display: grid;
+}
+.academy-session-row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.academy-session-row:last-child {
+  border-bottom: 0;
+}
+.academy-session-row > div {
+  display: flex;
+  flex-direction: column;
+}
+.academy-session-row small {
+  color: var(--muted);
+}
+.academy-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cbd5e1;
+}
+.academy-status-dot.active {
+  background: var(--ok);
+}
+
+/* Academy V2 — syllabus learning experience */
+.academy-syllabus-hero {
+  padding: 28px;
+  border: 1px solid rgba(122, 43, 143, 0.14);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(247, 148, 29, 0.2), transparent 30%),
+    linear-gradient(135deg, #fff, #fff9f3 60%, #f7effb);
+  box-shadow: var(--shadow);
+}
+.academy-syllabus-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+.academy-syllabus-top h1 {
+  margin: 4px 0 6px;
+  font-size: clamp(26px, 4vw, 42px);
+}
+.academy-syllabus-top p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--muted);
+}
+.academy-syllabus-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.academy-progress-ring {
+  display: grid;
+  place-items: center;
+  min-width: 86px;
+  min-height: 70px;
+  padding: 10px;
+  border: 6px solid #f4d9c8;
+  border-radius: 50%;
+  background: #fff;
+  line-height: 1.1;
+}
+.academy-progress-ring strong {
+  color: var(--plum);
+  font-size: 18px;
+}
+.academy-progress-ring small {
+  color: var(--muted);
+  font-size: 9px;
+}
+.academy-level-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 24px 0 14px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.academy-level-tabs button {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  min-width: 150px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.academy-level-tabs button.active {
+  border-color: #2c327f;
+  background: #252d76;
+  color: #fff;
+}
+.academy-level-tabs small {
+  max-width: 220px;
+  overflow: hidden;
+  opacity: 0.78;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.academy-syllabus-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+.academy-syllabus-search input {
+  border: 0;
+  box-shadow: none;
+}
+.academy-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  overflow-x: auto;
+}
+.academy-filter-bar select {
+  width: auto;
+  min-width: 150px;
+}
+.academy-filter-bar .check {
+  margin: 0;
+  white-space: nowrap;
+}
+.academy-type-tabs {
+  display: flex;
+  gap: 6px;
+}
+.academy-type-tabs button {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.academy-type-tabs button.active {
+  background: #252d76;
+  color: #fff;
+}
+.academy-session-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.academy-session-card {
+  margin: 0;
+}
+.academy-session-card-head {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+.academy-session-card h3,
+.academy-session-card p {
+  margin: 3px 0;
+}
+.academy-session-card p {
+  color: var(--muted);
+  font-size: 13px;
+}
+.academy-favorite-button {
+  border: 0;
+  background: transparent;
+  color: #d97706;
+  font-size: 22px;
+  cursor: pointer;
+}
+.academy-session-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 14px;
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+.academy-session-card-meta .btn {
+  margin-left: auto;
+}
+.academy-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  gap: 16px;
+  align-items: start;
+}
+.academy-procedure {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fcfbfd;
+}
+.academy-resource-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.academy-homework,
+.academy-teacher-note {
+  padding: 18px;
+  margin-top: 18px;
+  border-radius: 16px;
+  white-space: pre-wrap;
+}
+.academy-homework {
+  background: #eaf8f6;
+}
+.academy-homework h3 {
+  color: #087f6f;
+}
+.academy-teacher-note {
+  background: #fff8df;
+}
+.academy-objectives-panel {
+  position: sticky;
+  top: 90px;
+}
+.academy-objectives-panel dl {
+  margin: 18px 0;
+}
+.academy-objective-item {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.academy-objective-item dt {
+  font-weight: 700;
+}
+.academy-objective-item dd {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 900px) {
+  .academy-authoring-grid,
+  .academy-detail-layout {
+    grid-template-columns: 1fr;
+  }
+  .academy-objectives-panel {
+    position: static;
+  }
+  .academy-form-4,
+  .academy-resource-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .academy-session-cards {
+    grid-template-columns: 1fr;
+  }
   .academy-learn-header {
     position: static;
   }
@@ -5315,6 +5680,51 @@ main:focus-visible {
 }
 
 @media (max-width: 560px) {
+  .academy-syllabus-hero {
+    padding: 20px 16px;
+  }
+  .academy-syllabus-top,
+  .academy-syllabus-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .academy-progress-ring {
+    align-self: flex-start;
+  }
+  .academy-filter-bar {
+    align-items: stretch;
+    flex-direction: column;
+    overflow: visible;
+  }
+  .academy-type-tabs {
+    overflow-x: auto;
+  }
+  .academy-form-4,
+  .academy-resource-grid,
+  .academy-editor-section .grid2 {
+    grid-template-columns: 1fr;
+  }
+  .academy-publish-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .academy-publish-bar .field {
+    width: 100%;
+  }
+  .academy-outline-row,
+  .academy-session-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+  .academy-session-row .academy-status-dot {
+    display: none;
+  }
+  .academy-session-row > div {
+    grid-column: 1 / -1;
+  }
+  .academy-objective-item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
   .academy-learn-header {
     align-items: flex-start;
   }
